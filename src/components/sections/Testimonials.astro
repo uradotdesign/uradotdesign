@@ -1,0 +1,206 @@
+---
+import { getTestimonials } from '../../lib/directus';
+import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
+
+// Get current language
+const currentLang = getCurrentLanguage(Astro.url);
+
+// Fetch testimonials from Directus
+const testimonialsData = await getTestimonials();
+
+const testimonials = testimonialsData.length > 0
+  ? testimonialsData.map(t => ({
+      id: t.id,
+      quote: getLocalizedField(t, 'quote', currentLang),
+      authorName: t.author_name,
+      authorTitle: getLocalizedField(t, 'author_title', currentLang),
+      authorCompany: t.author_company
+    }))
+  : [];
+---
+
+{
+  testimonials.length > 0 && (
+    <section 
+      class="relative py-20 sm:py-28 bg-muted/30"
+      aria-labelledby="testimonials-heading"
+    >
+      <div class="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
+        <!-- Testimonials Carousel -->
+        <div class="relative" role="region" aria-label="Client testimonials carousel">
+          <div id="testimonials-carousel" class="relative overflow-hidden">
+            {testimonials.map((testimonial, index) => (
+              <div 
+                class:list={[
+                  "testimonial-slide transition-opacity duration-500",
+                  index === 0 ? "opacity-100" : "opacity-0 absolute inset-0"
+                ]}
+                data-index={index}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`Testimonial ${index + 1} of ${testimonials.length}`}
+              >
+                <div class="flex flex-col gap-12">
+                  <!-- Quote -->
+                  <div class="flex-1">
+                    <blockquote class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-light leading-tight tracking-tight mb-10 lg:mb-12">
+                      <span class="sr-only">Quote:</span>
+                      <span class="font-display">&ldquo;{testimonial.quote}&rdquo;</span>
+                    </blockquote>
+                    
+                    <footer class="flex items-center gap-6">
+                      <cite class="not-italic text-base sm:text-lg">
+                        <span aria-hidden="true">—</span> <span class="font-medium">{testimonial.authorName}</span>{testimonial.authorTitle && `, ${testimonial.authorTitle}`}{testimonial.authorCompany && `, ${testimonial.authorCompany}`}
+                      </cite>
+                    </footer>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <!-- Navigation -->
+          {testimonials.length > 1 && (
+            <div class="flex items-center justify-end gap-8 mt-8">
+              <!-- Dots Indicator -->
+              <div 
+                class="flex items-center gap-2"
+                role="tablist"
+                aria-label="Testimonial navigation"
+              >
+                {testimonials.map((_, index) => (
+                  <button
+                    type="button"
+                    class:list={[
+                      "testimonial-dot w-2.5 h-2.5 sm:w-3 sm:h-3 transition-all duration-300 cursor-pointer border border-[var(--color-foreground)]",
+                      index === 0 ? "bg-[var(--color-foreground)]" : "bg-transparent"
+                    ]}
+                    data-index={index}
+                    role="tab"
+                    aria-label={`Go to testimonial ${index + 1}`}
+                    aria-selected={index === 0 ? "true" : "false"}
+                    tabindex={index === 0 ? "0" : "-1"}
+                    style={index === 0 ? `background-color: var(--color-foreground)` : ""}
+                  />
+                ))}
+              </div>
+
+              <!-- Next Button -->
+              <button
+                type="button"
+                id="testimonials-next"
+                class="group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
+                aria-label="Next testimonial"
+              >
+                <svg 
+                  class="w-8 h-8 sm:w-10 sm:h-10 transition-transform duration-300 group-hover:translate-x-1" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<script>
+  // Use a weak map or property to track if listeners are attached to elements to prevent duplicates
+  // But for global listeners, we need a flag.
+  
+  function initTestimonials() {
+    const slides = document.querySelectorAll<HTMLElement>('.testimonial-slide');
+    const dots = document.querySelectorAll<HTMLButtonElement>('.testimonial-dot');
+    const nextButton = document.getElementById('testimonials-next');
+    
+    if (slides.length <= 1) return;
+
+    // Remove existing listeners if any (by cloning or check) - tough for elements.
+    // Better to check if initialized.
+    if (nextButton?.dataset.initialized) return;
+    if (nextButton) nextButton.dataset.initialized = "true";
+
+    let currentIndex = 0;
+
+    function showSlide(index: number) {
+      // Hide all slides
+      slides.forEach((slide, i) => {
+        if (i === index) {
+          slide.classList.remove('opacity-0', 'absolute');
+          slide.classList.add('opacity-100');
+        } else {
+          slide.classList.add('opacity-0', 'absolute');
+          slide.classList.remove('opacity-100');
+        }
+      });
+
+      // Update dots - filled for active, transparent for inactive
+      dots.forEach((dot, i) => {
+        if (i === index) {
+          dot.style.backgroundColor = 'var(--color-foreground)';
+          dot.classList.remove('bg-transparent');
+          dot.setAttribute('aria-selected', 'true');
+          dot.setAttribute('tabindex', '0');
+        } else {
+          dot.style.backgroundColor = 'transparent';
+          dot.classList.add('bg-transparent');
+          dot.setAttribute('aria-selected', 'false');
+          dot.setAttribute('tabindex', '-1');
+        }
+      });
+
+      currentIndex = index;
+    }
+
+    // Next button click
+    nextButton?.addEventListener('click', () => {
+      const nextIndex = (currentIndex + 1) % slides.length;
+      showSlide(nextIndex);
+    });
+
+    // Dot clicks
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const index = parseInt(dot.dataset.index || '0');
+        showSlide(index);
+      });
+    });
+    
+    const handleKeydown = (e: KeyboardEvent) => {
+      // Check if testimonials section exists in current DOM
+      if (!document.getElementById('testimonials-carousel')) {
+        document.removeEventListener('keydown', handleKeydown);
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
+        showSlide(prevIndex);
+      } else if (e.key === 'ArrowRight') {
+        const nextIndex = (currentIndex + 1) % slides.length;
+        showSlide(nextIndex);
+      }
+    };
+
+    // Prevent adding multiple global listeners
+    // We can remove the old one if it exists (but we don't have reference easily across runs without global var)
+    // or just rely on the check inside handleKeydown (but that doesn't prevent stacking)
+    
+    // Better: Assign to window property to track
+    if ((window as any)._testimonialsKeydownHandler) {
+      document.removeEventListener('keydown', (window as any)._testimonialsKeydownHandler);
+    }
+    (window as any)._testimonialsKeydownHandler = handleKeydown;
+    document.addEventListener('keydown', handleKeydown);
+  }
+
+  // Initialize on page load and after view transitions
+  document.addEventListener('astro:page-load', initTestimonials);
+</script>

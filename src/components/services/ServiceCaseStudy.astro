@@ -1,0 +1,116 @@
+---
+export interface Props {
+  title: string;
+  subtitle: string;
+  description: string;
+  image?: string | { light: string; dark: string } | null;
+  link: string;
+  linkText?: string;
+  currentLang: string;
+}
+
+const { title, subtitle, description, image, link, linkText, currentLang } =
+  Astro.props;
+
+const defaultLinkText =
+  linkText ||
+  (currentLang === "de" ? "Wie es funktioniert hat" : "See how it worked");
+const headingId = "service-case-study-heading";
+---
+
+<section
+  class="relative py-20 lg:py-32 px-6 sm:px-8 lg:px-12 xl:px-16"
+  aria-labelledby={headingId}
+>
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
+      <!-- Left: Case Study Heading -->
+      <div>
+        <div class="border-t border-foreground/20 pt-6">
+          <h2
+            id={headingId}
+            class="text-sm font-mono uppercase tracking-wider text-foreground/60"
+          >
+            RELEVANT CASE STUDY
+          </h2>
+        </div>
+      </div>
+
+      <!-- Right: Case Study Card -->
+      <div>
+        <a
+          href={link}
+          class="group block relative overflow-hidden rounded-2xl border border-foreground/10 hover:border-foreground/20 transition-all duration-300 hover:-translate-y-0.5"
+        >
+          <!-- Background Image (if provided) -->
+          {
+            image && (
+              <div class="absolute inset-0 z-0">
+                {typeof image === "string" ? (
+                  <img
+                    src={image}
+                    alt={title}
+                    class="w-full h-full object-cover opacity-30 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700"
+                  />
+                ) : (
+                  <>
+                    <img
+                      src={image.light}
+                      alt={title}
+                      class="w-full h-full object-cover opacity-30 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700 dark:hidden"
+                    />
+                    <img
+                      src={image.dark}
+                      alt={title}
+                      class="w-full h-full object-cover opacity-30 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700 hidden dark:block"
+                    />
+                  </>
+                )}
+              </div>
+            )
+          }
+
+          <!-- Card Content -->
+          <div class="relative z-10 p-8 sm:p-12">
+            <!-- Subtitle (small text at top) -->
+            <p class="text-sm font-mono uppercase tracking-wider mb-4">
+              {subtitle}
+            </p>
+
+            <!-- Title (large serif heading) -->
+            <h3
+              class="font-display text-4xl sm:text-5xl font-normal leading-tight mb-6"
+            >
+              {title}
+            </h3>
+
+            <!-- Description -->
+            <p class="text-base sm:text-lg leading-relaxed mb-8 opacity-80">
+              {description}
+            </p>
+
+            <!-- Link with Arrow -->
+            <div
+              class="w-full flex items-center justify-between text-sm sm:text-base font-medium text-[var(--color-foreground)] border-b border-[var(--color-foreground)]/60 pb-3 transition-all duration-300 group-hover:border-[var(--color-foreground)]"
+            >
+              <span>{defaultLinkText}</span>
+              <svg
+                class="w-5 h-5 opacity-70 rotate-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:rotate-45"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 17L17 7M17 7H7M17 7V17"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+              </svg>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

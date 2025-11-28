@@ -1,0 +1,93 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: directus_postgres
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-directus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-directus}
+      POSTGRES_DB: ${POSTGRES_DB:-directus}
+    ports:
+      - "5432:5432"
+    networks:
+      - directus
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8.2.3-alpine
+    container_name: ura_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - directus
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  directus:
+    image: directus/directus:11.13.3
+    container_name: directus_cms
+    restart: unless-stopped
+    ports:
+      - "8055:8055"
+    volumes:
+      - directus_uploads:/directus/uploads
+      - directus_extensions:/directus/extensions
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      KEY: ${KEY}
+      SECRET: ${SECRET}
+
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@ura.design}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+
+      DB_CLIENT: "pg"
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB:-directus}
+      DB_USER: ${POSTGRES_USER:-directus}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-directus}
+
+      # Redis cache
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      CACHE_STORE: ${CACHE_STORE:-redis}
+      REDIS: ${REDIS_URL:-redis://redis:6379}
+
+      WEBSOCKETS_ENABLED: "true"
+
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8055}
+
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "http://localhost:3000,http://localhost:4321"
+
+      # File Upload Settings
+      FILES_MAX_UPLOAD_SIZE: "500MB"
+      FILES_MIME_TYPE_ALLOW_LIST: "image/*,video/*,audio/*,application/pdf"
+    networks:
+      - directus
+
+networks:
+  directus:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  directus_uploads:
+  directus_extensions:
+  redis_data:

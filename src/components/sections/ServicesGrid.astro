@@ -1,0 +1,520 @@
+---
+import { getServices, getAssetUrl } from '../../lib/directus';
+import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
+import { t } from '../../lib/translations';
+
+// Get current language
+const currentLang = getCurrentLanguage(Astro.url);
+const servicesHeading = await t('services.heading', currentLang, currentLang === 'de' ? 'DIENSTLEISTUNGEN' : 'SERVICES');
+const defaultCtaText = await t('services.cta_text', currentLang, currentLang === 'de' ? 'Unseren Prozess ansehen' : 'See our process');
+
+// Fetch services from Directus (limit to 3 for homepage)
+const servicesData = await getServices({
+  limit: 3,
+  fields: [
+    "id",
+    "slug",
+    "title_en",
+    "title_de",
+    "subtitle_en",
+    "subtitle_de",
+    "description_en",
+    "description_de",
+    "cta_text_en",
+    "cta_text_de",
+    "cta_link",
+    "lottie_light",
+    "lottie_dark",
+    "color_accent",
+    "show_in_hero"
+  ],
+  filter: {
+    show_in_hero: { _eq: true }
+  }
+});
+
+const services = servicesData.length > 0
+  ? servicesData.map(s => ({
+      id: s.id,
+      title: getLocalizedField(s, 'title', currentLang), // Big heading (e.g., "Forensic Audit")
+      subtitle: getLocalizedField(s, 'subtitle', currentLang), // Small uppercase (e.g., "AUDIT & DIAGNOSE")
+      description: getLocalizedField(s, 'description', currentLang),
+      ctaText: getLocalizedField(s, 'cta_text', currentLang) || defaultCtaText,
+      ctaLink: s.cta_link,
+      lottieLight: s.lottie_light ? getAssetUrl(s.lottie_light) : null,
+      lottieDark: s.lottie_dark ? getAssetUrl(s.lottie_dark) : null,
+      colorAccent: s.color_accent || '#10b981',
+      slug: s.slug
+    }))
+  : [];
+---
+
+<section 
+  class="relative py-16 sm:py-20 lg:py-24 transition-colors duration-300 bg-[var(--color-background)]"
+  aria-labelledby="services-heading"
+>
+  <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
+    <!-- Section Header with Line -->
+    <div class="mb-12 lg:mb-16 flex items-center gap-6">
+      <h2 
+        id="services-heading" 
+        class="text-[12px] sm:text-xs font-mono uppercase text-foreground/70 whitespace-nowrap"
+      >
+        {servicesHeading}
+      </h2>
+      <div class="flex-1 h-px bg-[var(--color-border)]"></div>
+    </div>
+
+    <!-- Services Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16" role="list">
+      {services.map((service) => {
+        const titleId = `service-${service.id}-title`;
+        const descriptionId = `service-${service.id}-description`;
+
+        return (
+          <article 
+            class="service-item group relative" 
+            data-spotlight-color={service.colorAccent}
+            data-service-id={service.id}
+            style={`--service-accent: ${service.colorAccent || "#10b981"};`}
+            role="listitem"
+            aria-labelledby={service.title ? titleId : undefined}
+            aria-describedby={service.description ? descriptionId : undefined}
+          >
+              <!-- Lottie Animation Container -->
+              <div class="lottie-container mb-8" role="presentation" aria-hidden="true">
+              {service.lottieLight && service.lottieDark ? (
+                <div 
+                  class="lottie-light"
+                  data-lottie-light={service.lottieLight}
+                  data-lottie-dark={service.lottieDark}
+                  data-service-id={service.id}
+                ></div>
+              ) : (
+                <div class="w-16 h-16 rounded-full flex items-center justify-center">
+                  <span class="text-2xl">◆</span>
+                </div>
+              )}
+            </div>
+
+            <!-- Big Title -->
+            {service.title && (
+              <h3 id={titleId} class="spotlight-text font-display text-5xl mb-2 font-normal leading-tight">
+                {service.title}
+              </h3>
+            )}
+
+            <!-- Small Subtitle (Uppercase) -->
+            {service.subtitle && (
+              <p class="spotlight-text text-xs sm:text-sm font-mono uppercase mb-4">
+                {service.subtitle}
+              </p>
+            )}
+
+            <!-- Description -->
+            {service.description && (
+              <p id={descriptionId} class="spotlight-text text-base sm:text-lg mb-6 font-geist font-medium">
+                {service.description}
+              </p>
+            )}
+
+            <!-- CTA Link -->
+            <a 
+              href={service.ctaLink || `/${currentLang}/${service.slug}`}
+              class="spotlight-text service-cta-link inline-block font-light pb-1 transition-all duration-300"
+              style="--accent-color: var(--service-accent);"
+            >
+              {service.ctaText}
+            </a>
+          </article>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<script>
+  // Import Lottie player
+  import type { AnimationItem } from 'lottie-web';
+  
+  let lottie: any = null;
+  const animations: Map<string, { light: AnimationItem | null, dark: AnimationItem | null, container: HTMLElement }> = new Map();
+  const initializedSpotlights = new WeakSet<HTMLElement>();
+
+  function cleanupLottie() {
+    animations.forEach((animData) => {
+      animData.light?.destroy();
+      animData.dark?.destroy();
+      animData.container.innerHTML = "";
+    });
+    animations.clear();
+    document.querySelectorAll(".lottie-animation").forEach((node) => node.remove());
+  }
+
+  async function initLottie() {
+    if (typeof window === 'undefined') return;
+
+    if (!lottie) {
+      lottie = await import('lottie-web');
+    }
+
+    cleanupLottie();
+    
+    // Initialize all Lottie animations
+    const containers = document.querySelectorAll('[data-lottie-light]');
+        
+    containers.forEach((container) => {
+      const el = container as HTMLElement;
+      const lightPath = el.dataset.lottieLight;
+      const darkPath = el.dataset.lottieDark;
+      const serviceId = el.dataset.serviceId;
+      if (!serviceId || !lightPath || !darkPath) return;
+      
+      // Create container for the animation
+      const animContainer = document.createElement('div');
+      animContainer.className = 'lottie-animation';
+      el.appendChild(animContainer);
+      
+      // Determine which theme to load initially
+      const isDark = document.documentElement.classList.contains('dark');
+      const initialPath = isDark ? darkPath : lightPath;
+      
+      // Load the initial animation
+      try {
+        const anim = lottie.default.loadAnimation({
+          container: animContainer,
+          renderer: 'svg',
+          loop: false,
+          autoplay: false,
+          path: initialPath
+        });
+        
+        anim.addEventListener('data_failed', () => {
+          console.error('❌ Lottie: Failed to load animation for service', serviceId, initialPath);
+        });
+        
+        // Store the animation
+        animations.set(serviceId, {
+          light: isDark ? null : anim,
+          dark: isDark ? anim : null,
+          container: animContainer
+        });
+      } catch (error) {
+        console.error('❌ Lottie: Error loading animation for service', serviceId, error);
+      }
+      
+      // Add hover/touch event listeners to the parent article
+      const article = el.closest('.service-item');
+      if (article) {
+        // Mouse events
+        article.addEventListener('mouseenter', () => {
+          const animData = animations.get(serviceId);
+          if (animData) {
+            const currentAnim = isDark ? animData.dark : animData.light;
+            if (currentAnim) {
+              currentAnim.setDirection(1); // Forward
+              currentAnim.play();
+            }
+          }
+        });
+        
+        article.addEventListener('mouseleave', () => {
+          const animData = animations.get(serviceId);
+          if (animData) {
+            const currentAnim = isDark ? animData.dark : animData.light;
+            if (currentAnim) {
+              currentAnim.setDirection(-1); // Reverse
+              currentAnim.play();
+            }
+          }
+        });
+
+        // Touch events for mobile
+        let touchActive = false;
+        article.addEventListener('touchstart', (e) => {
+          if (!touchActive) {
+            touchActive = true;
+            const animData = animations.get(serviceId);
+            if (animData) {
+              const currentAnim = isDark ? animData.dark : animData.light;
+              if (currentAnim) {
+                currentAnim.setDirection(1);
+                currentAnim.play();
+              }
+            }
+          }
+        });
+        
+        article.addEventListener('touchend', () => {
+          if (touchActive) {
+            touchActive = false;
+            setTimeout(() => {
+              const animData = animations.get(serviceId);
+              if (animData) {
+                const currentAnim = isDark ? animData.dark : animData.light;
+                if (currentAnim) {
+                  currentAnim.setDirection(-1);
+                  currentAnim.play();
+                }
+              }
+            }, 300); // Brief delay before reversing
+          }
+        });
+      }
+    });
+  }
+
+  // Handle theme changes
+  function handleThemeChange() {
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    animations.forEach((animData, serviceId) => {
+      const container = document.querySelector(`[data-service-id="${serviceId}"]`) as HTMLElement | null;
+      if (!container) return;
+      
+      const lightPath = container.dataset.lottieLight;
+      const darkPath = container.dataset.lottieDark;
+      const currentPath = isDark ? darkPath : lightPath;
+
+      if (!currentPath) return;
+      
+      // Destroy existing animation
+      if (animData.light) animData.light.destroy();
+      if (animData.dark) animData.dark.destroy();
+      
+      // Load new animation for current theme
+      const anim = lottie.default.loadAnimation({
+        container: animData.container,
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        path: currentPath
+      });
+      
+      if (isDark) {
+        animData.dark = anim;
+        animData.light = null;
+      } else {
+        animData.light = anim;
+        animData.dark = null;
+      }
+    });
+  }
+
+  // Listen for theme changes (with cleanup check)
+  if ((document as any).__servicesThemeHandler) {
+    document.removeEventListener('theme-changed', (document as any).__servicesThemeHandler);
+  }
+  (document as any).__servicesThemeHandler = handleThemeChange;
+  document.addEventListener('theme-changed', handleThemeChange);
+  
+  // Listen for custom theme toggle event
+  const storageHandler = (e: StorageEvent) => {
+    if (e.key === 'theme') {
+      handleThemeChange();
+    }
+  };
+  
+  if ((window as any).__servicesStorageHandler) {
+    window.removeEventListener('storage', (window as any).__servicesStorageHandler);
+  }
+  (window as any).__servicesStorageHandler = storageHandler;
+  window.addEventListener('storage', storageHandler);
+
+  // Spotlight effect - CSS mask-based
+  function initSpotlight() {
+    const serviceItems = document.querySelectorAll('.service-item');
+
+    serviceItems.forEach((item, index) => {
+      const el = item as HTMLElement;
+      if (initializedSpotlights.has(el)) return;
+      initializedSpotlights.add(el);
+      const spotlightColor = el.dataset.spotlightColor;
+      const textElements = el.querySelectorAll('.spotlight-text');
+      
+      if (!spotlightColor) return;
+      
+      textElements.forEach((textEl) => {
+        const htmlEl = textEl as HTMLElement;
+        htmlEl.style.setProperty('--spotlight-color', spotlightColor);
+      });
+      
+      let mouseX = 0;
+      let mouseY = 0;
+      
+      // Function to update spotlight position
+      const updateSpotlight = (clientX: number, clientY: number) => {
+        textElements.forEach((textEl) => {
+          const htmlEl = textEl as HTMLElement;
+          const textRect = htmlEl.getBoundingClientRect();
+          
+          // Calculate position relative to the text element itself
+          const relativeX = clientX - textRect.left;
+          const relativeY = clientY - textRect.top;
+          
+          htmlEl.style.setProperty('--mouse-x', `${relativeX}px`);
+          htmlEl.style.setProperty('--mouse-y', `${relativeY}px`);
+        });
+      };
+
+      // Mouse events
+      el.addEventListener('mousemove', (e) => {
+        requestAnimationFrame(() => {
+        updateSpotlight(e.clientX, e.clientY);
+      });
+      }, { passive: true });
+      
+      el.addEventListener('mouseenter', () => {
+        textElements.forEach((textEl) => {
+          const htmlEl = textEl as HTMLElement;
+          htmlEl.classList.add('spotlight-active');
+        });
+      });
+      
+      el.addEventListener('mouseleave', () => {
+        textElements.forEach((textEl) => {
+          const htmlEl = textEl as HTMLElement;
+          htmlEl.classList.remove('spotlight-active');
+        });
+      });
+
+      // Touch events for mobile
+      let touchSpotlightActive = false;
+      
+      el.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 0) {
+          touchSpotlightActive = true;
+          const touch = e.touches[0];
+          requestAnimationFrame(() => {
+          updateSpotlight(touch.clientX, touch.clientY);
+          });
+          
+          textElements.forEach((textEl) => {
+            const htmlEl = textEl as HTMLElement;
+            htmlEl.classList.add('spotlight-active');
+          });
+        }
+      }, { passive: true });
+      
+      el.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0 && touchSpotlightActive) {
+          const touch = e.touches[0];
+          requestAnimationFrame(() => {
+          updateSpotlight(touch.clientX, touch.clientY);
+          });
+        }
+      }, { passive: true });
+      
+      el.addEventListener('touchend', () => {
+        touchSpotlightActive = false;
+        textElements.forEach((textEl) => {
+          const htmlEl = textEl as HTMLElement;
+          htmlEl.classList.remove('spotlight-active');
+        });
+      });
+    });
+  }
+
+  function initializeServicesGrid() {
+    initLottie();
+    initSpotlight();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeServicesGrid, { once: true });
+  } else {
+    initializeServicesGrid();
+  }
+
+  document.addEventListener('ura:page-ready', initializeServicesGrid);
+</script>
+
+<style>
+  .service-item {
+    position: relative;
+    cursor: default;
+  }
+
+  /* CTA Link with arrow animation (same as Hero) */
+  .service-cta-link {
+    position: relative;
+    padding-right: 2rem;
+    border-bottom: 1px solid currentColor;
+  }
+
+  /* Animated accent color underline */
+  .service-cta-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 0%;
+    height: 1px;
+    background-color: var(--accent-color);
+    transition: width 0.4s ease;
+  }
+
+  .service-cta-link:hover::before,
+  .service-cta-link:active::before {
+    width: 100%;
+  }
+
+  .service-cta-link::after {
+    content: '↗';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%) rotate(0deg);
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    color: currentColor;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    font-size: 1.25em;
+  }
+
+  .service-cta-link:hover::after,
+  .service-cta-link:active::after {
+    opacity: 1;
+    transform: translateY(-50%) rotate(45deg);
+  }
+  
+  /* Override spotlight effect for the arrow */
+  .service-cta-link.spotlight-active::after {
+    -webkit-text-fill-color: currentColor !important;
+    background: none !important;
+  }
+
+  .spotlight-text {
+    position: relative;
+    --mouse-x: 0px;
+    --mouse-y: 0px;
+    --spotlight-color: #10b981;
+  }
+
+  .spotlight-text.spotlight-active {
+    background: 
+      radial-gradient(
+        circle 120px at var(--mouse-x) var(--mouse-y),
+        var(--spotlight-color) 0%,
+        transparent 100%
+      ),
+      linear-gradient(currentColor, currentColor);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: background 0.05s ease;
+  }
+
+  .lottie-container {
+    position: relative;
+    width: 64px;
+    height: 64px;
+  }
+
+  .lottie-animation {
+    width: 100%;
+    height: 100%;
+  }
+</style>
+

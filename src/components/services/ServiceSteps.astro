@@ -1,0 +1,308 @@
+---
+export interface Props {
+  steps: Array<{
+    number: string;
+    title: string;
+    description: string;
+    tags?: string[];
+  }>;
+  lottieLight?: string | null;
+  lottieDark?: string | null;
+  accentColor?: string;
+}
+
+const { steps, lottieLight, lottieDark, accentColor = "#10b981" } = Astro.props;
+---
+
+<section
+  class="service-steps-container relative py-20 lg:py-32"
+  aria-label="Service process steps"
+  style={`--timeline-accent: ${accentColor}`}
+>
+  <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
+    <div class="grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-8 lg:gap-16">
+      <!-- Left: Vertical Line with Animated Lottie Icon -->
+      <div class="relative hidden lg:block">
+        <!-- Static Vertical Line -->
+        <div
+          class="absolute left-1/2 -translate-x-1/2 top-0 w-px h-full bg-[var(--timeline-accent)] opacity-20"
+          aria-hidden="true"
+        ></div>
+        
+        <!-- Animated Lottie Icon Container (moves along the line) -->
+        <div
+          class="lottie-icon-container absolute left-1/2 -translate-x-1/2 w-32 h-32 flex items-center justify-center transition-all duration-500 ease-out"
+          data-lottie-container
+          data-lottie-light={lottieLight}
+          data-lottie-dark={lottieDark}
+          aria-hidden="true"
+        >
+          <!-- Lottie will be injected here by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Right: Steps Content -->
+      <ol class="space-y-24 lg:space-y-32 list-none" role="list">
+        {steps.map((step, index) => (
+          <li
+            class="step-item relative scroll-mt-32"
+            data-step-index={index}
+          >
+            <!-- Step Number and Content in Horizontal Layout -->
+            <div class="flex items-start gap-6 lg:gap-8">
+              <!-- Small Number on Left -->
+              <span
+                class="text-xl font-normal flex-shrink-0 pt-1 text-[var(--timeline-accent)]"
+              >
+                {step.number}
+              </span>
+
+              <!-- Content on Right -->
+              <div class="flex-1">
+                <h3 class="font-display text-4xl sm:text-5xl lg:text-6xl font-normal leading-tight mb-6">
+                  {step.title}
+                </h3>
+                
+                <p class="text-base sm:text-lg font-light leading-relaxed text-foreground/80 mb-6">
+                  {step.description}
+                </p>
+
+                {step.tags && step.tags.length > 0 && (
+                  <div class="flex flex-wrap gap-2">
+                    {step.tags.map((tag) => (
+                      <span
+                        class="px-4 py-2 rounded-full text-sm font-normal border border-foreground/20 text-foreground/60 bg-foreground/5 transition-colors duration-300 hover:bg-foreground/10"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<script>
+  import type { AnimationItem } from 'lottie-web';
+
+  interface LottieCache {
+    light: AnimationItem | null;
+    dark: AnimationItem | null;
+  }
+
+  // Store global cleanup function to prevent listener leaks
+  let cleanup: (() => void) | null = null;
+
+  async function initServiceSteps() {
+    // Cleanup previous listeners if any
+    if (cleanup) cleanup();
+
+    const container = document.querySelector('.service-steps-container');
+    if (!container) return;
+
+    const lottieContainer = container.querySelector('[data-lottie-container]') as HTMLElement;
+    const stepItems = container.querySelectorAll('.step-item');
+    
+    if (!lottieContainer || stepItems.length === 0) return;
+
+    let lottieCache: LottieCache = { light: null, dark: null };
+    const lottieLight = lottieContainer.getAttribute('data-lottie-light');
+    const lottieDark = lottieContainer.getAttribute('data-lottie-dark');
+
+    // Detect current theme
+    let currentTheme: 'light' | 'dark' = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+
+    // Load Lottie
+    async function loadLottie(path: string | null, theme: 'light' | 'dark'): Promise<AnimationItem | null> {
+      if (!path) return null;
+      
+      try {
+        const lottie = (await import('lottie-web')).default;
+        
+        // Clear any existing content
+        lottieContainer.innerHTML = '';
+        
+        const animation = lottie.loadAnimation({
+          container: lottieContainer,
+          renderer: 'svg',
+          loop: false,
+          autoplay: false,
+          path,
+        });
+
+        return animation;
+      } catch (error) {
+        console.error('Failed to load Lottie animation:', error);
+        return null;
+      }
+    }
+
+    // Initialize Lottie for the current theme only
+    if (currentTheme === 'dark' && lottieDark) {
+      lottieCache.dark = await loadLottie(lottieDark, 'dark');
+      if (lottieCache.dark) {
+        lottieCache.dark.goToAndStop(0, true);
+      }
+    } else if (currentTheme === 'light' && lottieLight) {
+      lottieCache.light = await loadLottie(lottieLight, 'light');
+      if (lottieCache.light) {
+        lottieCache.light.goToAndStop(0, true);
+      }
+    }
+
+    // Calculate step positions and handle scroll
+    let stepPositions: { top: number; bottom: number; index: number }[] = [];
+    let lastScrollDirection: 'down' | 'up' = 'down';
+    let lastScrollY = window.scrollY;
+    let activeStepIndex = 0;
+
+    function updateStepPositions() {
+      stepPositions = Array.from(stepItems).map((item, index) => {
+        const rect = (item as HTMLElement).getBoundingClientRect();
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        return {
+          top: rect.top + scrollTop,
+          bottom: rect.bottom + scrollTop,
+          index,
+        };
+      });
+    }
+
+    function handleScroll() {
+      const scrollY = window.scrollY;
+      const scrollDirection: 'down' | 'up' = scrollY > lastScrollY ? 'down' : 'up';
+      lastScrollY = scrollY;
+
+      if (scrollDirection !== lastScrollDirection) {
+        lastScrollDirection = scrollDirection;
+      }
+
+      const viewportCenter = scrollY + window.innerHeight / 2;
+
+      // Update icon position along the timeline
+      if (stepPositions.length > 0) {
+        const firstStepTop = stepPositions[0].top;
+        const lastStepBottom = stepPositions[stepPositions.length - 1].bottom;
+        const totalHeight = lastStepBottom - firstStepTop;
+        
+        // Adjust the scroll range to start and end sooner
+        const startOffset = window.innerHeight * 0.3;
+        const adjustedStart = firstStepTop - startOffset;
+        const animationRange = totalHeight * 0.7 + startOffset;
+        const relativeScroll = Math.max(0, Math.min(1, (viewportCenter - adjustedStart) / animationRange));
+        
+        // Move icon along the vertical line (still uses full range for visual positioning)
+        const containerHeight = lottieContainer.parentElement?.offsetHeight || 0;
+        const visualScroll = Math.max(0, Math.min(1, (viewportCenter - firstStepTop) / totalHeight));
+        const iconPosition = visualScroll * containerHeight;
+        lottieContainer.style.top = `${iconPosition}px`;
+
+        // Animate Lottie based on adjusted scroll progress
+        const animation = currentTheme === 'dark' ? lottieCache.dark : lottieCache.light;
+        if (animation) {
+          const totalFrames = animation.totalFrames;
+          const targetFrame = Math.floor(relativeScroll * totalFrames);
+
+          // Play forward or backward based on direction
+          animation.goToAndStop(Math.min(Math.max(0, targetFrame), totalFrames - 1), true);
+        }
+      }
+
+      // Find active step for visual feedback
+      const newActiveStepIndex = stepPositions.findIndex(
+        (pos) => viewportCenter >= pos.top && viewportCenter <= pos.bottom
+      );
+
+      if (newActiveStepIndex !== -1 && newActiveStepIndex !== activeStepIndex) {
+        activeStepIndex = newActiveStepIndex;
+      }
+    }
+
+    // Use requestAnimationFrame for smoother scroll handling
+    let rafId: number | null = null;
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        handleScroll();
+        rafId = null;
+      });
+    };
+
+    const onResize = () => {
+      updateStepPositions();
+      onScroll();
+    };
+
+    // Initial setup
+    updateStepPositions();
+    handleScroll();
+
+    // Listen to scroll
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+
+    // Theme switching support
+    const observer = new MutationObserver(async () => {
+      const newTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      if (newTheme !== currentTheme) {
+        currentTheme = newTheme;
+        
+        // Load the new theme's animation if not already loaded
+        if (currentTheme === 'dark' && !lottieCache.dark && lottieDark) {
+          lottieCache.dark = await loadLottie(lottieDark, 'dark');
+        } else if (currentTheme === 'light' && !lottieCache.light && lottieLight) {
+          lottieCache.light = await loadLottie(lottieLight, 'light');
+        }
+        
+        // Update to show the current theme's animation
+        const animation = currentTheme === 'dark' ? lottieCache.dark : lottieCache.light;
+        if (animation) {
+          const totalFrames = animation.totalFrames;
+          const framePerStep = totalFrames / stepItems.length;
+          const targetFrame = Math.floor(framePerStep * (activeStepIndex + 0.5));
+          animation.goToAndStop(targetFrame, true);
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    // Define cleanup function
+    cleanup = () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      observer.disconnect();
+      if (rafId) cancelAnimationFrame(rafId);
+      
+      // Destroy lottie instances
+      if (lottieCache.light) lottieCache.light.destroy();
+      if (lottieCache.dark) lottieCache.dark.destroy();
+    };
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => initServiceSteps());
+  } else {
+    initServiceSteps();
+  }
+
+  // Re-initialize after custom page lifecycle events (View Transitions)
+  document.addEventListener('ura:page-ready', () => initServiceSteps());
+  
+  // Cleanup on swap
+  document.addEventListener('astro:before-swap', () => {
+    if (cleanup) {
+      cleanup();
+      cleanup = null;
+    }
+  });
+</script>

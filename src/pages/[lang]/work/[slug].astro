@@ -1,0 +1,328 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import {
+  getCaseStudies,
+  getAssetUrl,
+  type CaseStudy,
+} from "../../../lib/directus";
+import { getLocalizedField, type Language } from "../../../lib/i18n";
+
+const { lang: langParam, slug } = Astro.params;
+const lang = (langParam as Language) || "en";
+
+if (!slug) {
+  return Astro.redirect("/404");
+}
+
+const caseStudies = await getCaseStudies({
+  fields: [
+    "slug",
+    "status",
+    "id",
+    "client_name",
+    "title_en",
+    "title_de",
+    "description_en",
+    "description_de",
+    "excerpt_en",
+    "excerpt_de",
+    "year",
+    "links",
+    "categories.category_id.title_en",
+    "categories.category_id.title_de",
+    "featured_image_light",
+    "featured_image_dark",
+    "cover_image",
+    "logo",
+    "sections.*", // Fetch all section fields
+  ],
+  filter: {
+    slug: { _eq: slug },
+    status: { _eq: "published" },
+  },
+  limit: 1,
+});
+
+const study = caseStudies[0];
+
+// Redirect to 404 if study is not found
+if (!study) {
+  console.error(`Study not found for slug: ${slug} and lang: ${lang}`);
+  return Astro.redirect("/404");
+}
+
+// Normalize data
+const title = getLocalizedField(study, "title", lang);
+const description =
+  getLocalizedField(study, "description", lang) ||
+  getLocalizedField(study, "excerpt", lang);
+const clientName = study.client_name;
+const year = study.year;
+const links = study.links || [];
+const imageLight = getAssetUrl(study.featured_image_light);
+const imageDark = getAssetUrl(study.featured_image_dark);
+const coverImage = getAssetUrl(study.cover_image);
+const logo = getAssetUrl(study.logo);
+
+// Use cover image if available, fallback to featured images
+const heroImageLight = coverImage || imageLight;
+const heroImageDark = coverImage || imageDark;
+
+const categories =
+  study.categories
+    ?.map((catLink: any) => {
+      const cat = catLink.category_id;
+      const localizedTitle = getLocalizedField(cat, "title", lang);
+      return localizedTitle;
+    })
+    .filter((cat: string | undefined): cat is string => Boolean(cat)) || [];
+
+// Breadcrumb text
+const backText = lang === "de" ? "Zurück zu Arbeiten" : "Back to Works";
+const worksLink = `/${lang}/works`;
+---
+
+<BaseLayout title={`${title} | Ura Design`} description={description}>
+  <!-- Hero Section -->
+  <section
+    class="relative w-full min-h-screen flex flex-col justify-between px-6 sm:px-8 lg:px-12 xl:px-24 py-24 sm:py-32 text-white overflow-hidden"
+  >
+    {/* Background Images */}
+    <div class="absolute inset-0 -z-10">
+      {
+        heroImageLight && (
+          <img
+            src={heroImageLight}
+            alt=""
+            class="absolute inset-0 w-full h-full object-cover dark:hidden"
+          />
+        )
+      }
+      {
+        heroImageDark && (
+          <img
+            src={heroImageDark}
+            alt=""
+            class="absolute inset-0 w-full h-full object-cover hidden dark:block"
+          />
+        )
+      }
+      {
+        /* Overlay Gradients - minimal overlay for text legibility, no heavy white/black gradient */
+      }
+      <div class="absolute inset-0 bg-black/40 dark:bg-black/40"></div>
+    </div>
+
+    {/* Top Row */}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 w-full pt-12">
+      {/* Top Left: Breadcrumb & Title */}
+      <div class="flex flex-col gap-8 max-w-3xl">
+        <div>
+          <span class="block text-sm uppercase mb-4 opacity-70">
+            <a
+              href={worksLink}
+              class="hover:opacity-100 underline font-semibold transition-opacity"
+              >{lang === "de" ? "PROJEKT" : "WORKS"}</a
+            >
+            <span>{" "} /</span>
+          </span>
+          <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl">
+            {title}
+          </h1>
+        </div>
+      </div>
+
+      {/* Top Right: Description */}
+      <div class="flex flex-col justify-end lg:items-end lg:text-right">
+        <p
+          class="text-xl sm:text-2xl lg:text-3xl font-light max-w-2xl opacity-90"
+        >
+          {description}
+        </p>
+      </div>
+    </div>
+
+    {/* Bottom Row */}
+    <div
+      class="grid grid-cols-1 lg:grid-cols-2 gap-12 w-full items-end mt-auto pt-24"
+    >
+      {/* Bottom Left: Logo */}
+      <div>
+        {
+          logo && (
+            <img
+              src={logo}
+              alt={`${clientName} logo`}
+              class="h-14 w-auto object-contain brightness-0 invert opacity-90"
+            />
+          )
+        }
+      </div>
+
+      {/* Bottom Right: Meta Info */}
+      <div class="flex flex-col lg:items-end gap-8 lg:text-right">
+        {/* Year */}
+        {
+          year && (
+            <div class="flex flex-col gap-2">
+              <span class="text-sm uppercase opacity-50">Year</span>
+              <span class="text-lg font-medium">{year}</span>
+            </div>
+          )
+        }
+
+        {/* Links */}
+        {
+          links.length > 0 && (
+            <div class="flex flex-col gap-2 lg:items-end">
+              <span class="text-sm uppercase opacity-50">
+                {lang === "de" ? "Links" : "Links"}
+              </span>
+              <div class="flex flex-col gap-3 lg:gap-1 lg:items-end">
+                {links.map((link: any) => (
+                  <div class="w-fit">
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="hero-link text-lg font-medium border-b border-white pb-0.5 hover:opacity-70 transition-opacity block w-fit"
+                    >
+                      {link.label}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        }
+
+        {/* Categories */}
+        {
+          categories.length > 0 && (
+            <div class="flex flex-col gap-2 lg:items-end">
+              <div class="flex flex-wrap gap-2 lg:justify-end">
+                {categories.map((cat: string) => (
+                  <span class="text-sm font-medium text-white/90">{cat}</span>
+                ))}
+              </div>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  {/* Dynamic Sections */}
+  {
+    study.sections && study.sections.length > 0 ? (
+      study.sections.map((section: any) => (
+        <section class="py-8 lg:py-20 px-6 sm:px-8 lg:px-12 xl:px-24 w-full mx-auto">
+          <div class="flex flex-col lg:flex-row gap-6 lg:gap-24">
+            {/* Left: Section Title */}
+            <div class="lg:w-1/6 lg:sticky lg:top-32 h-fit">
+              <h2 class="text-sm font-mono opacity-70">{section.title}</h2>
+            </div>
+
+            {/* Right: Content Grid */}
+            <div
+              class={`lg:w-5/6 grid sm:gap-32 gap-4 ${
+                section.layout === "3-cols"
+                  ? "lg:grid-cols-3"
+                  : section.layout === "2-cols"
+                    ? "lg:grid-cols-2"
+                    : "grid-cols-1"
+              }`}
+            >
+              {/* Column 1 */}
+              {(section.content_1 || section.custom_code_1) && (
+                <div class="flex flex-col gap-8">
+                  {section.content_1 && (
+                    <div
+                      class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display w-full"
+                      set:html={section.content_1}
+                    />
+                  )}
+                  {section.custom_code_1 && (
+                    <div class="w-full" set:html={section.custom_code_1} />
+                  )}
+                </div>
+              )}
+
+              {/* Column 2 */}
+              {(section.content_2 || section.custom_code_2) && (
+                <div class="flex flex-col gap-8">
+                  {section.content_2 && (
+                    <div
+                      class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display w-full"
+                      set:html={section.content_2}
+                    />
+                  )}
+                  {section.custom_code_2 && (
+                    <div class="w-full" set:html={section.custom_code_2} />
+                  )}
+                </div>
+              )}
+
+              {/* Column 3 */}
+              {(section.content_3 || section.custom_code_3) && (
+                <div class="flex flex-col gap-8">
+                  {section.content_3 && (
+                    <div
+                      class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display w-full"
+                      set:html={section.content_3}
+                    />
+                  )}
+                  {section.custom_code_3 && (
+                    <div class="w-full" set:html={section.custom_code_3} />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      ))
+    ) : null
+  }
+
+  <!-- Inject the custom element script for Before/After toggle -->
+  <script>
+    import "../../../scripts/BeforeAfterToggle.js";
+    import "../../../scripts/InteractiveShowcase.js";
+    import "../../../scripts/CharacterSystem.js";
+    import "../../../scripts/LottiePlayerGrid.js";
+  </script>
+</BaseLayout>
+
+<style>
+  /* Force white header on desktop for this page to match dark hero background,
+     BUT only when the header is transparent (not scrolled).
+     When scrolled, it should behave normally (adaptive).
+  */
+  @media (min-width: 768px) {
+    :global(header:not(.scrolled) .adaptive-color),
+    :global(header:not(.scrolled) .nav-link) {
+      color: #ffffff !important;
+    }
+
+    :global(header:not(.scrolled) .logo-path) {
+      fill: #ffffff !important;
+    }
+
+    :global(header:not(.scrolled) .header-divider) {
+      background-color: #ffffff !important;
+    }
+
+    /* Force white underline for links in hero section */
+    .hero-link {
+      border-bottom-color: #ffffff !important;
+    }
+
+    /* Force weather text and icons to white */
+    :global(header:not(.scrolled) [role="status"]),
+    :global(header:not(.scrolled) [role="status"] span),
+    :global(header:not(.scrolled) [role="status"] svg),
+    :global(header:not(.scrolled) time) {
+      color: #ffffff !important;
+    }
+  }
+</style>

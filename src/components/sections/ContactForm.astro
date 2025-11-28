@@ -1,0 +1,601 @@
+---
+import {
+  getContactSection,
+  getContactTeamMembers,
+  getAssetUrl,
+} from "../../lib/directus";
+import { t } from "../../lib/translations";
+import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
+
+// Get current language
+const currentLang = getCurrentLanguage(Astro.url);
+
+// Fetch contact section data
+const contactData = await getContactSection();
+const teamMembers = await getContactTeamMembers({
+  fields: ["id", "full_name", "role_en", "role_de", "photo", "email"],
+});
+
+// Get localized content (no hardcoded fallbacks)
+const label = contactData
+  ? getLocalizedField(contactData, "label", currentLang)
+  : null;
+
+const heading = contactData
+  ? getLocalizedField(contactData, "heading", currentLang)
+  : null;
+
+const responseTime = contactData
+  ? getLocalizedField(contactData, "response_time", currentLang)
+  : null;
+
+const buttonText = contactData
+  ? getLocalizedField(contactData, "button_text", currentLang)
+  : null;
+
+// Form labels (localized)
+const labels = {
+  firstName: await t(
+    "contact.first_name",
+    currentLang,
+    currentLang === "de" ? "Vorname" : "First name"
+  ),
+  lastName: await t(
+    "contact.last_name",
+    currentLang,
+    currentLang === "de" ? "Nachname" : "Last name"
+  ),
+  email: await t(
+    "contact.email",
+    currentLang,
+    currentLang === "de" ? "E-Mail" : "Email"
+  ),
+  phone: await t(
+    "contact.phone",
+    currentLang,
+    currentLang === "de" ? "Telefonnummer" : "Phone number"
+  ),
+  contactPreference: await t(
+    "contact.contact_preference",
+    currentLang,
+    currentLang === "de"
+      ? "Wie können wir Sie kontaktieren?"
+      : "How can we contact you?"
+  ),
+  message: await t(
+    "contact.message",
+    currentLang,
+    currentLang === "de" ? "Wie können wir helfen?" : "How can we help?"
+  ),
+  phoneOption: await t(
+    "contact.phone_option",
+    currentLang,
+    currentLang === "de" ? "Telefon" : "Phone"
+  ),
+  emailOption: await t("contact.email_option", currentLang, "E-Mail"),
+  signalOption: await t("contact.signal_option", currentLang, "Signal"),
+  required: await t(
+    "contact.required",
+    currentLang,
+    currentLang === "de" ? "(erforderlich)" : "(required)"
+  ),
+  optional: await t(
+    "contact.optional",
+    currentLang,
+    currentLang === "de" ? "(optional)" : "(optional)"
+  ),
+  messagePlaceholder: await t(
+    "contact.message_placeholder",
+    currentLang,
+    currentLang === "de"
+      ? "Hinterlassen Sie uns eine Nachricht..."
+      : "Leave us a message..."
+  ),
+  successMessage: await t(
+    "contact.success_message",
+    currentLang,
+    currentLang === "de"
+      ? "Vielen Dank! Wir melden uns bald bei Ihnen."
+      : "Thank you! We'll get back to you soon."
+  ),
+  errorMessage: await t(
+    "contact.error_message",
+    currentLang,
+    currentLang === "de"
+      ? "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut."
+      : "Something went wrong. Please try again."
+  ),
+  responseTimePrefix: await t(
+    "contact.response_time_prefix",
+    currentLang,
+    currentLang === "de"
+      ? "Wir melden uns innerhalb von"
+      : "Our team will get back to you within"
+  ),
+};
+
+const clientMessages = {
+  sending: await t(
+    "contact.sending",
+    currentLang,
+    currentLang === "de" ? "Wird gesendet..." : "Sending..."
+  ),
+  success: labels.successMessage,
+  error: labels.errorMessage,
+  requiredField: await t(
+    "contact.required_field",
+    currentLang,
+    currentLang === "de"
+      ? "Dieses Feld ist erforderlich"
+      : "This field is required"
+  ),
+  invalidEmail: await t(
+    "contact.invalid_email",
+    currentLang,
+    currentLang === "de"
+      ? "Bitte geben Sie eine gültige E-Mail-Adresse ein"
+      : "Please enter a valid email address"
+  ),
+};
+---
+
+<section id="contact" class="relative py-24 md:py-32 transition-colors">
+  <div class="container mx-auto px-6 md:px-12">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
+      <!-- Left Column: Content -->
+      <div class="space-y-8">
+        {label && <p class="text-base">{label}</p>}
+
+        <h2 class="text-4xl md:text-5xl lg:text-6xl font-display max-w-md">
+          {heading}
+        </h2>
+
+        <div class="flex items-center gap-4">
+          {
+            teamMembers.length > 0 && (
+              <div class="flex items-center -space-x-5">
+                {teamMembers.map(
+                  (member, index) =>
+                    member.photo && (
+                      <img
+                        src={getAssetUrl(member.photo)}
+                        alt={member.full_name}
+                        class="w-14 h-14 rounded-full object-cover border-2 border-white transition-transform hover:scale-110 hover:z-10"
+                        style={`z-index: ${teamMembers.length - index}`}
+                        loading="lazy"
+                        title={member.full_name}
+                      />
+                    )
+                )}
+              </div>
+            )
+          }
+          <div>
+            {labels.responseTimePrefix}
+            <strong>{responseTime}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Form -->
+      <div class="p-0 md:p-10 transition-colors">
+        <form
+          id="contact-form"
+          class="space-y-6"
+          data-language={currentLang}
+          data-messages={JSON.stringify(clientMessages)}
+          novalidate
+        >
+          <!-- Name Fields -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="first-name" class="block text-base font-normal mb-2">
+                {labels.firstName}
+                <span class="text-blue-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="first-name"
+                name="first_name"
+                required
+                aria-required="true"
+                class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all text-base"
+                placeholder={labels.firstName}
+              />
+              <p
+                class="error-message hidden text-xs text-red-500 mt-1"
+                role="alert"
+              >
+              </p>
+            </div>
+
+            <div>
+              <label for="last-name" class="block text-base font-normal mb-2">
+                {labels.lastName}
+                <span class="text-blue-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="last-name"
+                name="last_name"
+                required
+                aria-required="true"
+                class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all text-base"
+                placeholder={labels.lastName}
+              />
+              <p
+                class="error-message hidden text-xs text-red-500 mt-1"
+                role="alert"
+              >
+              </p>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-base font-normal mb-2">
+              {labels.email}
+              <span class="text-blue-500">*</span>
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              aria-required="true"
+              class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all text-base"
+              placeholder="you@company.com"
+            />
+            <p
+              class="error-message hidden text-xs text-red-500 mt-1"
+              role="alert"
+            >
+            </p>
+          </div>
+
+          <!-- Honeypot field (hidden from users, bots will fill it) -->
+          <input
+            type="text"
+            id="website"
+            name="website"
+            tabindex="-1"
+            autocomplete="off"
+            class="sr-only"
+            aria-hidden="true"
+          />
+
+          <!-- Phone (Optional) -->
+          <div>
+            <label for="phone" class="block text-base font-normal mb-2">
+              {labels.phone}
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all text-base"
+              placeholder="+49 123 456789"
+            />
+          </div>
+
+          <!-- Contact Preference -->
+          <fieldset>
+            <legend class="block text-base font-normal mb-3">
+              {labels.contactPreference}
+            </legend>
+            <div class="flex flex-wrap gap-20">
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="contact_preference"
+                  value="phone"
+                  class="w-5 h-5 rounded border text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-gray-50 dark:bg-transparent"
+                />
+                <span class="ml-2 text-base">{labels.phoneOption}</span>
+              </label>
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="contact_preference"
+                  value="email"
+                  class="w-5 h-5 rounded border text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-gray-50 dark:bg-transparent"
+                />
+                <span class="ml-2 text-base">{labels.emailOption}</span>
+              </label>
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="contact_preference"
+                  value="signal"
+                  class="w-5 h-5 rounded border text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-gray-50 dark:bg-transparent"
+                />
+                <span class="ml-2 text-base">{labels.signalOption}</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Message -->
+          <div>
+            <label for="message" class="block text-base font-normal mb-2">
+              {labels.message}
+              <span class="text-blue-500">*</span>
+            </label>
+            <textarea
+              id="message"
+              name="message"
+              required
+              aria-required="true"
+              rows="5"
+              class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all resize-y text-base"
+              placeholder={labels.messagePlaceholder}></textarea>
+            <p
+              class="error-message hidden text-xs text-red-500 mt-1"
+              role="alert"
+            >
+            </p>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            class="group w-full inline-flex items-center justify-between px-8 py-5 rounded-lg uppercase transition-all focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 dark:bg-[radial-gradient(76.48%_303.08%_at_11.02%_16.43%,#55F9D6_0%,#98FFFC_52.4%,#42D6FF_100%)]"
+            aria-label={buttonText ||
+              (currentLang === "de" ? "Senden" : "Send")}
+          >
+            <span class="text-lg font-medium" id="button-text"
+              >{buttonText || (currentLang === "de" ? "Senden" : "Send")}</span
+            >
+            <span
+              class="flex items-center justify-center w-12 h-12 rounded-2xl transition-colors bg-[linear-gradient(144.49deg,#70FFAC_5.79%,#45C0FF_108.23%)] dark:bg-none dark:bg-transparent"
+            >
+              <svg
+                class="w-6 h-6 transform -rotate-45 group-hover:rotate-0 transition-transform duration-300 ease-in-out text-gray-900 transform-gpu origin-center"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M5 12h14M12 5l7 7-7 7"></path>
+              </svg>
+            </span>
+          </button>
+
+          <!-- Status Messages -->
+          <div
+            id="form-status"
+            class="hidden p-4 rounded-lg"
+            role="status"
+            aria-live="polite"
+          >
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const form = document.getElementById("contact-form") as HTMLFormElement;
+  const statusDiv = document.getElementById("form-status");
+  const submitButton = form?.querySelector(
+    'button[type="submit"]'
+  ) as HTMLButtonElement;
+  const buttonText = submitButton?.querySelector("#button-text");
+
+  if (form && statusDiv && submitButton && buttonText) {
+    // Get language from form data attribute
+    const language = form.getAttribute("data-language") || "en";
+
+    // Get localized messages
+    let msg = {
+      sending: "Sending...",
+      success: "Thank you! We'll get back to you soon.",
+      error: "Something went wrong. Please try again.",
+      requiredField: "This field is required",
+      invalidEmail: "Please enter a valid email address",
+    };
+
+    try {
+      const messagesAttr = form.getAttribute("data-messages");
+      if (messagesAttr) {
+        msg = JSON.parse(messagesAttr);
+      }
+    } catch (e) {
+      console.warn("Could not parse form messages", e);
+    }
+
+    // Track when user first interacts with the form (not when page loads)
+    let formInteractionStart: number | null = null;
+
+    const trackFirstInteraction = () => {
+      if (!formInteractionStart) {
+        formInteractionStart = Date.now();
+      }
+    };
+
+    // Listen for first interaction with any form field
+    const allFormFields = form.querySelectorAll("input, textarea");
+    allFormFields.forEach((input) => {
+      input.addEventListener("focus", trackFirstInteraction, { once: true });
+      input.addEventListener("input", trackFirstInteraction, { once: true });
+    });
+
+    // Clear error message
+    function clearError(input: HTMLInputElement | HTMLTextAreaElement) {
+      const errorMsg = input.parentElement?.querySelector(
+        ".error-message"
+      ) as HTMLElement;
+      if (errorMsg) {
+        errorMsg.textContent = "";
+        errorMsg.classList.add("hidden");
+      }
+      input.setAttribute("aria-invalid", "false");
+      input.classList.remove("border-red-500");
+    }
+
+    // Show error message
+    function showError(
+      input: HTMLInputElement | HTMLTextAreaElement,
+      message: string
+    ) {
+      const errorMsg = input.parentElement?.querySelector(
+        ".error-message"
+      ) as HTMLElement;
+      if (errorMsg) {
+        errorMsg.textContent = message;
+        errorMsg.classList.remove("hidden");
+      }
+      input.setAttribute("aria-invalid", "true");
+      input.classList.add("border-red-500");
+    }
+
+    // Validate field
+    function validateField(
+      input: HTMLInputElement | HTMLTextAreaElement
+    ): boolean {
+      clearError(input);
+
+      if (input.hasAttribute("required") && !input.value.trim()) {
+        showError(input, msg.requiredField);
+        return false;
+      }
+
+      if (input.type === "email" && input.value.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(input.value)) {
+          showError(input, msg.invalidEmail);
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    // Add real-time validation
+    const inputs = form.querySelectorAll("input[required], textarea[required]");
+    inputs.forEach((input) => {
+      input.addEventListener("blur", () => {
+        validateField(input as HTMLInputElement | HTMLTextAreaElement);
+      });
+      input.addEventListener("input", () => {
+        if (input.classList.contains("border-red-500")) {
+          validateField(input as HTMLInputElement | HTMLTextAreaElement);
+        }
+      });
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // Validate all fields
+      let isValid = true;
+      inputs.forEach((input) => {
+        if (!validateField(input as HTMLInputElement | HTMLTextAreaElement)) {
+          isValid = false;
+        }
+      });
+
+      if (!isValid) {
+        // Focus first invalid field
+        const firstInvalid = form.querySelector(
+          '[aria-invalid="true"]'
+        ) as HTMLElement;
+        firstInvalid?.focus();
+        return;
+      }
+
+      // Show loading state
+      submitButton.disabled = true;
+      const originalText = buttonText.textContent;
+      buttonText.textContent = msg.sending;
+      statusDiv.classList.add("hidden");
+
+      const formData = new FormData(form);
+
+      // Get contact preferences (checkboxes)
+      const contactPreferences = Array.from(
+        form.querySelectorAll('input[name="contact_preference"]:checked')
+      ).map((cb) => (cb as HTMLInputElement).value);
+
+      // Prepare data
+      const data = {
+        first_name: formData.get("first_name") as string,
+        last_name: formData.get("last_name") as string,
+        email: formData.get("email") as string,
+        phone: (formData.get("phone") as string) || undefined,
+        contact_preference: contactPreferences[0] || "email", // Take first preference
+        message: formData.get("message") as string,
+        website: formData.get("website") as string, // Honeypot field
+        language,
+        user_agent: navigator.userAgent,
+        timestamp: formInteractionStart, // When user first interacted with form
+      };
+
+      try {
+        const response = await fetch("/api/contact", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          // Show success message
+          statusDiv.textContent = msg.success;
+          statusDiv.className =
+            "block p-4 rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200";
+          statusDiv.classList.remove("hidden");
+
+          // Reset form
+          form.reset();
+
+          // Scroll to success message
+          statusDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } else {
+          throw new Error(result.error || "Submission failed");
+        }
+      } catch (error) {
+        console.error("Contact form error:", error);
+
+        // Show error message
+        statusDiv.textContent = msg.error;
+        statusDiv.className =
+          "block p-4 rounded-lg bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
+        statusDiv.classList.remove("hidden");
+      } finally {
+        // Restore button
+        submitButton.disabled = false;
+        buttonText.textContent = originalText;
+      }
+    });
+  }
+</script>
+
+<style>
+  /* Custom border and background color for inputs that works with dark mode */
+  /* Using specificity instead of !important where possible */
+  :global(#contact-form) input[type="text"],
+  :global(#contact-form) input[type="email"],
+  :global(#contact-form) input[type="tel"],
+  :global(#contact-form) textarea,
+  :global(#contact-form) input[type="checkbox"] {
+    border-color: #d0d5dd;
+    background-color: #f9fafb; /* gray-50 */
+  }
+
+  :global(.dark) :global(#contact-form) input[type="text"],
+  :global(.dark) :global(#contact-form) input[type="email"],
+  :global(.dark) :global(#contact-form) input[type="tel"],
+  :global(.dark) :global(#contact-form) textarea,
+  :global(.dark) :global(#contact-form) input[type="checkbox"] {
+    border-color: #4b5563; /* gray-600 */
+    background-color: transparent;
+  }
+</style>

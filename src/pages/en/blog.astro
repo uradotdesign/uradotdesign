@@ -1,0 +1,30 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getBlogPosts } from "../../lib/directus";
+
+export const prerender = false;
+
+const currentLang = "en";
+
+const articles = await getBlogPosts({
+  filter: { status: { _eq: "published" } },
+});
+---
+
+<BaseLayout title="Blog">
+  <div class="container mx-auto px-4 py-16">
+    <h1 class="text-4xl font-bold mb-8">Blog</h1>
+    {
+      articles.map((post) => (
+        <div class="mb-4">
+          <a
+            href={`/en/blog/${post.slug}`}
+            class="text-blue-600 hover:underline"
+          >
+            {post.title}
+          </a>
+        </div>
+      ))
+    }
+  </div>
+</BaseLayout>

@@ -1,0 +1,381 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ServiceHero from "../../components/services/ServiceHero.astro";
+import ServiceSteps from "../../components/services/ServiceSteps.astro";
+import ServiceActivities from "../../components/services/ServiceActivities.astro";
+import Testimonials from "../../components/sections/Testimonials.astro";
+import ContactForm from "../../components/sections/ContactForm.astro";
+import {
+  getServices,
+  getServiceRelations,
+  getAssetUrl,
+  getPageBySlug,
+  type Page,
+  type Service
+} from "../../lib/directus";
+import { getLocalizedField, type Language } from "../../lib/i18n";
+
+export const prerender = false;
+
+const { lang: langParam, slug } = Astro.params;
+const lang = (langParam as Language) || "en";
+
+if (!slug) {
+  return Astro.redirect("/404");
+}
+
+// Validate Language
+const supportedLanguages: Language[] = ["en", "de"];
+if (!supportedLanguages.includes(lang)) {
+  return Astro.redirect("/404");
+}
+
+let type: 'service' | 'page' | null = null;
+let data: Service | Page | null = null;
+
+// 1. Try to find a Service
+const services = await getServices({
+  filter: {
+    slug: { _eq: slug },
+    status: { _eq: "published" },
+    show_in_hero: { _neq: false }
+  },
+  limit: 1,
+  fields: ["*", "relevant_case_study.*"]
+});
+
+if (services && services.length > 0) {
+  type = 'service';
+  data = services[0];
+} else {
+  // 2. Try to find a Page
+  const page = await getPageBySlug(slug);
+  if (page && page.status === 'published') {
+    type = 'page';
+    data = page;
+  }
+}
+
+if (!type || !data) {
+  return Astro.redirect("/404");
+}
+
+// --- Service Logic ---
+let currentService = null;
+let serviceSteps: { number: string; title: string; description: string; tags: string[]; }[] = [];
+let activities: { title: string; description: string; isOpen: boolean; }[] = [];
+let caseStudyProps: {
+  title: string;
+  subtitle: string;
+  description: string;
+  image?: string | { light: string; dark: string } | null;
+  link: string;
+  linkText?: string;
+  logo?: string | null;
+} | null = null;
+
+if (type === 'service') {
+  const service = data as Service;
+  
+  // Fetch relational data separately
+  const relations = await getServiceRelations(service.id);
+  const serviceWithRelations = {
+    ...service,
+    checklist_items: relations.checklist_items,
+    steps: relations.steps,
+    activities_list: relations.activities_list,
+  };
+
+  // Process service data
+  const localizedTitle =
+    getLocalizedField(service, "title", lang) ??
+    service.title_en ??
+    service.title_de ??
+    service.slug;
+
+  const localizedSubtitle = getLocalizedField(service, "subtitle", lang);
+  const localizedDescription =
+    getLocalizedField(service, "description", lang) ??
+    getLocalizedField(service, "description", "en");
+  const localizedLongDescription = getLocalizedField(
+    service,
+    "long_description",
+    lang
+  );
+  const localizedCtaText = getLocalizedField(service, "cta_text", lang);
+
+  const sectionHeading = getLocalizedField(service, "section_heading", lang);
+  const sectionSubheading = getLocalizedField(
+    service,
+    "section_subheading",
+    lang
+  );
+
+  // Use relational checklist_items
+  const checklistItems = serviceWithRelations.checklist_items
+    ? serviceWithRelations.checklist_items
+        .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+        .map((item) => getLocalizedField(item, "text", lang))
+        .filter((value): value is string => Boolean(value))
+    : [];
+
+  currentService = {
+    id: service.id,
+    slug: service.slug,
+    title: localizedTitle,
+    subtitle: localizedSubtitle,
+    description: localizedDescription ?? "",
+    extendedDescription: localizedLongDescription,
+    longDescription: localizedLongDescription,
+    ctaText: localizedCtaText || "",
+    ctaLink: service.cta_link,
+    lottieLight: service.lottie_light ? getAssetUrl(service.lottie_light) : null,
+    lottieDark: service.lottie_dark ? getAssetUrl(service.lottie_dark) : null,
+    colorAccent: service.color_accent || "#10b981",
+    backgroundLight: service.hero_background_light
+      ? getAssetUrl(service.hero_background_light)
+      : undefined,
+    backgroundDark: service.hero_background_dark
+      ? getAssetUrl(service.hero_background_dark)
+      : undefined,
+    sectionHeading,
+    sectionSubheading,
+    checklistItems: checklistItems.map((text) => ({ text })),
+  };
+
+  // Process steps
+  serviceSteps = serviceWithRelations.steps
+    ? serviceWithRelations.steps
+        .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+        .map((step) => ({
+          number: step.number,
+          title: getLocalizedField(step, "title", lang) || "",
+          description: getLocalizedField(step, "description", lang) || "",
+          tags: (getLocalizedField(step, "tags", lang) || "")
+            .split(",")
+            .map((t: string) => t.trim())
+            .filter(Boolean),
+        }))
+    : [];
+
+  // Process activities
+  activities = serviceWithRelations.activities_list
+    ? serviceWithRelations.activities_list
+        .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+        .map((activity, index) => ({
+          title: getLocalizedField(activity, "title", lang) || "",
+          description: getLocalizedField(activity, "description", lang) || "",
+          isOpen: activity.is_open_by_default ?? index === 0,
+        }))
+    : [];
+
+  // Case study logic
+  const caseStudy =
+    service.relevant_case_study && typeof service.relevant_case_study === "object"
+      ? (service.relevant_case_study as any)
+      : null;
+
+  if (caseStudy) {
+    let caseStudyImage: string | { light: string; dark: string } | null = null;
+    const imgLight = caseStudy.featured_image_light ? getAssetUrl(caseStudy.featured_image_light) : null;
+    const imgDark = caseStudy.featured_image_dark ? getAssetUrl(caseStudy.featured_image_dark) : null;
+    const imgDefault = caseStudy.featured_image ? getAssetUrl(caseStudy.featured_image) : null;
+
+    if (imgLight && imgDark) {
+      caseStudyImage = {
+        light: imgLight,
+        dark: imgDark,
+      };
+    } else if (imgLight || imgDark) {
+      // Ensure string fallback
+      caseStudyImage = (imgLight || imgDark) as string;
+    } else if (imgDefault) {
+      caseStudyImage = imgDefault;
+    }
+
+    caseStudyProps = {
+      title: getLocalizedField(caseStudy, "title", lang) || caseStudy.title_en,
+      subtitle: caseStudy.client_name,
+      description:
+        getLocalizedField(caseStudy, "excerpt", lang) ||
+        caseStudy.excerpt_en ||
+        "",
+      image: caseStudyImage,
+      link: caseStudy.case_study_url || `/${lang}/work/${caseStudy.slug}`,
+      linkText: getLocalizedField(caseStudy, "cta_text", lang),
+      logo: getAssetUrl(caseStudy.logo),
+    };
+  }
+}
+
+// --- Page Logic ---
+let pageContent = null;
+if (type === 'page') {
+  const page = data as Page;
+  pageContent = {
+    title: page.title,
+    content: page.content || "",
+    seoTitle: page.seo_title || page.title,
+    seoDescription: page.seo_description || "",
+  };
+}
+
+// Common Meta
+const pageTitle = type === 'service' 
+  ? `${currentService?.title} | Ura Design`
+  : `${pageContent?.seoTitle || pageContent?.title} | Ura Design`;
+
+const pageDescription = type === 'service'
+  ? currentService?.description || ""
+  : pageContent?.seoDescription || "";
+
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  {type === 'service' && currentService && (
+    <>
+      <!-- Service Hero Section (now includes checklist) -->
+      <ServiceHero currentService={currentService} />
+
+      <!-- If no structured content, fall back to long description only -->
+      {
+        !currentService.sectionHeading &&
+          currentService.checklistItems.length === 0 &&
+          currentService.longDescription && (
+            <section class="relative py-20 lg:py-32 px-6 sm:px-8 lg:px-12 xl:px-16">
+              <div class="max-w-4xl mx-auto">
+                <div
+                  class="prose prose-lg prose-gray dark:prose-invert max-w-none"
+                  set:html={currentService.longDescription}
+                />
+              </div>
+            </section>
+          )
+      }
+
+      <!-- Service Steps Section -->
+      {
+        serviceSteps.length > 0 && (
+          <ServiceSteps
+            steps={serviceSteps}
+            lottieLight={currentService.lottieLight}
+            lottieDark={currentService.lottieDark}
+            accentColor={currentService.colorAccent}
+          />
+        )
+      }
+
+      <Testimonials />
+
+      <!-- Activities Section (Accordion) & Relevant Case Study -->
+      {
+        activities.length > 0 && (
+          <ServiceActivities
+            activities={activities}
+            accentColor={currentService.colorAccent}
+            caseStudy={caseStudyProps}
+          />
+        )
+      }
+
+      <!-- Contact Form Section -->
+      <ContactForm />
+    </>
+  )}
+
+  {type === 'page' && pageContent && (
+    <article class="w-full">
+      <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pt-32 pb-20 md:pt-48 md:pb-32">
+        <h1 class="font-display text-5xl sm:text-7xl lg:text-8xl mb-12 pb-8 border-b border-[var(--color-border)]">
+          {pageContent.title}
+        </h1>
+        <div
+          class="prose dark:prose-invert prose-lg max-w-2xl mx-auto prose-headings:font-display prose-headings:font-normal prose-p:font-serif prose-img:rounded-none prose-img:w-full"
+          set:html={pageContent.content}
+        />
+      </div>
+    </article>
+  )}
+  
+  <!-- Inject the custom element script for Before/After toggle -->
+  <script>
+    // Only importing the side effect
+    import "../../scripts/BeforeAfterToggle.js";
+  </script>
+</BaseLayout>
+
+<style>
+  /* Custom prose styles for service content */
+  .prose {
+    --tw-prose-body: var(--color-foreground);
+    --tw-prose-headings: var(--color-foreground);
+    --tw-prose-links: var(--color-foreground);
+  }
+
+  .prose h2 {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    line-height: 1.1;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .prose h3 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1.2;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .prose p {
+    font-size: 1.25rem;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+  }
+
+  .prose ul,
+  .prose ol {
+    font-size: 1.25rem;
+    line-height: 1.8;
+  }
+
+  .prose li {
+    margin-bottom: 0.75rem;
+  }
+
+  .prose a {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: opacity 0.2s;
+  }
+
+  .prose a:hover {
+    opacity: 0.7;
+  }
+
+  /* Blog-like styles for Pages (wrapped in article) to override general .prose styles */
+  :global(article .prose p) {
+    margin-bottom: 1.5em;
+  }
+
+  :global(article .prose h2) {
+    font-family: var(--font-display);
+    font-size: 4rem !important;
+    line-height: 1;
+    margin-top: 0.75em;
+    margin-bottom: 0.3em;
+  }
+
+  :global(article .prose h3) {
+    font-family: var(--font-display);
+    font-size: 3rem !important;
+    line-height: 1.1;
+    margin-top: 0.75em;
+    margin-bottom: 0.25em;
+  }
+
+  :global(article .prose a) {
+    text-decoration: underline;
+  }
+</style>

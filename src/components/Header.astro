@@ -1,0 +1,960 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import { getCurrentLanguage } from '../lib/i18n';
+import { getWeather } from '../pages/api/weather';
+import { t } from '../lib/translations';
+import { 
+  getSiteSettings, 
+  getHeaderSettings, 
+  getNavigationLinks,
+  getServices,
+  toBoolean, 
+  getLocalizedField 
+} from '../lib/cms';
+
+export interface Props {
+  overlay?: boolean;
+}
+
+const { overlay = false } = Astro.props as Props;
+
+const currentPath = Astro.url.pathname;
+const currentLang = getCurrentLanguage(Astro.url);
+const langPrefix = `/${currentLang}`;
+
+// Fetch settings from CMS (SDK with smart caching)
+const [headerSettings, siteSettings, navigationLinks, services] = await Promise.all([
+  getHeaderSettings(),
+  getSiteSettings(),
+  getNavigationLinks(),
+  getServices(),
+]);
+
+// Header settings with defaults
+const showWeather = toBoolean(headerSettings?.show_weather);
+const weatherLocation = headerSettings?.weather_location || null;
+const stickyHeader = headerSettings?.sticky_header !== false;
+const blurOnScroll = toBoolean(headerSettings?.blur_on_scroll);
+const scrollThreshold = headerSettings?.scroll_threshold ?? 50;
+const showBorder = toBoolean(headerSettings?.show_border);
+const backgroundOpacity = headerSettings?.background_opacity ?? 0;
+const backgroundOpacityScrolled = headerSettings?.background_opacity_scrolled ?? 0;
+const overlaySetting = headerSettings?.overlay_mode !== false;
+const showServicesMenu = headerSettings?.show_services_menu !== false;
+
+const defaultCtaText = await t('header.cta', currentLang, "LET'S TALK");
+const ctaText = currentLang === 'de' 
+  ? (headerSettings?.cta_text_de || defaultCtaText)
+  : (headerSettings?.cta_text_en || defaultCtaText);
+
+const homeLabel = await t('header.home_label', currentLang, currentLang === 'de' ? 'Ura Design Startseite' : 'Ura Design Home');
+const mainNavLabel = await t('header.main_nav_label', currentLang, currentLang === 'de' ? 'Hauptnavigation' : 'Main navigation');
+const servicesLabel = await t('header.services', currentLang, currentLang === 'de' ? 'DIENSTLEISTUNGEN' : 'SERVICES');
+const servicesMenuLabel = await t('header.services_menu_label', currentLang, currentLang === 'de' ? 'Dienstleistungen Menü' : 'Services menu');
+const whoWeAreLabel = await t('header.who_we_are', currentLang, currentLang === 'de' ? 'WER WIR SIND' : 'WHO WE ARE');
+const weatherLabel = await t('header.weather_label', currentLang, currentLang === 'de' ? 'Aktuelles Wetter und Zeit' : 'Current weather and time');
+const mobileNavLabel = await t('header.mobile_nav_label', currentLang, currentLang === 'de' ? 'Mobile Navigation' : 'Mobile navigation');
+const openMenuLabel = await t('header.open_menu', currentLang, currentLang === 'de' ? 'Menü öffnen' : 'Open menu');
+
+// Language switcher setting
+const showLanguageSwitcher = siteSettings?.language_switcher_enabled !== false;
+
+const isOverlay = overlay || overlaySetting;
+
+// Active state helpers
+const normalizePath = (p: string) => {
+  try {
+    const u = new URL(p, Astro.url.origin);
+    return u.pathname.replace(/\/$/, "");
+  } catch {
+    return (p || "").replace(Astro.url.origin, "").replace(/\/$/, "");
+  }
+};
+
+const currentPathNorm = normalizePath(currentPath);
+const isServicesActive = currentPathNorm.startsWith(`${langPrefix}/services`);
+const isActiveLink = (href?: string) => {
+  if (!href) return false;
+  if (/^(https?:)?\/\//.test(href) || href.startsWith('mailto:') || href.startsWith('tel:')) return false;
+  const linkPath = normalizePath(href);
+  return currentPathNorm === linkPath || currentPathNorm.startsWith(`${linkPath}/`);
+};
+
+// Process services for dropdown (already fetched above)
+const processedServices = services?.filter(s => s.show_in_hero !== false).map(service => ({
+  title: getLocalizedField(service, 'title', currentLang) || '',
+  slug: (service as any).slug || '',
+  link: `/${currentLang}/${(service as any).slug}`
+})) || [];
+
+// Process navigation links (already fetched above, filtered for enabled in fetcher)
+const navLinks = navigationLinks?.map(link => {
+  let url = link.url || '#';
+  
+  // Auto-localize internal links if they don't start with http/mailto/tel/#
+  if (url !== '#' && !url.startsWith('http') && !url.startsWith('mailto:') && !url.startsWith('tel:') && !url.startsWith('#')) {
+    // Remove leading slash
+    const path = url.replace(/^\//, '');
+    // Avoid double-prefixing if path already starts with lang prefix
+    // This allows users to enter "about" or "/about" and get "/en/about" or "/de/about"
+    if (!path.startsWith(`${currentLang}/`) && path !== currentLang) {
+      url = `/${currentLang}/${path}`;
+    } else {
+      url = `/${path}`;
+    }
+  }
+
+  return {
+    label: getLocalizedField(link, 'label', currentLang) || '',
+    url,
+    newTab: toBoolean(link.open_in_new_tab),
+    isCta: toBoolean(link.is_cta),
+    ctaStyle: link.cta_style || 'primary',
+  };
+}) || [];
+
+// Fetch weather data - ONLY if enabled in Directus and location is set
+let weather: { temperature: number; icon: string; condition: string } | null = null;
+
+if (showWeather && weatherLocation) {
+  try {
+    const data = await getWeather(weatherLocation);
+        
+    if (data) {
+        weather = {
+          temperature: Math.round(data.temperature),
+          icon: data.icon === '01d' || data.icon === '01n' ? 'sun' : 
+                data.icon.startsWith('02') ? 'cloud-sun' :
+                data.icon.startsWith('03') || data.icon.startsWith('04') ? 'cloud' :
+                data.icon.startsWith('09') || data.icon.startsWith('10') ? 'cloud-rain' :
+                data.icon.startsWith('11') ? 'cloud-lightning' :
+                data.icon.startsWith('13') ? 'cloud-snow' :
+                data.icon.startsWith('50') ? 'cloud-fog' : 'sun',
+          condition: data.condition
+        };
+    }
+  } catch (error) {
+    console.error('🌤️  Error fetching weather setup:', error);
+  }
+}
+---
+
+<header 
+  class:list={[
+    isOverlay ? 'fixed' : (stickyHeader ? 'sticky' : 'relative'),
+    'hidden md:flex top-0 left-0 right-0 z-50 items-center justify-between px-4 sm:px-6 lg:px-8 py-4 lg:py-5 font-body transition-all duration-300',
+    isOverlay ? 'bg-transparent' : ''
+  ]}
+  data-scroll-threshold={scrollThreshold}
+  data-blur-on-scroll={blurOnScroll}
+  data-show-border={showBorder}
+  data-bg-opacity={backgroundOpacity}
+  data-bg-opacity-scrolled={backgroundOpacityScrolled}
+  style={`--bg-opacity: ${backgroundOpacity / 100}; --bg-opacity-scrolled: ${backgroundOpacityScrolled / 100};`}
+>
+  <!-- Logo -->
+  <div class="flex items-center">
+    <a 
+      href={langPrefix} 
+      class="logo-container relative h-12"
+      aria-label={homeLabel}
+    >
+      <!-- Logo icon (background layer) -->
+      <svg width="42" height="39" viewBox="0 0 42 39" fill="none" xmlns="http://www.w3.org/2000/svg" class="lg:h-12 h-8 w-[42px] absolute left-0 top-0 z-10 logo-svg">
+        <path d="M9.62587 38.8478L16.6734 19.0802C10.7432 19.8537 5.32857 22.3461 0.773438 26.1278C1.89073 31.3705 5.15668 35.8397 9.62587 38.8478Z" class="logo-path"/>
+        <path d="M32.2292 38.8478C36.7843 36.0115 40.0503 31.4564 41.2535 26.1278C36.6984 22.1743 31.2838 19.6818 25.3535 19.0802L32.2292 38.8478Z" class="logo-path"/>
+        <path d="M41.9416 22.0881V21.1427C41.9416 9.36811 32.5735 0 21.0567 0C9.54 0 0 9.36811 0 21.1427V22.0881C6.10216 17.533 13.4076 15.0405 21.0567 15.0405C28.534 15.0405 35.8394 17.533 41.9416 22.0881Z" class="logo-path"/>
+      </svg>
+      
+      <!-- Logo text with clipping container -->
+      <div class="logo-text-container absolute left-0 top-0 overflow-hidden w-[111px] h-[39px]" style="clip-path: inset(0 0 0 50px);">
+        <svg width="111" height="39" viewBox="0 0 111 39" fill="none" xmlns="http://www.w3.org/2000/svg" class="lg:h-12 h-8 w-[111px] logo-text-svg">
+          <g class="logo-text">
+            <path d="M61.0852 34.0347C65.1799 34.0347 66.4161 33.4166 68.6566 30.6353C68.6566 32.2568 69.971 33.5712 71.5924 33.5712H74.5282V8.92572H68.3475V22.6777C68.3475 26.6952 66.2615 29.0129 63.0167 29.0129C60.0036 29.0129 58.8447 27.3132 58.8447 23.9911V8.92572H52.6641V25.2272C52.7413 31.1762 55.5226 34.0347 61.0852 34.0347Z" class="logo-path"/>
+            <path d="M92.2982 8.4635H90.8015C87.4022 8.4635 84.8955 10.2354 83.8912 13.0167V8.92204H78.0195V27.3868C78.0195 30.8003 80.7867 33.5675 84.2002 33.5675V20.279C84.2002 15.0994 86.5955 13.4803 90.2838 13.4803L92.2982 8.4635Z" class="logo-path"/>
+            <path d="M99.2455 8.46326L95.2596 8.46313L93.2377 13.4755C93.2377 13.4755 104.032 12.297 104.032 16.3145V16.8553C103.955 18.0142 103.183 18.6322 100.865 18.7867L96.6156 19.2503C90.4349 19.7139 88.1172 22.7269 88.1172 26.5126C88.1172 31.0708 91.2075 34.0067 97.0019 34.0067C101.019 34.0067 102.719 33.5431 104.032 31.0709C104.11 30.9936 104.187 30.8391 104.264 30.6846C104.264 32.2633 105.544 33.5431 107.123 33.5431H110.136V17.3961C110.213 12.3743 106.817 8.54052 99.2455 8.46326ZM104.032 23.1905C104.032 26.7444 101.869 29.6802 98.0835 29.6802C94.9159 29.6802 93.5253 28.2123 93.5253 25.9718C93.5253 24.1948 94.7614 22.8814 97.8518 22.6497L100.788 22.4179C102.487 22.2634 103.569 21.9543 104.032 21.4908V23.1905Z" class="logo-path"/>
+          </g>
+        </svg>
+      </div>
+    </a>
+  </div>
+
+  <!-- Navigation with Dropdowns -->
+  <nav id="main-navigation" role="navigation" aria-label={mainNavLabel} class="flex items-center gap-8">
+    <ul role="menubar" class={['hidden md:flex items-center gap-8 text-sm font-medium font-mono', isOverlay ? 'adaptive-color' : 'text-white'].join(' ')}>
+      {showServicesMenu && services.length > 0 && (
+      <li class="relative" role="none">
+        <details class="group relative">
+          <summary
+            class:list={[
+              'nav-link flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded cursor-pointer select-none list-none marker:hidden',
+              isServicesActive ? 'is-active' : ''
+            ]}
+            aria-haspopup="menu"
+            aria-label={servicesMenuLabel}
+          >
+            {servicesLabel}
+            <svg class="w-3 h-3 transition-transform duration-300 group-open:-rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div
+            class="services-dropdown-menu absolute top-full left-0 mt-2 w-56 opacity-0 invisible pointer-events-none transition-all duration-200 z-[60] group-open:opacity-100 group-open:visible group-open:pointer-events-auto origin-top-left"
+            role="menu"
+          >
+            <div class="rounded-lg shadow-lg border border-[var(--color-border)] py-2 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95">
+            {processedServices.map((service) => (
+              <a
+                href={service.link}
+                role="menuitem"
+                class="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800 cursor-pointer"
+                aria-label={`View ${service.title} service`}
+              >
+                {service.title}
+              </a>
+            ))}
+            </div>
+          </div>
+        </details>
+      </li>
+      )}
+
+      {navLinks.length > 0 ? (
+        navLinks.filter(link => !link.isCta).map((link) => (
+          <li role="none">
+            <a
+              role="menuitem"
+              href={link.url}
+              target={link.newTab ? '_blank' : undefined}
+              rel={link.newTab ? 'noopener noreferrer' : undefined}
+              class:list={['nav-link focus:outline-none cursor-pointer', isActiveLink(link.url) ? 'is-active' : '']}
+            >
+              {link.label?.toUpperCase?.() || link.label}
+            </a>
+          </li>
+        ))
+      ) : (
+        <>
+          <li role="none">
+            <a role="menuitem" href={`${langPrefix}/about`} class:list={['nav-link focus:outline-none cursor-pointer', currentPathNorm.startsWith(`${langPrefix}/about`) ? 'is-active' : '']}>
+              {whoWeAreLabel}
+            </a>
+          </li>
+          <li role="none">
+            <a role="menuitem" href={`${langPrefix}/works`} class:list={['nav-link focus:outline-none cursor-pointer', currentPathNorm.startsWith(`${langPrefix}/works`) ? 'is-active' : '']}>
+              WORKS
+            </a>
+          </li>
+        </>
+      )}
+    </ul>
+
+    <!-- Let's Talk CTA - Right after nav items -->
+    <a 
+      href="#contact-modal"
+      data-contact-modal="true"
+      class={['hidden md:inline-flex items-center uppercase px-6 py-2.5 rounded-full font-medium font-mono text-sm transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer', isOverlay ? 'adaptive-color bg-white/30 hover:bg-white dark:bg-white/30 dark:hover:bg-white/40 text-gray-900 focus-visible:ring-white/30' : 'bg-white/20 hover:bg-white/30 text-foreground backdrop-blur-sm focus-visible:ring-foreground/30'].join(' ')}
+    >
+      {ctaText}
+    </a>
+
+    <!-- Vertical divider -->
+    <div class={['hidden md:block w-px h-4 header-divider', overlay ? 'adaptive-color' : 'bg-current'].join(' ')}></div>
+    
+    <!-- Theme & Language -->
+    <div class={['hidden md:flex items-center gap-4', isOverlay ? 'adaptive-color' : ''].join(' ')}>
+      <ThemeToggle />
+      {showLanguageSwitcher && <LanguageSwitcher />}
+    </div>
+  </nav>
+
+  <!-- Right Side: Weather & Time (Desktop only) -->
+  <div class="hidden md:flex items-center gap-4">
+    {showWeather && weatherLocation && weather && (
+      <!-- Location Time & Weather -->
+      <div 
+        class={['inline-flex items-center text-xs sm:text-sm font-medium font-mono', overlay ? 'adaptive-color' : ''].join(' ')}
+        role="status"
+        aria-live="polite"
+        aria-label={weatherLabel}
+      >
+        <span class="hidden sm:inline">{weatherLocation.toUpperCase()}</span>
+      <span class="ml-2 flex items-center" aria-label={weather.condition}>
+        {weather.icon === 'sun' && (
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" stroke-width="2"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        )}
+        {weather.icon === 'cloud' && (
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        )}
+        {weather.icon === 'cloud-rain' && (
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25M8 19v2M12 19v3M16 19v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        )}
+        {/* Fallback for other icons */}
+        {['sun', 'cloud', 'cloud-rain'].indexOf(weather.icon) === -1 && (
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+             <circle cx="12" cy="12" r="4" stroke-width="2"/>
+             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        )}
+      </span>
+      <time id="header-time" datetime="" class="ml-2">--:-- CEST</time>
+      </div>
+    )}
+  </div>
+</header>
+
+<!-- Mobile Navigation Bar (Starts at bottom of hero, moves up) -->
+<nav 
+  id="mobile-nav" 
+  class="mobile-nav md:hidden absolute w-full z-[100] transition-all duration-300 pointer-events-none"
+  aria-label={mobileNavLabel}
+  style="top: 100dvh; transform: translateY(-100%);"
+>
+  <div class="mobile-nav-bar relative flex items-center justify-between h-16 pointer-events-auto px-4 isolate">
+    
+    <!-- Background -->
+    <div class="mobile-nav-bg absolute inset-0 w-full h-full -z-10 transition-colors duration-300"></div>
+
+    <!-- Left: Hamburger -->
+    <button 
+      id="mobile-menu-toggle"
+      type="button"
+      class="relative z-20 flex items-center justify-center w-10 h-10 adaptive-color focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-full"
+      aria-label={openMenuLabel}
+      aria-expanded="false"
+      aria-controls="mobile-menu-overlay"
+    >
+      <svg class="hamburger-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16" />
+      </svg>
+      <svg class="close-icon w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Center: Logo (Direct SVG, Adaptive Color) -->
+    <div class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+       <a 
+        href={langPrefix} 
+        class="mobile-logo-link flex items-center justify-center w-[80px] h-[28px] pointer-events-auto adaptive-color transition-opacity duration-300"
+        aria-label={homeLabel}
+      >
+        <svg width="80" height="28" viewBox="0 0 111 39" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+          <path d="M9.62587 38.8478L16.6734 19.0802C10.7432 19.8537 5.32857 22.3461 0.773438 26.1278C1.89073 31.3705 5.15668 35.8397 9.62587 38.8478Z"/>
+          <path d="M32.2292 38.8478C36.7843 36.0115 40.0503 31.4564 41.2535 26.1278C36.6984 22.1743 31.2838 19.6818 25.3535 19.0802L32.2292 38.8478Z"/>
+          <path d="M41.9416 22.0881V21.1427C41.9416 9.36811 32.5735 0 21.0567 0C9.54 0 0 9.36811 0 21.1427V22.0881C6.10216 17.533 13.4076 15.0405 21.0567 15.0405C28.534 15.0405 35.8394 17.533 41.9416 22.0881Z"/>
+          <path d="M61.0852 34.0347C65.1799 34.0347 66.4161 33.4166 68.6566 30.6353C68.6566 32.2568 69.971 33.5712 71.5924 33.5712H74.5282V8.92572H68.3475V22.6777C68.3475 26.6952 66.2615 29.0129 63.0167 29.0129C60.0036 29.0129 58.8447 27.3132 58.8447 23.9911V8.92572H52.6641V25.2272C52.7413 31.1762 55.5226 34.0347 61.0852 34.0347Z"/>
+          <path d="M92.2982 8.4635H90.8015C87.4022 8.4635 84.8955 10.2354 83.8912 13.0167V8.92204H78.0195V27.3868C78.0195 30.8003 80.7867 33.5675 84.2002 33.5675V20.279C84.2002 15.0994 86.5955 13.4803 90.2838 13.4803L92.2982 8.4635Z"/>
+          <path d="M99.2455 8.46326L95.2596 8.46313L93.2377 13.4755C93.2377 13.4755 104.032 12.297 104.032 16.3145V16.8553C103.955 18.0142 103.183 18.6322 100.865 18.7867L96.6156 19.2503C90.4349 19.7139 88.1172 22.7269 88.1172 26.5126C88.1172 31.0708 91.2075 34.0067 97.0019 34.0067C101.019 34.0067 102.719 33.5431 104.032 31.0709C104.11 30.9936 104.187 30.8391 104.264 30.6846C104.264 32.2633 105.544 33.5431 107.123 33.5431H110.136V17.3961C110.213 12.3743 106.817 8.54052 99.2455 8.46326ZM104.032 23.1905C104.032 26.7444 101.869 29.6802 98.0835 29.6802C94.9159 29.6802 93.5253 28.2123 93.5253 25.9718C93.5253 24.1948 94.7614 22.8814 97.8518 22.6497L100.788 22.4179C102.487 22.2634 103.569 21.9543 104.032 21.4908V23.1905Z"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Right: Weather or CTA -->
+    <div class="relative z-20 flex items-center justify-end min-w-[80px]">
+      
+      <!-- Weather Display (Visible initially/at bottom) -->
+      <div id="mobile-nav-weather" class="flex items-center justify-end text-xs font-mono font-medium adaptive-color transition-opacity duration-300 opacity-100">
+        {weather && (
+          <span class="flex flex-col items-end leading-tight">
+             <span>{weatherLocation?.toUpperCase()}</span>
+             <span class="opacity-70 flex items-center gap-1">
+               {weather.icon === 'sun' && (
+                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                   <circle cx="12" cy="12" r="4" stroke-width="2"/>
+                   <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
+                 </svg>
+               )}
+               {weather.icon === 'cloud' && (
+                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                   <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                 </svg>
+               )}
+               {weather.icon === 'cloud-rain' && (
+                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                   <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25M8 19v2M12 19v3M16 19v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                 </svg>
+               )}
+               {/* Fallback for other icons to avoid blank if mapped but not specific handled */}
+               {['sun', 'cloud', 'cloud-rain'].indexOf(weather.icon) === -1 && (
+                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                   <circle cx="12" cy="12" r="4" stroke-width="2"/>
+                   <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
+                 </svg>
+               )}
+               <time id="mobile-header-time" class="ml-1">--:--</time>
+             </span>
+          </span>
+        ) || (
+          <span class="flex items-center gap-2">
+             <span>--</span>
+          </span>
+        )}
+      </div>
+
+      <!-- CTA Button (Visible when sticky/scrolled) -->
+      <div id="mobile-nav-cta" class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+        <a 
+          href="#contact-modal"
+          data-contact-modal="true"
+          class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-full text-[10px] font-mono font-medium uppercase whitespace-nowrap"
+        >
+          Let's Talk
+        </a>
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Menu Overlay -->
+<div 
+  id="mobile-menu-overlay" 
+  class="mobile-menu-overlay md:hidden fixed inset-0 z-[99] pointer-events-none transition-transform duration-300"
+  aria-hidden="true"
+>
+  <!-- Background Layer matches mobile nav strip (static color, no blur) -->
+  <div class="absolute inset-0 mobile-nav-bg"></div>
+  
+  <div class="relative h-full flex flex-col pt-24 pb-32 px-6 overflow-y-auto adaptive-color">
+    <!-- Navigation Links -->
+    <nav class="flex-1 flex flex-col justify-center">
+      <ul class="space-y-6">
+        {showServicesMenu && services.length > 0 && (
+          <li>
+            <details class="mobile-accordion group">
+              <summary class="flex items-center justify-between text-3xl font-display font-medium cursor-pointer list-none">
+                <span>{servicesLabel}</span>
+                <svg class="w-6 h-6 transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div class="overflow-hidden max-h-0 opacity-0 transition-all duration-500 ease-out group-open:max-h-[800px] group-open:opacity-100">
+                <ul class="mt-4 ml-4 space-y-3">
+                  {processedServices.map((service) => (
+                    <li>
+                      <a href={service.link} class="text-xl opacity-70 hover:opacity-100 transition-opacity">
+                        {service.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </details>
+          </li>
+        )}
+        {navLinks.filter(link => !link.isCta).map((link) => (
+          <li>
+            <a 
+              href={link.url}
+              target={link.newTab ? '_blank' : undefined}
+              rel={link.newTab ? 'noopener noreferrer' : undefined}
+              class="text-3xl font-display font-medium hover:text-emerald-500 transition-colors"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+        {navLinks.length === 0 && (
+          <>
+            <li>
+              <a href={`${langPrefix}/about`} class="text-3xl font-display font-medium hover:text-emerald-500 transition-colors">
+                {whoWeAreLabel}
+              </a>
+            </li>
+            <li>
+              <a href={`${langPrefix}/works`} class="text-3xl font-display font-medium hover:text-emerald-500 transition-colors">
+                Works
+              </a>
+            </li>
+          </>
+        )}
+      </ul>
+    </nav>
+
+    <!-- Bottom Section: Theme & Language -->
+    <div class="flex items-center justify-between pt-8 border-t border-current opacity-80">
+      <div class="flex items-center gap-4">
+        <ThemeToggle />
+        {showLanguageSwitcher && <LanguageSwitcher />}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Enhanced scroll behavior for header with Directus settings
+  // Use a flag to track if we've already attached the scroll listener
+  let scrollListenerAttached = false;
+  let lastScrollHandler: ((e: Event) => void) | null = null;
+
+  function initHeaderScroll() {
+    const header = document.querySelector('header');
+    if (!header) return;
+
+    const scrollThreshold = parseInt(header.dataset.scrollThreshold || '50');
+    const blurOnScroll = header.dataset.blurOnScroll === 'true';
+    const showBorder = header.dataset.showBorder === 'true';
+
+    // Add blur class if enabled (only once)
+    if (blurOnScroll && !header.classList.contains('blur-enabled')) {
+      header.classList.add('blur-enabled');
+    }
+
+    // Apply current scroll state immediately without transition flash
+    const applyScrollState = () => {
+      const currentScroll = window.pageYOffset || window.scrollY;
+      if (currentScroll > scrollThreshold) {
+        header.classList.add('scrolled');
+        if (showBorder) header.classList.add('show-border');
+      } else {
+        header.classList.remove('scrolled');
+        header.classList.remove('show-border');
+      }
+    };
+
+    // Apply immediately
+    applyScrollState();
+
+    // Only attach scroll listener once
+    if (!scrollListenerAttached) {
+      const scrollHandler = () => {
+        applyScrollState();
+      };
+
+      window.addEventListener('scroll', scrollHandler, { passive: true });
+      lastScrollHandler = scrollHandler;
+      scrollListenerAttached = true;
+    } else {
+       // If attached, force re-check
+       applyScrollState();
+    }
+  }
+  
+  // Update CEST time in real-time
+  function updateTime() {
+    const timeElement = document.getElementById('header-time');
+    const mobileTimeElement = document.getElementById('mobile-header-time');
+    
+    const now = new Date();
+    const timeOptions: Intl.DateTimeFormatOptions = {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Berlin',
+      hour12: false
+    };
+    const currentTime = new Intl.DateTimeFormat('en-US', timeOptions).format(now);
+    
+    if (timeElement) {
+      timeElement.textContent = `${currentTime} CEST`;
+      timeElement.setAttribute('datetime', now.toISOString());
+    }
+
+    if (mobileTimeElement) {
+      mobileTimeElement.textContent = `${currentTime} CEST`;
+      mobileTimeElement.setAttribute('datetime', now.toISOString());
+    }
+  }
+
+  // Update immediately on load
+  updateTime();
+
+  // Update every second for real-time display
+  setInterval(updateTime, 1000);
+
+  // ========================================
+  // MOBILE NAVIGATION
+  // ========================================
+  
+  function initMobileNav() {
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    const mobileNav = document.getElementById('mobile-nav');
+    const weatherEl = document.getElementById('mobile-nav-weather');
+    const ctaEl = document.getElementById('mobile-nav-cta');
+    
+    if (!toggle || !overlay || !mobileNav) return;
+
+    // Move mobile nav to body to avoid fixed header context
+    if (mobileNav.parentElement !== document.body) {
+      document.body.appendChild(mobileNav);
+      document.body.appendChild(overlay); // Overlay needs to be outside too
+    }
+
+    // Initial positioning logic for "stacking paper" effect
+    // Mobile Nav sits at bottom of the fixed hero, which is 100dvh tall.
+    const heroHeight = window.innerHeight;
+    mobileNav.style.position = 'absolute';
+    // Position at the bottom of the viewport initially
+    mobileNav.style.top = `${heroHeight}px`;
+    mobileNav.style.transform = 'translateY(-100%)';
+    mobileNav.style.width = '100%';
+    
+    const hamburgerIcon = toggle.querySelector('.hamburger-icon');
+    const closeIcon = toggle.querySelector('.close-icon');
+    const menuToggle = toggle; // non-null reference
+    const menuOverlay = overlay; // non-null reference
+
+    let isMenuOpen = false;
+
+    function toggleMenu() {
+      isMenuOpen = !isMenuOpen;
+      
+      if (isMenuOpen) {
+        menuOverlay.classList.add('is-open');
+        menuOverlay.setAttribute('aria-hidden', 'false');
+        menuToggle.setAttribute('aria-expanded', 'true');
+        hamburgerIcon?.classList.add('hidden');
+        closeIcon?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Force strip to top when menu is open
+        mobileNav!.classList.add('is-sticky');
+        mobileNav!.style.position = 'fixed';
+        mobileNav!.style.top = '0';
+        mobileNav!.style.bottom = 'auto';
+        mobileNav!.style.transform = 'none';
+        
+        // Ensure CTA/Weather visibility matches "sticky" state (CTA visible)
+        if (weatherEl) weatherEl.style.opacity = '0';
+        if (ctaEl) {
+           ctaEl.style.opacity = '1';
+           ctaEl.style.pointerEvents = 'auto';
+        }
+
+      } else {
+        menuOverlay.classList.remove('is-open');
+        menuOverlay.setAttribute('aria-hidden', 'true');
+        menuToggle.setAttribute('aria-expanded', 'false');
+        hamburgerIcon?.classList.remove('hidden');
+        closeIcon?.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        // Restore strip position based on scroll
+        requestAnimationFrame(() => {
+           updateNavState();
+        });
+      }
+    }
+
+    menuToggle.onclick = toggleMenu;
+
+    menuOverlay.onclick = (e) => {
+      const target = e.target as HTMLElement;
+      if (target === menuOverlay || target.closest('a')) {
+        if (isMenuOpen) toggleMenu();
+      }
+    };
+
+    document.onkeydown = (e) => {
+      if (e.key === 'Escape' && isMenuOpen) toggleMenu();
+    };
+
+    // Scroll Logic for Sticky Behavior & Weather/CTA Toggle
+    let ticking = false;
+    function updateNavState() {
+      if (isMenuOpen) return;
+
+      const scrollY = window.scrollY;
+      const navHeight = mobileNav!.offsetHeight;
+      const triggerPoint = window.innerHeight - navHeight;
+      
+      if (scrollY >= triggerPoint) {
+        mobileNav!.classList.add('is-sticky');
+        // When sticky, we fix it to top
+        mobileNav!.style.position = 'fixed';
+        mobileNav!.style.top = '0';
+        mobileNav!.style.transform = 'none';
+        
+        // Show CTA, Hide Weather
+        if (weatherEl) weatherEl.style.opacity = '0';
+        if (ctaEl) {
+           ctaEl.style.opacity = '1';
+           ctaEl.style.pointerEvents = 'auto';
+        }
+      } else {
+        mobileNav!.classList.remove('is-sticky');
+        // Reset to initial absolute position
+        mobileNav!.style.position = 'absolute';
+        mobileNav!.style.top = `${window.innerHeight}px`;
+        mobileNav!.style.transform = 'translateY(-100%)';
+        
+        // Show Weather, Hide CTA
+        if (weatherEl) weatherEl.style.opacity = '1';
+        if (ctaEl) {
+           ctaEl.style.opacity = '0';
+           ctaEl.style.pointerEvents = 'none';
+        }
+      }
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateNavState();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+    
+    // Initial check
+    updateNavState();
+    
+    // Handle Resize
+    window.addEventListener('resize', () => {
+       if (!mobileNav!.classList.contains('is-sticky') && !isMenuOpen) {
+         const h = window.innerHeight;
+         mobileNav!.style.top = `${h}px`;
+       }
+       updateNavState();
+    });
+  }
+
+  // Initialize on load
+  document.addEventListener('astro:page-load', () => {
+    initHeaderScroll();
+    
+    // Check if functions are defined before calling, though they are in scope
+    // We use a small timeout to ensure DOM and other scripts are ready
+    setTimeout(() => {
+      if (typeof updateTime === 'function') updateTime();
+      if (typeof initMobileNav === 'function') initMobileNav();
+    }, 0);
+  });
+
+  // Re-apply scroll state after page transitions (but don't re-attach listener)
+  document.addEventListener('astro:page-load', () => {
+    // Re-attach listener if missing (page navigation might have cleared it)
+    scrollListenerAttached = false;
+    
+    // Small delay to ensure DOM is ready
+    requestAnimationFrame(initHeaderScroll);
+  });
+
+  // Before swap, preserve header state
+  document.addEventListener('astro:before-swap', () => {
+    const header = document.querySelector('header');
+    if (header) {
+      // Store current classes to preserve state
+      header.dataset.wasScrolled = header.classList.contains('scrolled') ? 'true' : 'false';
+    }
+  });
+
+  // After swap, restore header state immediately
+  document.addEventListener('astro:after-swap', () => {
+    const header = document.querySelector('header');
+    if (header && header.dataset.wasScrolled === 'true') {
+      header.classList.add('scrolled');
+    }
+    // Re-check scroll position
+    requestAnimationFrame(initHeaderScroll);
+  });
+</script>
+
+<style>  /* Prevent header from participating in view transitions animations */
+  header {
+    view-transition-name: header;
+    background-color: rgba(255, 255, 255, var(--bg-opacity, 0));
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease;
+  }
+
+  /* Disable view transition animations for header - instant swap */
+  ::view-transition-old(header),
+  ::view-transition-new(header) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  /* Logo styling - theme-aware */
+  .logo-path {
+    fill: #000000;
+    transition: fill 0.3s ease;
+  }
+
+  :global(.dark) .logo-path {
+    fill: #ffffff;
+  }
+
+  /* Adaptive coloring for overlay mode & mobile nav */
+  header .adaptive-color,
+  .mobile-nav .adaptive-color { color: #030712; /* gray-950 */ }
+  
+  header .adaptive-color svg path,
+  .mobile-nav .adaptive-color svg path { fill: currentColor; }
+  
+  /* Divider styling */
+  header .header-divider { background-color: #000000; }
+
+  /* Dark theme overlay */
+  :global(.dark) header .adaptive-color,
+  :global(.dark) .mobile-nav .adaptive-color { color: #F9FAFB; /* gray-50 */ }
+  
+  :global(.dark) header .adaptive-color svg path,
+  :global(.dark) .mobile-nav .adaptive-color svg path { fill: currentColor; }
+  
+  :global(.dark) header .header-divider { background-color: #ffffff; }
+
+  /* Glass-morphism effect on scroll - uses Directus settings for opacity */
+  header.scrolled {
+    background-color: rgba(255, 255, 255, var(--bg-opacity-scrolled, 0.2));
+  }
+
+  header.scrolled.blur-enabled {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  header.scrolled .adaptive-color { color: black; }
+  header.scrolled .adaptive-color svg path { fill: currentColor; }
+
+  :global(.dark) header {
+    background-color: rgba(0, 0, 0, var(--bg-opacity, 0));
+  }
+
+  :global(.dark) header.scrolled {
+    background-color: rgba(0, 0, 0, var(--bg-opacity-scrolled, 0.2));
+    color: white;
+  }
+
+  :global(.dark) header.scrolled .adaptive-color { color: white; }
+  :global(.dark) header.scrolled .adaptive-color svg path { fill: currentColor; }
+
+  /* Border only when scrolled and enabled */
+  header.show-border {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  :global(.dark) header.show-border {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  header button svg {
+    color: inherit;
+    transition: color 0.3s ease;
+  }
+
+  header nav ul li {
+    position: relative;
+  }
+
+  header .nav-link {
+    position: relative;
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+  }
+  
+  header .nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 0%;
+    height: 1px;
+    background-color: currentColor;
+    transition: width 0.35s ease;
+  }
+  
+  header .nav-link:hover::before {
+    width: 100%;
+  }
+  
+  header .nav-link.is-active::before {
+    width: 28px;
+  }
+  header .nav-link.is-active:hover::before {
+    width: 28px;
+  }
+
+  .mobile-nav.is-sticky {
+    position: fixed;
+    top: 0;
+    bottom: auto;
+    transform: none !important;
+  }
+  
+  .mobile-nav .mobile-nav-bg {
+    background-color: #FAFAFA;
+  }
+
+  :global(.dark) .mobile-nav .mobile-nav-bg {
+    background-color: #111827;
+  }
+
+  .mobile-nav.is-sticky .mobile-nav-bg {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  
+  :global(.dark) .mobile-nav.is-sticky .mobile-nav-bg {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+  }
+  
+  .mobile-logo-link {
+    opacity: 1;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .mobile-menu-overlay {
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+
+  .mobile-menu-overlay .mobile-nav-bg {
+    background-color: #FAFAFA;
+  }
+  
+  :global(.dark) .mobile-menu-overlay .mobile-nav-bg {
+    background-color: #111827;
+  }
+
+  .mobile-menu-overlay.is-open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  .mobile-menu-overlay :global(details) {
+    position: relative;
+  }
+  
+  .mobile-menu-overlay :global(details > div) {
+    bottom: 100%;
+    top: auto;
+    left: 0;
+    right: auto;
+    margin-bottom: 0.5rem;
+    transform-origin: bottom left;
+  }
+
+  .mobile-accordion summary {
+    list-style: none;
+  }
+  .mobile-accordion summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-nav,
+  .mobile-menu-overlay {
+    view-transition-name: none;
+  }
+
+  ::view-transition-old(mobile-nav),
+  ::view-transition-new(mobile-nav) {
+    animation: none;
+  }
+</style>
+

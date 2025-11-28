@@ -1,0 +1,236 @@
+---
+import { Image } from "astro:assets";
+import { getCaseStudies, getAssetUrl } from '../../lib/directus';
+import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
+import { t } from '../../lib/translations';
+
+// Get current language
+const currentLang = getCurrentLanguage(Astro.url);
+const defaultCtaText = await t('case_studies.cta_text', currentLang, currentLang === 'de' ? 'Fallstudie ansehen' : 'See Case Study');
+
+// Fetch featured case studies from Directus
+const caseStudiesData = await getCaseStudies({
+  featuredOnly: true,
+  limit: 3,
+  fields: [
+    "id",
+    "slug",
+    "client_name",
+    "title_en",
+    "title_de",
+    "logo",
+    "excerpt_en",
+    "excerpt_de",
+    "cta_text_en",
+    "cta_text_de",
+    "case_study_url",
+    "featured_image_light",
+    "featured_image_dark",
+    "categories.category_id.id",
+    "categories.category_id.slug",
+    "categories.category_id.title_en",
+    "categories.category_id.title_de",
+  ],
+});
+
+const caseStudies = caseStudiesData.length > 0
+  ? caseStudiesData.map(cs => {
+      // Determine which image to use
+      let backgroundImage = null;
+      if (cs.featured_image_light && cs.featured_image_dark) {
+        // If both theme images exist, we'll handle this in CSS
+        backgroundImage = {
+          light: getAssetUrl(cs.featured_image_light),
+          dark: getAssetUrl(cs.featured_image_dark)
+        };
+      } else if (cs.featured_image_light || cs.featured_image_dark) {
+        const fallback = cs.featured_image_light || cs.featured_image_dark;
+        backgroundImage = fallback ? getAssetUrl(fallback) : null;
+      }
+
+      const categories = Array.isArray(cs.categories)
+        ? cs.categories
+            .map((link: any) => {
+              const rel = link?.category_id;
+              if (!rel) return null;
+              return rel.title_en || rel.title_de;
+            })
+            .filter(Boolean)
+        : [];
+
+      return {
+        id: cs.id,
+        clientName: cs.client_name,
+        logo: getAssetUrl(cs.logo),
+        title: getLocalizedField(cs, 'title', currentLang) || cs.title_en,
+        excerpt: getLocalizedField(cs, 'excerpt', currentLang),
+        ctaText: getLocalizedField(cs, 'cta_text', currentLang) || defaultCtaText,
+        url: cs.case_study_url || `/${currentLang}/work/${cs.slug}`,
+        categories,
+        backgroundImage
+      };
+    })
+  : [];
+---
+
+<section 
+  class="relative py-16 sm:py-20 lg:py-24 transition-colors duration-300"
+  aria-labelledby="case-studies-heading"
+>
+  <div class="w-full sm:max-w-7xl sm:mx-auto px-0 sm:px-8 lg:px-12 xl:px-16">
+    <!-- Case Studies Grid -->
+    <div class="flex overflow-x-auto snap-x snap-mandatory -mx-0 px-6 pb-8 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 sm:overflow-visible sm:snap-none sm:mx-0 sm:px-0 scrollbar-hide">
+      {caseStudies.map((caseStudy) => (
+        <a
+          href={caseStudy.url}
+          class="case-study-card group relative overflow-hidden rounded-3xl aspect-[3/4] sm:aspect-[2/3] block transition-all duration-300 hover:shadow-2xl border-2 border-[#FBFBFB] flex-shrink-0 w-[75vw] sm:w-auto snap-center mr-6 sm:mr-0 last:mr-6 sm:last:mr-0"
+          aria-label={`${caseStudy.title} - ${caseStudy.clientName}`}
+        >
+          <!-- Background Image -->
+          {caseStudy.backgroundImage ? (
+            typeof caseStudy.backgroundImage === 'string' ? (
+              <img
+                src={caseStudy.backgroundImage}
+                alt=""
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+                decoding="async"
+                width="600"
+                height="800"
+              />
+            ) : (
+              <>
+                <img
+                  src={caseStudy.backgroundImage.light}
+                  alt=""
+                  class="case-study-bg case-study-bg-light absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
+                  decoding="async"
+                  width="600"
+                  height="800"
+                />
+                <img
+                  src={caseStudy.backgroundImage.dark}
+                  alt=""
+                  class="case-study-bg case-study-bg-dark absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
+                  decoding="async"
+                  width="600"
+                  height="800"
+                />
+              </>
+            )
+          ) : (
+            <div class="absolute inset-0 bg-gray-100 dark:bg-gray-800"></div>
+          )}
+
+          <!-- Gradient Overlay -->
+          <div 
+            class="absolute inset-0 pointer-events-none z-10 card-gradient-overlay" 
+          ></div>
+
+          <!-- Content (z-20 to ensure text is above gradient) -->
+          <div class="relative h-full flex flex-col justify-end p-6 sm:p-8 z-20">
+            <!-- Client Name/Logo -->
+            <div class="mb-3">
+              {caseStudy.logo ? (
+                <div 
+                  class="w-auto h-8 bg-[var(--color-foreground)] transition-colors duration-300" 
+                  style={{
+                    maskImage: `url(${caseStudy.logo})`,
+                    maskSize: 'contain',
+                    maskRepeat: 'no-repeat',
+                    maskPosition: 'left center',
+                    WebkitMaskImage: `url(${caseStudy.logo})`,
+                    WebkitMaskSize: 'contain',
+                    WebkitMaskRepeat: 'no-repeat',
+                    WebkitMaskPosition: 'left center'
+                  }}
+                ></div>
+              ) : (
+                <span class="text-sm sm:text-base font-medium tracking-wide text-[var(--color-foreground)] font-sans">
+                  {caseStudy.clientName}
+                </span>
+              )}
+            </div>
+
+            <!-- Title -->
+            <h3 class="font-display text-4xl lg:text-5xl mb-8 text-[var(--color-foreground)] font-normal">
+              {caseStudy.title}
+            </h3>
+
+            <!-- CTA Link -->
+            <div class="w-full flex items-center justify-between text-sm sm:text-base font-medium text-[var(--color-foreground)] border-b border-[var(--color-foreground)]/60 pb-3 transition-all duration-300 group-hover:border-[var(--color-foreground)]">
+              <span>{caseStudy.ctaText}</span>
+              <svg 
+                class="w-5 h-5 opacity-70 rotate-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:rotate-45" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path d="M7 17L17 7M17 7H7M17 7V17" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .case-study-card {
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .case-study-card:hover {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .case-study-bg-light {
+    display: block;
+  }
+
+  .case-study-bg-dark {
+    display: none;
+  }
+
+  :global(.dark) .case-study-bg-light {
+    display: none;
+  }
+
+  :global(.dark) .case-study-bg-dark {
+    display: block;
+  }
+
+  /* Card Gradient Overlay */
+  .card-gradient-overlay {
+    background: linear-gradient(to top, var(--card-gradient-start) 11.87%, var(--card-gradient-end) 76.06%);
+  }
+
+  /* Default (Light) Theme Variables */
+  :root {
+    --card-gradient-start: #FAFAFA;
+    --card-gradient-end: rgba(250, 250, 250, 0);
+  }
+
+  /* Dark Theme Variables */
+  :global(.dark) {
+    --card-gradient-start: #0C111D;
+    --card-gradient-end: rgba(12, 17, 29, 0);
+  }
+</style>
+

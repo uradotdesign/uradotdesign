@@ -1,0 +1,541 @@
+---
+import {
+  getCaseStudies,
+  getCaseStudyCategories,
+  getAssetUrl,
+  getLocalizedField,
+  toBoolean,
+} from "../../lib/cms";
+
+import ClientsCarousel from "../sections/ClientsCarousel.astro";
+import ContactForm from "../sections/ContactForm.astro";
+
+type SupportedLang = "en" | "de";
+
+interface Props {
+  lang: SupportedLang;
+}
+
+interface NormalizedCategory {
+  id: number;
+  slug: string;
+  label: string;
+}
+
+interface NormalizedCaseStudy {
+  id: string | number;
+  client: string;
+  title: string;
+  excerpt: string;
+  url: string;
+  cta: string;
+  featured: boolean;
+  categories: NormalizedCategory[];
+  imageLight: string | null;
+  imageDark: string | null;
+  logo: string | null;
+}
+
+const { lang } = Astro.props;
+
+const translations =
+  lang === "de"
+    ? {
+        pageTitle: "Unsere Arbeiten",
+        featuredHeading: "Ausgewählte Projekte",
+        allFilter: "Alle Projekte",
+        viewProject: "Projekt ansehen",
+        seeHowItWorked: "So haben wir es geschafft",
+        emptyCopy:
+          "Noch keine Case Studies veröffentlicht. Füge sie in Directus hinzu, um sie hier zu sehen.",
+        categoryLabels: {
+          accessibility: "Barrierefreiheit",
+          branding: "Branding",
+          illustrations: "Illustrationen",
+          "interaction-design": "Interaction Design",
+          "ux-research": "UX Research",
+          "web-development": "Webentwicklung",
+          uncategorized: "Ohne Kategorie",
+        },
+      }
+    : {
+        pageTitle: "Our Work",
+        featuredHeading: "Featured Projects",
+        allFilter: "All Projects",
+        viewProject: "View Project",
+        seeHowItWorked: "See how it worked",
+        emptyCopy:
+          "No published case studies yet. Add them in Directus to populate this page.",
+        categoryLabels: {
+          accessibility: "Accessibility",
+          branding: "Branding",
+          illustrations: "Illustrations",
+          "interaction-design": "Interaction Design",
+          "ux-research": "UX Research",
+          "web-development": "Web Development",
+          uncategorized: "Uncategorized",
+        },
+      };
+
+const [caseStudiesData, categoryRecords] = await Promise.all([
+  getCaseStudies({
+    sort: ["sort_order", "-date_created"],
+    fields: [
+      "id",
+      "client_name",
+      "slug",
+      "title_en",
+      "title_de",
+      "cta_text_en",
+      "cta_text_de",
+      "excerpt_en",
+      "excerpt_de",
+      "case_study_url",
+      "featured",
+      "featured_image.id",
+      "featured_image_light.id",
+      "featured_image_dark.id",
+      "categories.category_id.id",
+      "categories.category_id.slug",
+      "categories.category_id.title_en",
+      "categories.category_id.title_de",
+      "logo"
+    ],
+  }),
+  getCaseStudyCategories(),
+]);
+
+const categoryMap = new Map<number, NormalizedCategory>();
+const orderedCategories: NormalizedCategory[] = categoryRecords.map((cat) => {
+  const slug = cat.slug || `category-${cat.id}`;
+  const label =
+    (lang === "de"
+      ? cat.title_de || cat.title_en
+      : cat.title_en || cat.title_de) ||
+    translations.categoryLabels[
+      slug as keyof typeof translations.categoryLabels
+    ] ||
+    slug;
+  const normalized = { id: cat.id, slug, label };
+  categoryMap.set(cat.id, normalized);
+  return normalized;
+});
+
+function buildCategoryList(entry: any): NormalizedCategory[] {
+  const links = Array.isArray(entry?.categories) ? entry.categories : [];
+
+  const resolved = links
+    .map((link: any) => {
+      const rel = link?.category_id;
+      if (!rel) return null;
+
+      const slug =
+        rel.slug ||
+        (rel.title_en || rel.title_de
+          ? (rel.title_en || rel.title_de)
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/gi, "-")
+              .replace(/^-+|-+$/g, "")
+          : `category-${rel.id ?? rel.slug}`);
+
+      const label =
+        (lang === "de"
+          ? rel.title_de || rel.title_en
+          : rel.title_en || rel.title_de) ||
+        translations.categoryLabels[
+          slug as keyof typeof translations.categoryLabels
+        ] ||
+        slug;
+
+      return { id: rel.id ?? slug, slug, label };
+    })
+    .filter(Boolean) as NormalizedCategory[];
+
+  if (resolved.length) return resolved;
+
+  return [
+    {
+      id: 0,
+      slug: "uncategorized",
+      label: translations.categoryLabels["uncategorized"],
+    },
+  ];
+}
+
+function normalizeCaseStudy(entry: any): NormalizedCaseStudy {
+  const title =
+    getLocalizedField(entry, "title", lang) ||
+    entry.title_en ||
+    entry.client_name ||
+    translations.pageTitle;
+  const excerpt = getLocalizedField(entry, "excerpt", lang) || "";
+  const cta =
+    getLocalizedField(entry, "cta_text", lang) ||
+    (lang === "de" ? "Projekt ansehen" : "See how it worked");
+
+  // Handle image IDs - they can be strings or objects with .id
+  const imageLightId = entry.featured_image_light?.id || entry.featured_image_light || entry.featured_image?.id || entry.featured_image;
+  const imageDarkId = entry.featured_image_dark?.id || entry.featured_image_dark || entry.featured_image?.id || entry.featured_image;
+
+  return {
+    id: entry.id,
+    client: entry.client_name || "",
+    title,
+    excerpt,
+    url:
+      entry.case_study_url ||
+      (entry.slug ? `/${lang}/work/${entry.slug}` : `/${lang}/work`),
+    cta,
+    featured: toBoolean(entry.featured),
+    categories: buildCategoryList(entry),
+    imageLight: imageLightId ? getAssetUrl(imageLightId) : null,
+    imageDark: imageDarkId ? getAssetUrl(imageDarkId) : null,
+    logo: entry.logo ? getAssetUrl(entry.logo) : null
+  };
+}
+
+const normalizedCaseStudies: NormalizedCaseStudy[] = caseStudiesData.length
+  ? caseStudiesData.map(normalizeCaseStudy)
+  : [];
+
+const featuredPool = normalizedCaseStudies.filter((item) => item.featured);
+const featuredCards: NormalizedCaseStudy[] = featuredPool.slice(0, 3);
+const fallbackPool = normalizedCaseStudies.filter((item) => !item.featured);
+
+// Fill featured cards with non-featured if we don't have enough featured ones
+while (featuredCards.length < 3 && fallbackPool.length) {
+  featuredCards.push(fallbackPool.shift()!);
+}
+
+const featuredIds = new Set(featuredCards.map((item) => item.id));
+const remainingCaseStudies = normalizedCaseStudies.filter(
+  (item) => !featuredIds.has(item.id)
+);
+
+const filters: NormalizedCategory[] = [
+  { id: -1, slug: "all", label: translations.allFilter },
+  ...orderedCategories,
+];
+---
+
+{
+  normalizedCaseStudies.length ? (
+    <>
+      <!-- Featured Hero Section - Full Width Cards -->
+      <section class="works-hero relative md:h-[85vh] md:min-h-[600px] flex flex-col md:flex-row h-auto min-h-screen">
+        {featuredCards.map((project, index) => (
+          <a
+            href={project.url}
+            class="featured-hero-card group relative flex-1 overflow-hidden min-h-[50vh] md:min-h-auto"
+            style={`--card-index: ${index}`}
+          >
+            {/* Background Image */}
+            {project.imageLight ? (
+              <>
+                <img
+                  src={project.imageLight}
+                  alt=""
+                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 dark:hidden"
+                  loading="lazy"
+                  decoding="async"
+                  aria-hidden="true"
+                />
+                <img
+                  src={project.imageDark || project.imageLight}
+                  alt=""
+                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 hidden dark:block"
+                  loading="lazy"
+                  decoding="async"
+                  aria-hidden="true"
+                />
+              </>
+            ) : (
+              <div
+                class="absolute inset-0 bg-gradient-to-br from-[#e8f4f8] via-[#b8dde8] to-[#88c6d8] dark:from-[#0a0e1a] dark:via-[#15202e] dark:to-[#1a3040]"
+                aria-hidden="true"
+              />
+            )}
+
+            {/* Base overlay gradients - handled via CSS classes for reliable theme switching */}
+            <div class="absolute inset-0 work-card-gradient-light" />
+            <div class="absolute inset-0 work-card-gradient-dark" />
+            <div class="absolute inset-0 work-card-gradient-top-light" />
+            <div class="absolute inset-0 work-card-gradient-top-dark" />
+            
+            {/* Hover overlay gradient */}
+            <div class="absolute inset-0 bg-gradient-to-b from-black/20 to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+            {/* Content */}
+            <div class="relative z-10 h-full flex flex-col justify-between p-8 lg:p-12 xl:p-16 text-[var(--color-foreground)]">
+              {/* Top: Client name (Empty now as logo is moved) */}
+              <div class="flex items-start justify-between">
+                
+              </div>
+
+              {/* Bottom: Logo, Title and CTA */}
+              <div class="space-y-7">
+                 {/* Client Name/Logo */}
+                 <div class="mb-3">
+                  {project.logo ? (
+                    <div 
+                      class="w-auto h-10 bg-[var(--color-foreground)] transition-colors duration-300" 
+                      style={{
+                        maskImage: `url(${project.logo})`,
+                        maskSize: 'contain',
+                        maskRepeat: 'no-repeat',
+                        maskPosition: 'left center',
+                        WebkitMaskImage: `url(${project.logo})`,
+                        WebkitMaskSize: 'contain',
+                        WebkitMaskRepeat: 'no-repeat',
+                        WebkitMaskPosition: 'left center'
+                      }}
+                    ></div>
+                  ) : (
+                    <p class="text-sm lg:text-base uppercase font-mono font-medium">
+                      {project.client}
+                    </p>
+                  )}
+                </div>
+
+                <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-normal">
+                  {project.title}
+                </h2>
+                
+                <div class="w-full flex items-center justify-between text-base lg:text-lg font-medium border-b border-[var(--color-foreground)]/60 pb-3 transition-all duration-300 group-hover:border-[var(--color-foreground)]">
+                  <span>{project.cta}</span>
+                  <svg
+                    class="w-5 h-5 lg:w-6 lg:h-6 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M7 17L17 7M17 7H7M17 7V17"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </a>
+        ))}
+      </section>
+
+      <section
+        class="works-catalog py-16 lg:py-24 bg-[var(--color-background)] text-[var(--color-foreground)]"
+        data-works-root
+      >
+        <div class="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
+          <div class="flex flex-col gap-6 mb-10">
+            <div class="flex items-center gap-6">
+              <span class="uppercase text-xs font-semibold">
+                {translations.allFilter}
+              </span>
+              <div
+                class="flex-1 h-px bg-[var(--color-border)]"
+                aria-hidden="true"
+              />
+            </div>
+            <div class="flex flex-wrap gap-3">
+              {filters.map((filter) => (
+                <button
+                  type="button"
+                  class="works-filter px-4 py-2 rounded-sm border border-[var(--color-border)] text-sm transition-colors cursor-pointer text-[var(--color-foreground)] hover:border-[var(--color-foreground)] data-[active=true]:bg-[var(--color-foreground)] data-[active=true]:text-[var(--color-background)]"
+                  data-works-filter={filter.slug}
+                  data-active={filter.slug === "all"}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div class="case-list border border-[var(--color-border)] rounded-[32px] overflow-hidden">
+            {remainingCaseStudies.map((study) => (
+              <article
+                class="group border-b last:border-b-0 border-[var(--color-border)] py-12 px-6 sm:px-10 transition-colors duration-300"
+                data-case-item
+                data-case-categories={study.categories
+                  .map((category) => category.slug)
+                  .join(",")}
+              >
+                <div class="grid gap-y-8 gap-x-8 lg:grid-cols-12 items-start">
+                  {/* Client Name - Column 1 */}
+                  <div class="lg:col-span-3">
+                    <p class="text-xl font-medium text-[var(--color-foreground)]">
+                      {study.client}
+                    </p>
+                  </div>
+
+                  {/* Title and Tags - Column 2 (Middle) */}
+                  <div class="lg:col-span-6 space-y-6">
+                    <h3 class="text-3xl md:text-4xl font-display leading-tight text-[var(--color-foreground)]">
+                      <a href={study.url} class="hover:underline decoration-1 underline-offset-4 decoration-[var(--color-foreground)]">
+                        {study.title}
+                      </a>
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                      {study.categories.map((category) => (
+                        <span class="px-3 py-1 rounded-sm border border-[var(--color-border)] text-xs font-medium text-[var(--color-foreground)]">
+                          {category.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Action - Column 3 (Right) */}
+                  <div class="lg:col-span-3 flex lg:justify-end pt-2">
+                    <a
+                      href={study.url}
+                      class="inline-flex items-center gap-2 font-medium text-base group-hover:opacity-70 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black/40 dark:focus-visible:ring-white/60 border-b border-[var(--color-foreground)] pb-0.5"
+                    >
+                      {translations.viewProject}
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        stroke-width="2"
+                        aria-hidden="true"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M7 17L17 7M17 7H7M17 7V17"
+                        />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <ClientsCarousel />
+
+      <ContactForm />
+    </>
+  ) : (
+    <p class="px-4 sm:px-6 lg:px-12 xl:px-16 py-24 text-center text-lg text-[var(--color-muted-foreground)]">
+      {translations.emptyCopy}
+    </p>
+  )
+}
+
+<script>
+  function initWorksFilters() {
+    const root = document.querySelector<HTMLElement>("[data-works-root]");
+    if (!root || root.dataset.worksInit === "true") return;
+    root.dataset.worksInit = "true";
+
+    const buttons = root.querySelectorAll<HTMLButtonElement>(
+      "[data-works-filter]"
+    );
+    const rows = root.querySelectorAll<HTMLElement>("[data-case-item]");
+    if (!buttons.length || !rows.length) return;
+
+    const setActive = (slug: string) => {
+      buttons.forEach((button) => {
+        button.dataset.active =
+          button.dataset.worksFilter === slug ? "true" : "false";
+      });
+    };
+
+    const applyFilter = (slug: string) => {
+      rows.forEach((row) => {
+        const categories = row.dataset.caseCategories?.split(",") ?? [];
+        const isVisible = slug === "all" || categories.includes(slug);
+        row.classList.toggle("hidden", !isVisible);
+      });
+    };
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const slug = button.dataset.worksFilter ?? "all";
+        setActive(slug);
+        applyFilter(slug);
+      });
+    });
+  }
+
+  document.addEventListener("ura:page-ready", initWorksFilters);
+</script>
+
+<style>
+  .featured-card {
+    min-height: 420px;
+    color: #0f1117;
+  }
+
+  :global(html.dark) .featured-card {
+    color: #f4f6ff;
+  }
+
+  .case-row {
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .case-row:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 30px 60px rgba(15, 23, 42, 0.1),
+      0 15px 30px rgba(15, 23, 42, 0.05);
+  }
+
+  .works-filter {
+    font-size: 0.85rem;
+  }
+
+  /* Theme-aware gradients for work cards */
+  .work-card-gradient-light {
+    /* Bottom Gradient: Light */
+    background: linear-gradient(180deg, rgba(249, 250, 251, 0) 0%, rgba(249, 250, 251, 0) 50%, rgba(249, 250, 251, 0.9) 100%);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .work-card-gradient-dark {
+    /* Bottom Gradient: Dark */
+    background: linear-gradient(to top, rgba(3, 7, 18, 0.9) 0%, rgba(3, 7, 18, 0) 50%, rgba(3, 7, 18, 0) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  /* New gradients from opposite direction (Top for Dark, Bottom for Light) */
+  .work-card-gradient-top-light {
+    /* Top Gradient: Light */
+    background: linear-gradient(to bottom, rgba(249, 250, 251, 0.9) 0%, rgba(249, 250, 251, 0) 50%, rgba(249, 250, 251, 0) 100%);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .work-card-gradient-top-dark {
+     /* Top Gradient: Dark */
+    background: linear-gradient(to bottom, rgba(3, 7, 18, 0.9) 0%, rgba(3, 7, 18, 0) 50%, rgba(3, 7, 18, 0) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  :global(html.dark) .work-card-gradient-light {
+    opacity: 0;
+  }
+
+  :global(html.dark) .work-card-gradient-dark {
+    opacity: 1;
+  }
+
+  :global(html.dark) .work-card-gradient-top-light {
+    opacity: 0;
+  }
+
+  :global(html.dark) .work-card-gradient-top-dark {
+    opacity: 1;
+  }
+</style>

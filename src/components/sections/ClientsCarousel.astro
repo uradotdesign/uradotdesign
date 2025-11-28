@@ -1,0 +1,198 @@
+---
+import { getClients, getAssetUrl } from "../../lib/directus";
+
+// Fetch clients
+const clientsData = await getClients({
+  fields: [
+    "id",
+    "name",
+    "logo_light",
+    "logo_dark",
+    "logo_alt_text",
+    "website",
+    "aria_label",
+  ],
+});
+
+const clients = clientsData
+  .filter((c) => c.logo_light && c.logo_dark)
+  .map((c) => ({
+    id: c.id,
+    name: c.name,
+    logoLight: getAssetUrl(c.logo_light),
+    logoDark: getAssetUrl(c.logo_dark),
+    altText: c.logo_alt_text || `${c.name} logo`,
+    website: c.website,
+    ariaLabel: c.aria_label || `Visit ${c.name} website`,
+  }));
+
+// Split clients into 3 groups for mobile rows
+const group1: typeof clients = [];
+const group2: typeof clients = [];
+const group3: typeof clients = [];
+
+clients.forEach((client, index) => {
+  if (index % 3 === 0) group1.push(client);
+  else if (index % 3 === 1) group2.push(client);
+  else group3.push(client);
+});
+
+// Duplicate groups for seamless looping
+const loopGroup1 = [...group1, ...group1, ...group1];
+const loopGroup2 = [...group2, ...group2, ...group2];
+const loopGroup3 = [...group3, ...group3, ...group3];
+---
+
+{
+  clients.length > 0 && (
+    <section class="py-16 sm:py-20 bg-[var(--color-background)] overflow-hidden">
+      <div class="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
+        <div class="flex items-center gap-6 mb-12">
+          <span class="uppercase text-xs font-semibold">All Clients</span>
+          <div
+            class="flex-1 h-px bg-[var(--color-border)]"
+            aria-hidden="true"
+          />
+        </div>
+
+        {/* Desktop Grid (6 columns) */}
+        <div class="hidden md:grid md:grid-cols-4 lg:grid-cols-6 gap-x-12 gap-y-16">
+          {clients.map((client) => (
+            <div class="flex items-center justify-center w-full aspect-[3/2] grayscale hover:grayscale-0 transition-all duration-300 opacity-70 hover:opacity-100">
+              {client.website ? (
+                <a
+                  href={client.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={client.ariaLabel}
+                  class="block w-full h-full flex items-center justify-center"
+                >
+                  <img
+                    src={client.logoLight}
+                    alt={client.altText}
+                    class="max-w-full max-h-full object-contain dark:hidden"
+                    loading="lazy"
+                  />
+                  <img
+                    src={client.logoDark}
+                    alt={client.altText}
+                    class="hidden dark:block max-w-full max-h-full object-contain"
+                    loading="lazy"
+                  />
+                </a>
+              ) : (
+                <div class="w-full h-full flex items-center justify-center">
+                  <img
+                    src={client.logoLight}
+                    alt={client.altText}
+                    class="max-w-full max-h-full object-contain dark:hidden"
+                    loading="lazy"
+                  />
+                  <img
+                    src={client.logoDark}
+                    alt={client.altText}
+                    class="hidden dark:block max-w-full max-h-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Mobile Marquees (3 rows) */}
+      <div class="md:hidden flex flex-col gap-8 w-full max-w-[100vw]">
+        {/* Row 1 - Left */}
+        <div class="flex w-max animate-scroll-left items-center">
+          {loopGroup1.map((client) => (
+            <div class="flex items-center justify-center mx-4 w-32 opacity-70 grayscale">
+              <img
+                src={client.logoLight}
+                alt={client.altText}
+                class="w-full h-auto object-contain dark:hidden"
+                loading="lazy"
+              />
+              <img
+                src={client.logoDark}
+                alt={client.altText}
+                class="hidden dark:block w-full h-auto object-contain"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Row 2 - Right */}
+        <div class="flex w-max animate-scroll-right items-center">
+          {loopGroup2.map((client) => (
+            <div class="flex items-center justify-center mx-4 w-32 opacity-70 grayscale">
+              <img
+                src={client.logoLight}
+                alt={client.altText}
+                class="w-full h-auto object-contain dark:hidden"
+                loading="lazy"
+              />
+              <img
+                src={client.logoDark}
+                alt={client.altText}
+                class="hidden dark:block w-full h-auto object-contain"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Row 3 - Left */}
+        <div class="flex w-max animate-scroll-left items-center">
+          {loopGroup3.map((client) => (
+            <div class="flex items-center justify-center mx-4 w-32 opacity-70 grayscale">
+              <img
+                src={client.logoLight}
+                alt={client.altText}
+                class="w-full h-auto object-contain dark:hidden"
+                loading="lazy"
+              />
+              <img
+                src={client.logoDark}
+                alt={client.altText}
+                class="hidden dark:block w-full h-auto object-contain"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  @keyframes scroll-left {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-33.333%);
+    }
+  }
+
+  @keyframes scroll-right {
+    0% {
+      transform: translateX(-33.333%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-scroll-left {
+    animation: scroll-left 40s linear infinite;
+    will-change: transform;
+  }
+
+  .animate-scroll-right {
+    animation: scroll-right 40s linear infinite;
+    will-change: transform;
+  }
+</style>

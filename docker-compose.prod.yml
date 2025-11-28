@@ -1,0 +1,121 @@
+version: "3"
+
+services:
+  # 1. Your Astro Website
+  astro:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4321:4321" # Expose only to localhost for Nginx reverse proxy
+    environment:
+      - HOST=0.0.0.0
+      - PORT=4321
+
+      # URLs
+      - DIRECTUS_URL=http://directus:8055 # Internal
+      - PUBLIC_DIRECTUS_URL=https://api.${DOMAIN_NAME:-ura.design} # Public
+      - SITE_URL=https://${DOMAIN_NAME:-ura.design}
+
+      # Weather API
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+      - WEATHER_LOCATION=${WEATHER_LOCATION:-Berlin}
+      - WEATHER_CACHE_TTL=${WEATHER_CACHE_TTL:-900}
+
+      # Redis (if Astro uses it directly)
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+      # i18n
+      - DEFAULT_LOCALE=${DEFAULT_LOCALE:-en}
+      - AVAILABLE_LOCALES=${AVAILABLE_LOCALES:-en,de}
+    depends_on:
+      - directus
+      - redis
+    networks:
+      - app_network
+
+  # 2. Directus CMS
+  directus:
+    image: directus/directus:11.13.3
+    container_name: directus_cms
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8055:8055" # Expose only to localhost for Nginx reverse proxy
+    volumes:
+      - directus_uploads:/directus/uploads
+      - directus_extensions:/directus/extensions
+    environment:
+      KEY: ${KEY}
+      SECRET: ${SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+      DB_CLIENT: "pg"
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB:-directus}
+      DB_USER: ${POSTGRES_USER:-directus}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-directus}
+
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      CACHE_STORE: ${CACHE_STORE:-redis}
+      REDIS: ${REDIS_URL:-redis://redis:6379}
+
+      # IMPORTANT: Public URL must match the domain configured in Nginx
+      PUBLIC_URL: https://api.${DOMAIN_NAME:-ura.design}
+      WEBSOCKETS_ENABLED: "true"
+
+      # File Upload Settings
+      FILES_MAX_UPLOAD_SIZE: "500MB"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  # 3. Database
+  postgres:
+    image: postgres:18-alpine
+    container_name: directus_postgres
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-directus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-directus}
+      POSTGRES_DB: ${POSTGRES_DB:-directus}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app_network
+
+  # 4. Redis (Cache)
+  redis:
+    image: redis:8.2.3-alpine
+    container_name: ura_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  directus_uploads:
+  directus_extensions:
+  redis_data:

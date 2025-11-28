@@ -1,0 +1,409 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Prevent FOUC (Flash of Unstyled Content) and theme flash */
+html:not(.hydrated) {
+  visibility: hidden;
+}
+
+html.hydrated {
+  visibility: visible;
+}
+
+/* View Transitions */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-group(root) {
+  animation-duration: 0ms;
+}
+
+/* Header and Footer - no animation, instant swap */
+::view-transition-old(header),
+::view-transition-new(header),
+::view-transition-old(footer),
+::view-transition-new(footer) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-group(header),
+::view-transition-group(footer) {
+  animation-duration: 0ms;
+}
+
+/* Smooth crossfade on main content only */
+::view-transition-old(main-content),
+::view-transition-new(main-content) {
+  animation-duration: 250ms;
+  animation-timing-function: ease-in-out;
+}
+
+::view-transition-old(main-content) {
+  animation-name: fade-out-quick;
+}
+
+::view-transition-new(main-content) {
+  animation-name: fade-in-quick;
+}
+
+@keyframes fade-out-quick {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in-quick {
+  from {
+    opacity: 0;
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+html.astro-transitioning {
+  overflow-x: hidden;
+}
+
+html.astro-transitioning body {
+  background-color: var(--color-background);
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("/fonts/InstrumentSerif-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("/fonts/InstrumentSerif-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans:
+    "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", "Monaco", "Courier New", monospace;
+  --font-display: "Instrument Serif", "Times New Roman", serif;
+  --font-body:
+    "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prose Typography Fixes */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  font-family: var(--font-display);
+  line-height: 1.1;
+}
+
+:root {
+  --color-background: #fafafa;
+  --color-foreground: #0a0a0a;
+  --color-foreground-rgb: 10 10 10;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #737373;
+
+  --color-primary: #2563eb;
+  --color-primary-foreground: #ffffff;
+  --color-primary-hover: #1d4ed8;
+
+  --color-secondary: #f59e0b;
+  --color-secondary-foreground: #ffffff;
+
+  --color-accent: #10b981;
+  --color-accent-foreground: #ffffff;
+
+  --color-border: #0c111d;
+  --color-ring: #2563eb;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0a0a;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+
+  --color-input: #e5e7eb;
+  --color-input-foreground: #0a0a0a;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+:root.dark {
+  --color-background: #0c111d;
+  --color-foreground: #f5f5f5;
+  --color-foreground-rgb: 245 245 245;
+  --color-muted: #1a1a1a;
+  --color-muted-foreground: #a3a3a3;
+
+  --color-primary: #60a5fa;
+  --color-primary-foreground: #0a0a0a;
+  --color-primary-hover: #3b82f6;
+
+  --color-secondary: #fbbf24;
+  --color-secondary-foreground: #0a0a0a;
+
+  --color-accent: #34d399;
+  --color-accent-foreground: #0a0a0a;
+
+  --color-border: #ffffff;
+  --color-ring: #60a5fa;
+
+  --color-card: #171717;
+  --color-card-foreground: #f5f5f5;
+
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #0a0a0a;
+
+  --color-input: #262626;
+  --color-input-foreground: #f5f5f5;
+
+  --shadow-sm: 0 1px 2px 0 rgb(255 255 255 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(255 255 255 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(255 255 255 / 0.1);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base);
+}
+
+:global(.font-display) {
+  font-family: var(--font-display);
+}
+
+:global(.font-mono) {
+  font-family: var(--font-mono);
+}
+
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: var(--transition-base);
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in var(--transition-slow);
+}
+
+.animate-slide-up {
+  animation: slide-up var(--transition-slow);
+}
+
+.animate-slide-down {
+  animation: slide-down var(--transition-slow);
+}
+
+/* Compatibility Mappings */
+.font-stylebender {
+  font-family: "Instrument Serif", "Times New Roman", serif;
+}
+
+.font-geist {
+  font-family:
+    "Geist",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.logo-container {
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: 160px;
+  min-width: 160px;
+  overflow: hidden;
+}
+
+.logo-text {
+  transform-origin: left center;
+  transform: translateX(0);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logo-container:hover .logo-text {
+  transform: translateX(-100px);
+}
+
+.logo-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 10;
+}
+
+.container-custom {
+  max-width: 1920px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .container-custom {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-custom {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-custom {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+/* Accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+html[data-reduce-motion="true"],
+html[data-reduce-motion="true"] * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.skip-link:focus,
+a[href="#main-content"]:focus,
+a[href^="#skip"]:focus {
+  position: fixed !important;
+  top: 1rem !important;
+  left: 1rem !important;
+  z-index: 9999 !important;
+  padding: 1rem 1.5rem !important;
+  background: var(--color-primary) !important;
+  color: var(--color-primary-foreground) !important;
+  text-decoration: none !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  outline: 3px solid var(--color-ring) !important;
+  outline-offset: 2px !important;
+}
+
+@media (max-width: 767px) {
+  .hero-wrapper ~ section,
+  .hero-wrapper ~ div,
+  .hero-wrapper ~ footer {
+    position: relative;
+    z-index: 10;
+    background-color: var(--color-background);
+  }
+
+  #main-content > *:not(.hero-wrapper) {
+    position: relative;
+    z-index: 10;
+    background-color: var(--color-background);
+  }
+}

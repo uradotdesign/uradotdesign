@@ -1,0 +1,195 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { getBlogPostBySlug, getAssetUrl } from "../../../lib/directus";
+import { getLocalizedField } from "../../../lib/i18n";
+
+const { lang, slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect("/404");
+}
+
+const post = await getBlogPostBySlug(slug);
+
+if (!post) {
+  return Astro.redirect("/404");
+}
+
+// Helper to calculate reading time
+function calculateReadingTime(text: string): number {
+  if (!text) return 0;
+  const wordsPerMinute = 200;
+  const words = text.trim().split(/\s+/).length;
+  return Math.ceil(words / wordsPerMinute);
+}
+
+const title = post.title;
+const content = post.content || "";
+const readingTime = calculateReadingTime(content);
+const publishedDate = post.published_date
+  ? new Date(post.published_date).toLocaleDateString(
+      lang === "de" ? "de-DE" : "en-GB",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }
+    )
+  : "";
+
+let authorName = "";
+let authorPhoto = null;
+
+if (typeof post.author === "object" && post.author !== null) {
+  authorName = post.author.full_name || "";
+  authorPhoto = getAssetUrl(post.author.photo);
+}
+
+const coverImage = getAssetUrl(post.cover_image);
+
+// Strip HTML for meta description
+const description =
+  post.excerpt || content.replace(/<[^>]*>?/gm, "").substring(0, 160) + "...";
+---
+
+<BaseLayout title={`${title} | Ura Design`} description={description}>
+  <article class="w-full">
+    {/* Mobile Hero (Visible on Mobile only) */}
+    <div
+      class="relative w-full h-[60vh] max-h-[350px] md:hidden flex flex-col justify-end p-6 text-white overflow-hidden mb-12"
+    >
+      {/* Background Image */}
+      {
+        coverImage && (
+          <div class="absolute inset-0 z-0">
+            <img
+              src={coverImage}
+              alt=""
+              class="w-full h-full object-cover"
+              loading="eager"
+            />
+            {/* Overlay */}
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          </div>
+        )
+      }
+
+      {/* Content */}
+      <div class="relative z-10 flex flex-col gap-4">
+        <div class="flex items-center gap-4">
+          {
+            post.badge && (
+              <span class="bg-white text-black px-2 py-1 text-xs font-medium uppercase tracking-wider">
+                {post.badge}
+              </span>
+            )
+          }
+          <span class="text-sm font-medium opacity-90"
+            >{readingTime} min read</span
+          >
+        </div>
+        <h1 class="font-display text-5xl sm:text-8xl">{title}</h1>
+      </div>
+    </div>
+
+    <div
+      class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 md:pt-48 md:pb-32"
+    >
+      {/* Desktop Header (Hidden on Mobile) */}
+      <div class="hidden md:block">
+        {/* Header Meta */}
+        <div class="flex items-center justify-start gap-8 pb-4">
+          <div class="flex items-center">
+            {
+              post.badge && (
+                <span class="bg-black dark:bg-white text-white dark:text-black px-2 py-1 text-xs font-medium uppercase">
+                  {post.badge}
+                </span>
+              )
+            }
+          </div>
+          <span class="text-sm font-medium opacity-70">
+            {readingTime} min read
+          </span>
+        </div>
+
+        {/* Title */}
+        <h1
+          class="font-display text-7xl sm:text-8xl lg:text-9xl mb-6 pb-4 border-b border-[var(--color-border)]"
+        >
+          {title}
+        </h1>
+      </div>
+
+      {/* Author & Date */}
+      <div
+        class="flex items-center gap-8 pb-8 mb-16 text-sm font-medium border-b border-[var(--color-border)] md:border-0"
+      >
+        <span>{publishedDate}</span>
+        <div class="flex items-center gap-3">
+          {
+            authorPhoto && (
+              <img
+                src={authorPhoto}
+                alt={authorName}
+                class="w-6 h-6 rounded-full object-cover grayscale"
+              />
+            )
+          }
+          <span>{authorName}</span>
+        </div>
+      </div>
+
+      {/* Context / Excerpt */}
+      {
+        post.excerpt && (
+          <div class="mb-16 max-w-3xl">
+            <p class="text-xl opacity-90 font-serif leading-relaxed">
+              {post.excerpt}
+            </p>
+          </div>
+        )
+      }
+
+      {/* Main Content */}
+      <div
+        class="prose dark:prose-invert prose-lg max-w-2xl mx-auto prose-headings:font-display prose-headings:font-normal prose-p:font-serif prose-img:rounded-none prose-img:w-full"
+      >
+        {/* Desktop Cover Image (Hidden on Mobile) */}
+        {
+          coverImage && (
+            <div class="hidden md:block w-full aspect-[16/9] mb-16 overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img
+                src={coverImage}
+                alt=""
+                class="w-full h-full object-cover"
+                loading="eager"
+              />
+            </div>
+          )
+        }
+        <div set:html={content} />
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  /* Custom styles for content */
+  :global(article .prose p) {
+    margin-bottom: 1.5em;
+  }
+  :global(article .prose h2) {
+    font-size: 4rem;
+    margin-top: 0.75em;
+    margin-bottom: 0.3em;
+  }
+  :global(article .prose h3) {
+    font-size: 3rem;
+    margin-top: 0.75em;
+    margin-bottom: 0.25em;
+  }
+  :global(article a) {
+    text-decoration: underline;
+  }
+</style>

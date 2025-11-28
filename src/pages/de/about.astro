@@ -1,0 +1,247 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ValuesAccordion from "../../components/sections/ValuesAccordion.astro";
+import Certifications from "../../components/sections/Certifications.astro";
+import TeamMembers from "../../components/sections/TeamMembers.astro";
+import Approach from "../../components/sections/Approach.astro";
+import ContactForm from "../../components/sections/ContactForm.astro";
+import Expertise from "../../components/sections/Expertise.astro";
+import Testimonials from "../../components/sections/Testimonials.astro";
+import { getAboutPage, getApproaches, getAssetUrl } from "../../lib/directus";
+
+const currentLang = "de";
+const aboutData = await getAboutPage();
+const approachesData = await getApproaches();
+
+const heroLabel = aboutData?.hero_label_de || "WER WIR SIND";
+const heroHeading =
+  aboutData?.hero_heading_de ||
+  "Bei Ura bringen wir Klarheit in komplexe digitale Systeme.";
+const sectionTitle =
+  aboutData?.section_title_de ||
+  "Durchdachtes Design kommt aus tiefem Verständnis.";
+const sectionText =
+  aboutData?.section_text_de ||
+  'Effektives Design ist auch verantwortungsvoll. Unsere Wurzeln liegen in Open-Source-Communities und Hacker Spaces, wo Datenschutz, Sicherheit und Benutzerfürsorge grundlegend sind, nicht nur "schön zu haben". Wir haben früh gelernt, dass sorglose Designentscheidungen Vertrauen untergraben, Schwachstellen aufdecken und Menschen gefährden.';
+
+// Background media
+const mediaLightId = aboutData?.background_media_light;
+const mediaDarkId = aboutData?.background_media_dark;
+const mediaLight = mediaLightId ? getAssetUrl(mediaLightId) : null;
+const mediaDark = mediaDarkId ? getAssetUrl(mediaDarkId) : null;
+
+// Determine if media is video based on file extension
+const isVideoLight = mediaLight?.match(/\.(mp4|webm|ogg)$/i);
+const isVideoDark = mediaDark?.match(/\.(mp4|webm|ogg)$/i);
+// Values image
+const valuesImageLightId = aboutData?.values_image_light;
+const valuesImageDarkId = aboutData?.values_image_dark;
+const valuesImageLight = valuesImageLightId
+  ? getAssetUrl(valuesImageLightId)
+  : null;
+const valuesImageDark = valuesImageDarkId
+  ? getAssetUrl(valuesImageDarkId)
+  : null;
+---
+
+<BaseLayout title="Über uns">
+  <!-- Hero Section -->
+  <section
+    class="relative flex flex-col px-4 sm:px-6 lg:px-8 pt-24 pb-16 overflow-hidden"
+  >
+    <!-- Background Media -->
+    {
+      mediaLight && (
+        <>
+          {isVideoLight ? (
+            <video
+              class="hero-bg hero-bg-light"
+              autoplay
+              muted
+              loop
+              playsinline
+              aria-hidden="true"
+            >
+              <source src={mediaLight} type="video/mp4" />
+            </video>
+          ) : (
+            <div
+              class="hero-bg hero-bg-light"
+              style={`background-image: url(${mediaLight}); background-size: cover; background-position: center;`}
+              aria-hidden="true"
+            />
+          )}
+          <div
+            class="hero-bg hero-bg-light"
+            style="background: linear-gradient(to bottom, transparent 0%, transparent 50%, #fafafa 100%); z-index: 1;"
+            aria-hidden="true"
+          />
+        </>
+      )
+    }
+
+    {
+      mediaDark && (
+        <>
+          {isVideoDark ? (
+            <video
+              class="hero-bg hero-bg-dark"
+              autoplay
+              muted
+              loop
+              playsinline
+              aria-hidden="true"
+            >
+              <source src={mediaDark} type="video/mp4" />
+            </video>
+          ) : (
+            <div
+              class="hero-bg hero-bg-dark"
+              style={`background-image: url(${mediaDark}); background-size: cover; background-position: center;`}
+              aria-hidden="true"
+            />
+          )}
+          <div
+            class="hero-bg hero-bg-dark"
+            style="background: linear-gradient(to bottom, transparent 0%, transparent 50%, #0c111d 100%); z-index: 1;"
+            aria-hidden="true"
+          />
+        </>
+      )
+    }
+
+    <div class="container mx-auto relative z-10">
+      <!-- Hero Content -->
+      <div class="min-h-[60vh] flex items-center">
+        <div class="max-w-4xl">
+          <p
+            class="text-xs sm:text-sm font-mono uppercase mb-6 text-muted-foreground"
+          >
+            {heroLabel}
+          </p>
+          <h1
+            class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display leading-tight"
+            set:html={heroHeading.replace(
+              /Klarheit/i,
+              '<span class="italic text-[var(--color-primary)]">Klarheit</span>'
+            )}
+          />
+        </div>
+      </div>
+
+      <!-- Intro Section Content (Moved inside Hero) -->
+      <div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+          <!-- Left Column -->
+          <div>
+            <h2
+              class="text-3xl sm:text-4xl md:text-5xl font-display leading-tight mb-8"
+              class="text-[var(--color-primary)]"
+            >
+              {sectionTitle}
+            </h2>
+          </div>
+
+          <!-- Right Column -->
+          <div>
+            <div
+              class="text-base sm:text-lg leading-relaxed"
+              set:html={sectionText}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Values Accordion -->
+  <ValuesAccordion
+    introText={aboutData?.values_intro_de ||
+      "Unsere Wurzeln liegen in Open-Source-Communities und Hacker-Spaces, wo Privatsphäre, Sicherheit und Benutzerfürsorge grundlegend sind und nicht nur 'nice to haves'."}
+  />
+
+  <!-- Values Image Section -->
+  {
+    (valuesImageLight || valuesImageDark) && (
+      <section class="py-0 px-4 sm:px-6 lg:px-8">
+        <div class="container mx-auto">
+          <div class="w-full aspect-[16/9] relative overflow-hidden rounded-lg">
+            {valuesImageLight && (
+              <img
+                src={valuesImageLight}
+                alt="Werte"
+                class={`w-full h-full object-cover ${valuesImageDark ? "dark:hidden" : ""}`}
+              />
+            )}
+            {valuesImageDark && (
+              <img
+                src={valuesImageDark}
+                alt="Werte"
+                class={`w-full h-full object-cover hidden ${valuesImageLight ? "dark:block" : "block"}`}
+              />
+            )}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Team Members -->
+  <!-- Approach Section -->
+  <Approach
+    sectionTitle={aboutData?.approach_section_title_de || "ANSATZ"}
+    approaches={approachesData.map((app) => ({
+      title: app.title_de || app.title_en,
+      description: app.description_de || "",
+      borderAnimation: app.border_animation,
+    }))}
+  />
+
+  <Expertise page="about" />
+
+  <Testimonials />
+
+  <TeamMembers />
+
+  <!-- Certifications -->
+  <Certifications />
+
+  <!-- Contact Form -->
+  <ContactForm />
+</BaseLayout>
+
+<style>
+  .gradient-text {
+    background: linear-gradient(200.7deg, #00ff6a 0.31%, #59c7ff 83.19%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  .hero-bg-light,
+  .hero-bg-dark {
+    display: none;
+  }
+
+  :global(.hydrated) .hero-bg-light {
+    display: block;
+  }
+
+  :global(.hydrated.dark) .hero-bg-light {
+    display: none;
+  }
+
+  :global(.hydrated.dark) .hero-bg-dark {
+    display: block;
+  }
+</style>

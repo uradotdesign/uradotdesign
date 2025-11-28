@@ -1,0 +1,213 @@
+---
+import { getCertifications } from "../../lib/directus";
+import { getCurrentLanguage } from "../../lib/i18n";
+import { t } from "../../lib/translations";
+
+const currentLang = getCurrentLanguage(Astro.url);
+const certifications = await getCertifications();
+const headingId = "certifications-heading";
+
+const heading = await t(
+  "certifications.heading",
+  currentLang,
+  "RECOGNITION & CERTIFICATIONS"
+);
+const noCertificationsText = await t(
+  "certifications.empty",
+  currentLang,
+  "No certifications available."
+);
+---
+
+<section class="py-16 md:py-24" aria-labelledby={headingId}>
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Section Header -->
+    <div class="mb-12 flex items-center gap-6">
+      <h2
+        id={headingId}
+        class="text-[12px] sm:text-xs font-mono uppercase text-foreground/70 whitespace-nowrap"
+      >
+        {heading}
+      </h2>
+      <div class="h-px flex-1 bg-[var(--color-border)]"></div>
+    </div>
+
+    <!-- Certifications Grid -->
+    {
+      certifications.length > 0 ? (
+        <ul class="space-y-0 list-none" data-spotlight-container role="list">
+          {certifications.map((cert) => (
+            <li
+              class="relative py-6 transition-colors duration-300 border-b border-foreground/20 last:border-b-0 first:border-t-0"
+              role="listitem"
+            >
+              <div class="grid grid-cols-1 md:grid-cols-[4fr_2fr_1fr] gap-4 md:gap-8 items-baseline">
+                <h3 class="spotlight-text text-2xl md:text-3xl font-display">
+                  {cert.title}
+                </h3>
+                <p class="spotlight-text text-sm md:text-base md:text-end text-start font-mono uppercase">
+                  {cert.organization}
+                </p>
+                <p class="spotlight-text text-sm md:text-base font-mono md:text-end text-start">
+                  {cert.year}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="text-center py-12 text-[var(--color-muted-foreground)]">
+          {noCertificationsText}
+        </p>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .spotlight-text {
+    position: relative;
+    --mouse-x: 0px;
+    --mouse-y: 0px;
+    --spotlight-color: #10b981;
+  }
+
+  .spotlight-text.spotlight-active {
+    background:
+      radial-gradient(
+        circle 120px at var(--mouse-x) var(--mouse-y),
+        var(--spotlight-color) 0%,
+        transparent 100%
+      ),
+      linear-gradient(currentColor, currentColor);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: background 0.05s ease;
+  }
+</style>
+
+<script>
+  function initSpotlight() {
+    const container = document.querySelector("[data-spotlight-container]");
+    if (!container) return;
+    if (container.hasAttribute("data-spotlight-ready")) return;
+    container.setAttribute("data-spotlight-ready", "true");
+
+    const spotlightColor = "#10b981"; // Emerald-500
+    const allTextElements = container.querySelectorAll(".spotlight-text");
+
+    function updateSpotlight(clientX: number, clientY: number) {
+      allTextElements.forEach((textEl) => {
+        const htmlEl = textEl as HTMLElement;
+        const textRect = htmlEl.getBoundingClientRect();
+
+        // Calculate position relative to each text element
+        const x = clientX - textRect.left;
+        const y = clientY - textRect.top;
+
+        htmlEl.style.setProperty("--mouse-x", `${x}px`);
+        htmlEl.style.setProperty("--mouse-y", `${y}px`);
+        htmlEl.style.setProperty("--spotlight-color", spotlightColor);
+      });
+    }
+
+    // Mouse events
+    container.addEventListener("mouseenter", () => {
+      allTextElements.forEach((textEl) => {
+        textEl.classList.add("spotlight-active");
+      });
+    });
+
+    container.addEventListener("mouseleave", () => {
+      allTextElements.forEach((textEl) => {
+        textEl.classList.remove("spotlight-active");
+      });
+    });
+
+    let ticking = false;
+    function onMouseMove(e: MouseEvent) {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateSpotlight(e.clientX, e.clientY);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
+
+    container.addEventListener("mousemove", onMouseMove as EventListener);
+
+    // Touch events for mobile
+    let touchSpotlightActive = false;
+
+    container.addEventListener(
+      "touchstart",
+      (e: Event) => {
+        const touchEvent = e as TouchEvent;
+        if (touchEvent.touches.length > 0) {
+          touchSpotlightActive = true;
+          const touch = touchEvent.touches[0];
+          window.requestAnimationFrame(() => {
+            updateSpotlight(touch.clientX, touch.clientY);
+          });
+
+          allTextElements.forEach((textEl) => {
+            textEl.classList.add("spotlight-active");
+          });
+        }
+      },
+      { passive: true }
+    );
+
+    container.addEventListener(
+      "touchmove",
+      (e: Event) => {
+        const touchEvent = e as TouchEvent;
+        if (touchEvent.touches.length > 0 && touchSpotlightActive) {
+          if (!ticking) {
+            const touch = touchEvent.touches[0];
+            window.requestAnimationFrame(() => {
+              updateSpotlight(touch.clientX, touch.clientY);
+              ticking = false;
+            });
+            ticking = true;
+          }
+        }
+      },
+      { passive: true }
+    );
+
+    container.addEventListener("touchend", () => {
+      touchSpotlightActive = false;
+      allTextElements.forEach((textEl) => {
+        textEl.classList.remove("spotlight-active");
+      });
+    });
+  }
+
+  const bootSpotlight = () => {
+    initSpotlight();
+  };
+
+  let spotlightInitialized = false;
+  const boot = () => {
+    if (spotlightInitialized) return;
+    spotlightInitialized = true;
+    bootSpotlight();
+  };
+
+  const startSpotlight = () => {
+    boot();
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startSpotlight, {
+      once: true,
+    });
+  } else {
+    startSpotlight();
+  }
+
+  document.addEventListener("ura:page-ready", startSpotlight);
+</script>

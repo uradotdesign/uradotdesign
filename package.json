@@ -1,0 +1,35 @@
+{
+  "name": "ura-astro-directus",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "directus:start": "docker-compose up -d",
+    "directus:stop": "docker-compose down",
+    "directus:logs": "docker-compose logs -f directus",
+    "schema:sync": "node scripts/sync-directus-schema-complete.mjs"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/node": "^9.0.0",
+    "@directus/sdk": "^17.0.0",
+    "astro": "^5.0.5",
+    "astro-i18next": "^1.0.0-beta.21",
+    "i18next": "^23.16.8",
+    "ioredis": "^5.4.1",
+    "lottie-web": "^5.13.0",
+    "typescript": "^5.6.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.16",
+    "@types/node": "^22.9.0",
+    "tailwindcss": "^4.1.16"
+  },
+  "engines": {
+    "node": ">=18.20.8"
+  }
+}

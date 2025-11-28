@@ -1,0 +1,140 @@
+---
+import { getAboutPage, getAssetUrl, getServices, getServiceRelations } from "../../lib/directus";
+import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
+import { t } from "../../lib/translations";
+
+export interface Props {
+  page?: "about" | "home" | "services" | "work";
+  heading?: string;
+  intro?: string;
+}
+
+const currentLang = getCurrentLanguage(Astro.url);
+const { page = "about", heading, intro } = Astro.props;
+
+const aboutData = await getAboutPage();
+const defaultHeading = await t("expertise.heading", currentLang, "EXPERTISE");
+const sectionHeading =
+  heading ||
+  (currentLang === "de"
+    ? aboutData?.expertise_heading_de
+    : aboutData?.expertise_heading_en) ||
+  defaultHeading;
+
+const defaultIntro = await t(
+  "expertise.intro",
+  currentLang,
+  currentLang === "de"
+    ? "Wir decken das gesamte Spektrum des Designs ab – von der Diagnose bis zur Entwicklung skalierbarer Systeme."
+    : "We cover the full scope of design, from diagnosing issues to designing scalable systems."
+);
+
+const introText =
+  intro ||
+  (currentLang === "de"
+    ? aboutData?.expertise_intro_de
+    : aboutData?.expertise_intro_en) ||
+  defaultIntro;
+
+const services = await getServices({
+  filter: {
+    show_in_expertise: { _eq: true },
+  },
+});
+
+// Fetch subservices for each service
+const servicesWithSubservices = await Promise.all(
+  services.map(async (s) => {
+    const relations = await getServiceRelations(s.id);
+    const subservices = relations.subservices || [];
+    
+    // Filter subservices by language if needed, or return all but localized in mapping
+    // The helper returns all items from the related collection. 
+    // We need to pick the correct text field based on language.
+    
+    return {
+      ...s,
+      subservices: subservices
+    };
+  })
+);
+
+const localizedGroups = servicesWithSubservices.map((s) => ({
+  id: s.id,
+  title: getLocalizedField(s, "title", currentLang),
+  icon: s.service_icon,
+  iconBg: s.color_accent || "#E5E7EB",
+  points: s.subservices.map(sub => 
+    currentLang === 'de' ? (sub.text_de || sub.text_en) : sub.text_en
+  ).filter(Boolean),
+}));
+---
+
+<section class="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+  <div class="container mx-auto">
+    <!-- Section label with divider (Full Width) -->
+    <div class="flex items-center gap-6 mb-10" aria-hidden="true">
+      <span
+        class="text-[12px] sm:text-xs font-mono uppercase text-foreground/70 whitespace-nowrap"
+        >{sectionHeading}</span
+      >
+      <div class="h-px flex-1 bg-[var(--color-border)]"></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+      <!-- Left intro -->
+      <div class="max-w-md">
+        <p class="text-xl">
+          {introText}
+        </p>
+      </div>
+
+      <!-- Right groups -->
+      <div class="space-y-10">
+        {
+          localizedGroups.map((group) => (
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              <!-- Icon + Title -->
+              <div>
+                <div class="flex items-center gap-5">
+                  <span
+                    class="inline-flex w-10 h-10 items-center justify-center overflow-hidden shrink-0"
+                    style={`background-color: ${group.iconBg};`}
+                  >
+                    {group.icon ? (
+                      <img
+                        class="w-7 h-7 object-contain block"
+                        src={getAssetUrl(group.icon)!}
+                        alt=""
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <span class="sr-only">Icon</span>
+                    )}
+                  </span>
+                  <h3 class="font-display font-normal leading-[1.1] text-3xl md:text-4xl">
+                    {group.title}
+                  </h3>
+                </div>
+              </div>
+              <!-- Points -->
+              <div>
+                <ul class="list-none m-0 p-0 grid text-xl font-medium text-muted-foreground">
+                  {group.points.map((pt: any) => (
+                    <li>{pt}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Keep only the divider color hook; layout is Tailwind */
+</style>
+
+

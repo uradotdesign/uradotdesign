@@ -1,0 +1,344 @@
+---
+import { ClientRouter } from "astro:transitions";
+import {
+  getSiteSettings,
+  getAccessibilitySettings,
+  getAssetUrl,
+} from "../lib/cms";
+import { getCurrentLanguage } from "../lib/i18n";
+import { t } from "../lib/translations";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import SkipLinks from "../components/SkipLinks.astro";
+import "../styles/globals.css";
+
+export interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  fullWidth?: boolean;
+}
+
+const settings = await getSiteSettings();
+const accessibilitySettings = await getAccessibilitySettings();
+const currentLang = getCurrentLanguage(Astro.url);
+
+const { title, description, image, fullWidth = false } = Astro.props;
+
+// Site Info from Directus
+const siteName = settings?.site_name || "Ura Design";
+const siteUrl =
+  settings?.site_url || Astro.site?.toString() || "https://ura.design";
+
+// Site tagline (multilingual)
+const defaultTagline = await t(
+  "site.tagline",
+  currentLang,
+  "Holistic Design for Nuanced Systems"
+);
+const siteTagline =
+  (currentLang === "de"
+    ? settings?.site_tagline_de
+    : settings?.site_tagline_en) || defaultTagline;
+
+const siteTitle = title
+  ? `${title} | ${siteName}`
+  : `${siteName} - ${siteTagline}`;
+
+// Description (multilingual)
+const defaultDesc = await t(
+  "site.description",
+  currentLang,
+  "We examine complex digital tools through usability forensics and whole-systems research"
+);
+const siteDescription =
+  description ||
+  (currentLang === "de"
+    ? settings?.site_description_de
+    : settings?.site_description_en) ||
+  defaultDesc;
+
+// Favicon
+const faviconUrl = settings?.favicon
+  ? getAssetUrl(settings.favicon) || "/favicon.svg"
+  : "/favicon.svg";
+const getFaviconType = (url: string) => {
+  if (url.endsWith(".svg")) return "image/svg+xml";
+  if (url.endsWith(".png")) return "image/png";
+  if (url.endsWith(".ico")) return "image/x-icon";
+  return "image/svg+xml";
+};
+const faviconType = getFaviconType(faviconUrl);
+
+// Social/OG Images
+const ogImage =
+  image || (settings?.og_image ? getAssetUrl(settings.og_image) : null);
+const twitterImage = settings?.twitter_image
+  ? getAssetUrl(settings.twitter_image)
+  : ogImage;
+const ogType = settings?.og_type || "website";
+const twitterCard = settings?.twitter_card || "summary_large_image";
+const twitterSite = settings?.twitter_site || "";
+const twitterCreator = settings?.twitter_creator || "";
+
+// Theme settings
+const primaryColor = settings?.primary_color || "#2D7A7B";
+const defaultTheme = settings?.default_theme || "light";
+
+// Accessibility settings
+const langCode =
+  currentLang === "de"
+    ? accessibilitySettings?.site_language_de || "de"
+    : accessibilitySettings?.site_language_en || "en";
+const focusIndicators = accessibilitySettings?.focus_indicators ?? true;
+const reduceMotion = accessibilitySettings?.reduce_motion ?? false;
+const landmarkRegions = accessibilitySettings?.landmark_regions ?? true;
+const ariaLabelsEnabled = accessibilitySettings?.aria_labels_enabled ?? true;
+const screenReaderAnnouncements =
+  accessibilitySettings?.screen_reader_announcements ?? true;
+---
+
+<!doctype html>
+<html
+  lang={langCode}
+  class="scroll-smooth"
+  data-focus-indicators={focusIndicators}
+  data-reduce-motion={reduceMotion}
+  data-landmark-regions={landmarkRegions}
+  data-aria-labels={ariaLabelsEnabled}
+  data-screen-reader={screenReaderAnnouncements}
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type={faviconType} href={faviconUrl} />
+    <ClientRouter fallback="none" />
+
+    <!-- SEO Meta Tags -->
+    <title>{siteTitle}</title>
+    <meta name="description" content={siteDescription} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={Astro.url} />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={siteDescription} />
+    <meta property="og:site_name" content={siteName} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content={twitterCard} />
+    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:title" content={siteTitle} />
+    <meta property="twitter:description" content={siteDescription} />
+    {twitterSite && <meta property="twitter:site" content={twitterSite} />}
+    {
+      twitterCreator && (
+        <meta property="twitter:creator" content={twitterCreator} />
+      )
+    }
+    {twitterImage && <meta property="twitter:image" content={twitterImage} />}
+
+    <!-- Analytics: Plausible (Self-Hosted) -->
+    {
+      settings?.plausible_enabled && settings?.plausible_domain && (
+        <script
+          defer
+          data-domain={settings.plausible_domain}
+          src={
+            settings.plausible_api_host
+              ? `${settings.plausible_api_host}/js/script.js`
+              : "https://plausible.io/js/script.js"
+          }
+        />
+      )
+    }
+
+    <!-- Prevent theme flash - inline to execute before render -->
+    <script is:inline define:vars={{ primaryColor, defaultTheme }}>
+      // Determine theme before page renders (manual only)
+      const getTheme = () => {
+        try {
+          const saved = localStorage.getItem("theme");
+          if (saved === "dark" || saved === "light") return saved;
+        } catch {}
+        return defaultTheme || "light";
+      };
+
+      const theme = getTheme();
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+
+      // Set primary color CSS variable from Directus
+      if (primaryColor) {
+        document.documentElement.style.setProperty(
+          "--color-primary",
+          primaryColor
+        );
+      }
+
+      // Mark as hydrated to show content
+      document.documentElement.classList.add("hydrated");
+    </script>
+  </head>
+  <body
+    class="min-h-screen flex flex-col font-geist antialiased bg-[var(--color-background)] text-[var(--color-foreground)]"
+  >
+    <SkipLinks />
+
+    {
+      landmarkRegions ? (
+        <>
+          <Header transition:persist="header" />
+          <main
+            id="main-content"
+            class="flex-1"
+            tabindex="-1"
+            aria-label={ariaLabelsEnabled ? "Main content" : undefined}
+            transition:name="main-content"
+          >
+            <slot />
+          </main>
+          <Footer transition:persist="footer" />
+        </>
+      ) : (
+        <>
+          <Header transition:persist="header" />
+          <div
+            id="main-content"
+            class="flex-1"
+            tabindex="-1"
+            transition:name="main-content"
+          >
+            <slot />
+          </div>
+          <Footer transition:persist="footer" />
+        </>
+      )
+    }
+
+    {
+      screenReaderAnnouncements && (
+        <div
+          id="announcements"
+          aria-live="polite"
+          aria-atomic="true"
+          class="sr-only"
+        />
+      )
+    }
+
+    <!-- View Transitions Script - Clean crossfade -->
+    <script>
+      const runPageReady = () => {
+        document.documentElement.classList.add("hydrated");
+        document.dispatchEvent(new CustomEvent("ura:page-ready"));
+      };
+
+      // Ensure listeners are attached only once
+      if (!(window as any)._viewTransitionsInitialized) {
+        document.addEventListener("astro:before-swap", (ev) => {
+          // Ensure the new document has the same theme as the current one
+          const currentTheme = document.documentElement.classList.contains(
+            "dark"
+          )
+            ? "dark"
+            : "light";
+          if (currentTheme === "dark") {
+            ev.newDocument.documentElement.classList.add("dark");
+          } else {
+            ev.newDocument.documentElement.classList.remove("dark");
+          }
+          ev.newDocument.documentElement.classList.remove("hydrated");
+        });
+
+        document.addEventListener("astro:page-load", runPageReady);
+
+        // Announce page navigation for screen readers
+        document.addEventListener("astro:page-load", () => {
+          if (document.documentElement.dataset.screenReader === "true") {
+            const announcer = document.getElementById("announcements");
+            if (announcer) {
+              setTimeout(() => {
+                announcer.textContent = "Page loaded: " + document.title;
+              }, 100);
+            }
+          }
+        });
+
+        (window as any)._viewTransitionsInitialized = true;
+      }
+
+      // Initial run if not handled by astro:page-load yet (e.g. first load)
+      if (
+        document.readyState === "complete" ||
+        document.readyState === "interactive"
+      ) {
+        // Check if we should run it now (if not already run by event)
+        // Actually, astro:page-load runs on initial load too.
+        // But just in case logic:
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  /* Minimal global styles - avoid overriding Tailwind spacing */
+  :global(html) {
+    box-sizing: border-box;
+  }
+  :global(*),
+  :global(*::before),
+  :global(*::after) {
+    box-sizing: inherit;
+  }
+
+  /* Enhanced focus indicators */
+  :global([data-focus-indicators="true"] *:focus-visible) {
+    outline: 3px solid var(--color-ring, #2563eb);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    :global([data-reduce-motion="true"] *) {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Main content focus management */
+  :global(#main-content:focus) {
+    outline: none;
+  }
+
+  /* Screen reader only text */
+  :global(.sr-only) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  :global(.sr-only-focusable:focus) {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: inherit;
+    margin: inherit;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+</style>

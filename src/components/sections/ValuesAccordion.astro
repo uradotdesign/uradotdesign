@@ -1,0 +1,134 @@
+---
+import { getCompanyValues } from "../../lib/directus";
+import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
+import { t } from "../../lib/translations";
+
+interface Props {
+  introText?: string;
+}
+
+const { introText } = Astro.props;
+const currentLang = getCurrentLanguage(Astro.url);
+const companyValues = await getCompanyValues();
+const defaultValueTitle = await t("values.default_title", currentLang, "Value");
+
+interface Value {
+  title: string;
+  description: string;
+  subtitle?: string;
+}
+
+// Transform data for display
+const values: Value[] = companyValues.map((v) => ({
+  title: getLocalizedField(v, "title", currentLang) || defaultValueTitle,
+  description: getLocalizedField(v, "description", currentLang) || "",
+  subtitle: getLocalizedField(v, "subtitle", currentLang),
+}));
+---
+
+<section class="py-16 px-4 sm:px-6 lg:px-8 relative">
+  <div class="container mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-16 lg:gap-24">
+      <!-- Left Column: Intro Text -->
+      <div class="hidden lg:block">
+        {introText && (
+          <p class="text-sm leading-relaxed max-w-xs sticky top-24">
+            {introText}
+          </p>
+        )}
+      </div>
+
+      <!-- Right Column: Accordion -->
+      <div class="w-full values-accordion">
+        <!-- Divider -->
+        <div class="w-full h-px bg-[var(--color-border)] mb-0"></div>
+
+        {
+          values.map((value) => (
+            <details class="group border-b border-[var(--color-border)]">
+              <summary class="list-none cursor-pointer py-8 md:py-12 flex items-center justify-between group-open:pb-6 transition-all duration-300">
+                <h3 class="text-4xl md:text-6xl lg:text-7xl font-display transition-colors">
+                  {value.title}
+                </h3>
+                <span class="flex items-center justify-center w-8 h-8 md:w-12 md:h-12 transition-all duration-300">
+                  <!-- Plus Icon (closed) -->
+                  <svg
+                    class="w-4 h-4 md:w-6 md:h-6 block group-open:hidden transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  <!-- Minus Icon (open) -->
+                  <svg
+                    class="w-4 h-4 md:w-6 md:h-6 hidden group-open:block transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M20 12H4"
+                    />
+                  </svg>
+                </span>
+              </summary>
+              <div class="pb-12 md:pb-16 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-16 animate-slide-down accordion-content">
+                <!-- Left Column: Subtitle/Summary -->
+                <div class="text-lg md:text-xl font-medium leading-relaxed">
+                  {value.subtitle}
+                </div>
+                
+                <!-- Right Column: Full Description -->
+                <div class="text-base md:text-lg text-muted-foreground leading-relaxed">
+                  {value.description}
+                </div>
+              </div>
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function initAccordion() {
+    const details = document.querySelectorAll(".values-accordion details");
+    
+    details.forEach((detail) => {
+      detail.addEventListener("toggle", () => {
+        const d = detail as HTMLDetailsElement;
+        if (d.open) {
+          const content = d.querySelector(".accordion-content") as HTMLElement;
+          if (content) {
+            // Reset animation
+            content.classList.remove("animate-slide-down");
+            void content.offsetWidth; // Force reflow
+            content.classList.add("animate-slide-down");
+          }
+        }
+      });
+    });
+  }
+
+  // Run on initial load
+  initAccordion();
+
+  // Run on View Transitions navigation
+  document.addEventListener("astro:page-load", initAccordion);
+</script>
+
+<style>
+  summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

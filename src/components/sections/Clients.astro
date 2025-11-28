@@ -1,0 +1,147 @@
+---
+import { Image } from "astro:assets";
+import { getClients, getClientsSection, getAssetUrl } from "../../lib/directus";
+import { getCurrentLanguage } from "../../lib/i18n";
+import { t } from "../../lib/translations";
+
+const currentLang = getCurrentLanguage(Astro.url);
+
+// Fetch clients and section heading from Directus
+const clientsData = await getClients({
+  fields: [
+    "id",
+    "name",
+    "logo_light",
+    "logo_dark",
+    "logo_alt_text",
+    "website",
+    "aria_label",
+  ],
+});
+const clientsSection = await getClientsSection();
+
+// Get localized heading
+const defaultHeading = await t(
+  "clients.heading",
+  currentLang,
+  currentLang === "de"
+    ? "ORGANISATIONEN, DIE WIR UNTERSTÜTZT HABEN"
+    : "ORGANIZATIONS WE SUPPORTED REACH THEIR GOALS"
+);
+
+const heading =
+  currentLang === "de"
+    ? clientsSection?.section_heading_de || defaultHeading
+    : clientsSection?.section_heading_en || defaultHeading;
+
+const visitWebsiteLabel = await t(
+  "clients.visit_website",
+  currentLang,
+  currentLang === "de" ? "Besuchen Sie die Website von" : "Visit website of"
+);
+
+const clients =
+  clientsData.length > 0
+    ? clientsData.map((c) => ({
+        name: c.name,
+        logoLight: c.logo_light ? getAssetUrl(c.logo_light) : null,
+        logoDark: c.logo_dark ? getAssetUrl(c.logo_dark) : null,
+        altText: c.logo_alt_text || `${c.name} logo`,
+        ariaLabel: c.aria_label || `${visitWebsiteLabel} ${c.name}`,
+        website: c.website,
+      }))
+    : [];
+---
+
+<section
+  class="relative py-16 sm:py-20 lg:py-24 transition-colors duration-300"
+  aria-labelledby="clients-heading"
+>
+  <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+      <!-- Left column: Heading -->
+      <div class="lg:col-span-2">
+        <h2
+          id="clients-heading"
+          class="text-lg font-geist text-center md:text-start"
+        >
+          {heading}
+        </h2>
+      </div>
+
+      <!-- Right column: Logos grid (3 columns mobile, 4 columns desktop) -->
+      <div class="lg:col-span-9">
+        <div
+          class="grid grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-center"
+          role="list"
+          aria-label="List of our clients"
+        >
+          {
+            clients.map(
+              (client) =>
+                client.logoLight &&
+                client.logoDark && (
+                  <div
+                    role="listitem"
+                    class="flex items-center justify-center overflow-hidden"
+                  >
+                    {client.website ? (
+                      <a
+                        href={client.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={client.ariaLabel}
+                        class="flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded transition-transform duration-300 hover:scale-110 scale-110"
+                      >
+                        <img
+                          src={client.logoLight}
+                          alt={client.altText}
+                          class="w-auto h-auto object-contain dark:hidden"
+                          loading="lazy"
+                          decoding="async"
+                          width="280"
+                          height="160"
+                        />
+                        <img
+                          src={client.logoDark}
+                          alt={client.altText}
+                          class="hidden dark:block w-auto h-auto object-contain"
+                          loading="lazy"
+                          decoding="async"
+                          width="280"
+                          height="160"
+                        />
+                      </a>
+                    ) : (
+                      <div class="flex items-center justify-center scale-110">
+                        <img
+                          src={client.logoLight}
+                          alt={client.altText}
+                          class="w-auto h-auto object-contain dark:hidden"
+                          loading="lazy"
+                          decoding="async"
+                          width="280"
+                          height="160"
+                          role="img"
+                        />
+                        <img
+                          src={client.logoDark}
+                          alt={client.altText}
+                          class="hidden dark:block w-auto h-auto object-contain"
+                          loading="lazy"
+                          decoding="async"
+                          width="280"
+                          height="160"
+                          role="img"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+            )
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,36 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Hero from "../../components/sections/Hero.astro";
+import Clients from "../../components/sections/Clients.astro";
+import ServicesGrid from "../../components/sections/ServicesGrid.astro";
+import CaseStudies from "../../components/sections/CaseStudies.astro";
+import Testimonials from "../../components/sections/Testimonials.astro";
+import LatestFromUs from "../../components/sections/LatestFromUs.astro";
+import { getSiteSettings } from "../../lib/cms";
+import { getLocalizedField } from "../../lib/i18n";
+
+// Set language context
+const currentLang = "de";
+
+// Fetch site settings for dynamic title
+const siteSettings = await getSiteSettings();
+const siteName = siteSettings?.site_name || "Ura Design";
+const tagline =
+  getLocalizedField(siteSettings, "site_tagline", currentLang) ||
+  "Ganzheitliches Design für nuancierte Systeme";
+const pageTitle = `${tagline} | ${siteName}`;
+---
+
+<BaseLayout title={pageTitle} fullWidth={true}>
+  <Hero />
+
+  <Clients />
+
+  <ServicesGrid />
+
+  <CaseStudies />
+
+  <Testimonials />
+
+  <LatestFromUs />
+</BaseLayout>

@@ -1,0 +1,202 @@
+---
+import { getAssetUrl } from "../../lib/directus";
+import { getLocalizedField } from "../../lib/i18n";
+import type { CaseStudy } from "../../lib/directus";
+
+interface Props {
+  caseStudy: CaseStudy;
+  currentLang: "en" | "de";
+}
+
+const { caseStudy, currentLang } = Astro.props;
+
+// Determine which image to use
+let backgroundImage = null;
+if (caseStudy.featured_image_light && caseStudy.featured_image_dark) {
+  backgroundImage = {
+    light: getAssetUrl(caseStudy.featured_image_light),
+    dark: getAssetUrl(caseStudy.featured_image_dark),
+  };
+} else if (caseStudy.featured_image_light || caseStudy.featured_image_dark) {
+  const fallback =
+    caseStudy.featured_image_light || caseStudy.featured_image_dark;
+  backgroundImage = fallback ? getAssetUrl(fallback) : null;
+} else if (caseStudy.featured_image) {
+  backgroundImage = getAssetUrl(caseStudy.featured_image);
+}
+
+const clientName = caseStudy.client_name;
+const logo = getAssetUrl(caseStudy.logo);
+const title =
+  getLocalizedField(caseStudy, "title", currentLang) || caseStudy.title_en;
+const ctaText =
+  getLocalizedField(caseStudy, "cta_text", currentLang) ||
+  (currentLang === "de" ? "Fallstudie ansehen" : "See Case Study");
+const url =
+  caseStudy.case_study_url || `/${currentLang}/work/${caseStudy.slug}`;
+---
+
+<section
+  class="py-20 px-6 sm:px-8 lg:px-12 xl:px-16 border-t border-[var(--color-border)]"
+>
+  <div class="max-w-[1800px] mx-auto">
+    <div class="flex items-center gap-4 mb-12">
+      <span
+        class="text-sm font-mono tracking-wider text-[var(--color-foreground)] uppercase"
+      >
+        {currentLang === "de" ? "RELEVANTE FALLSTUDIE" : "RELEVANT CASE STUDY"}
+      </span>
+      <div class="h-px flex-grow bg-[var(--color-border)]"></div>
+    </div>
+
+    <a
+      href={url}
+      class="case-study-card group relative overflow-hidden rounded-[2rem] block w-full aspect-[4/3] md:aspect-[21/9] border-2 border-[#FBFBFB] transition-all duration-300 hover:shadow-2xl"
+      aria-label={`${title} - ${clientName}`}
+    >
+      <!-- Background Image -->
+      {
+        backgroundImage ? (
+          typeof backgroundImage === "string" ? (
+            <img
+              src={backgroundImage}
+              alt=""
+              class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <>
+              <img
+                src={backgroundImage.light}
+                alt=""
+                class="case-study-bg case-study-bg-light absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+                decoding="async"
+              />
+              <img
+                src={backgroundImage.dark}
+                alt=""
+                class="case-study-bg case-study-bg-dark absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+                decoding="async"
+              />
+            </>
+          )
+        ) : (
+          <div class="absolute inset-0 bg-gray-100 dark:bg-gray-800" />
+        )
+      }
+
+      <!-- Gradient Overlay -->
+      <div
+        class="absolute inset-0 pointer-events-none z-10 card-gradient-overlay"
+      >
+      </div>
+
+      <!-- Content -->
+      <div
+        class="relative h-full flex flex-col justify-end p-8 md:p-12 lg:p-16 z-20"
+      >
+        <!-- Client Name/Logo -->
+        <div class="mb-4 md:mb-6">
+          {
+            logo ? (
+              <div
+                class="w-auto h-8 md:h-10 bg-[var(--color-foreground)] transition-colors duration-300"
+                style={{
+                  maskImage: `url(${logo})`,
+                  maskSize: "contain",
+                  maskRepeat: "no-repeat",
+                  maskPosition: "left center",
+                  WebkitMaskImage: `url(${logo})`,
+                  WebkitMaskSize: "contain",
+                  WebkitMaskRepeat: "no-repeat",
+                  WebkitMaskPosition: "left center",
+                }}
+              />
+            ) : (
+              <span class="text-base md:text-lg font-medium tracking-wide text-[var(--color-foreground)] font-sans">
+                {clientName}
+              </span>
+            )
+          }
+        </div>
+
+        <!-- Title -->
+        <h3
+          class="font-display text-4xl md:text-6xl lg:text-7xl mb-8 md:mb-12 text-[var(--color-foreground)] font-normal max-w-4xl"
+        >
+          {title}
+        </h3>
+
+        <!-- CTA Link -->
+        <div
+          class="w-full flex items-center justify-between text-base md:text-lg font-medium text-[var(--color-foreground)] border-b border-[var(--color-foreground)]/60 pb-4 transition-all duration-300 group-hover:border-[var(--color-foreground)]"
+        >
+          <span>{ctaText}</span>
+          <svg
+            class="w-6 h-6 opacity-70 transform rotate-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:rotate-45"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path
+              d="M7 17L17 7M17 7H7M17 7V17"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+        </div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<style>
+  .case-study-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .case-study-card:hover {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .case-study-bg-light {
+    display: block;
+  }
+
+  .case-study-bg-dark {
+    display: none;
+  }
+
+  :global(.dark) .case-study-bg-light {
+    display: none;
+  }
+
+  :global(.dark) .case-study-bg-dark {
+    display: block;
+  }
+
+  /* Card Gradient Overlay */
+  .card-gradient-overlay {
+    background: linear-gradient(
+      to top,
+      var(--card-gradient-start) 11.87%,
+      var(--card-gradient-end) 76.06%
+    );
+  }
+
+  /* Default (Light) Theme Variables */
+  :root {
+    --card-gradient-start: #fafafa;
+    --card-gradient-end: rgba(250, 250, 250, 0);
+  }
+
+  /* Dark Theme Variables */
+  :global(.dark) {
+    --card-gradient-start: #0c111d;
+    --card-gradient-end: rgba(12, 17, 29, 0);
+  }
+</style>

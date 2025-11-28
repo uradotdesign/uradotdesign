@@ -1,0 +1,130 @@
+---
+// Theme Toggle Component - Dropdown for theme selection
+---
+
+<details class="relative group theme-dropdown-root">
+  <summary
+    class="theme-toggle text-sm font-medium font-mono tracking-wide transition-opacity flex items-center gap-1 cursor-pointer list-none marker:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-border)]"
+    aria-label="Toggle theme"
+    aria-haspopup="menu"
+  >
+    <span class="theme-text">NIGHT</span>
+    <svg
+      class="w-3 h-3 transition-transform duration-300 group-open:-rotate-180"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M19 9l-7 7-7-7"></path>
+    </svg>
+  </summary>
+  <div
+    role="menu"
+    class="absolute top-full right-0 mt-2 w-32 z-[60] opacity-0 invisible group-open:opacity-100 group-open:visible group-open:pointer-events-auto transition-all duration-200 origin-top-right"
+  >
+    <div
+      class="theme-dropdown-menu rounded-lg shadow-lg border border-[var(--color-border)] py-2 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 overflow-hidden font-mono"
+    >
+      <button
+        data-theme="light"
+        role="menuitem"
+        class="theme-option block w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800"
+        aria-label="Switch to light theme"
+      >
+        DAY
+      </button>
+      <button
+        data-theme="dark"
+        role="menuitem"
+        class="theme-option block w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800"
+        aria-label="Switch to dark theme"
+      >
+        NIGHT
+      </button>
+    </div>
+  </div>
+</details>
+
+<script>
+  const activeClasses = [
+            "font-bold",
+            "text-gray-900",
+            "dark:text-white",
+            "bg-gray-100",
+    "dark:bg-gray-800",
+  ];
+  const inactiveClasses = [
+            "text-gray-700",
+            "dark:text-gray-300",
+            "hover:bg-gray-100",
+            "dark:hover:bg-gray-800",
+            "hover:text-gray-900",
+    "dark:hover:text-white",
+  ];
+
+  function updateUI(theme: string) {
+    // Update DOM class
+    document.documentElement.classList.toggle("dark", theme === "dark");
+
+    // Update Text
+    document.querySelectorAll(".theme-text").forEach((el) => {
+      el.textContent = theme === "dark" ? "NIGHT" : "DAY";
+    });
+
+    // Update Dropdown Options
+    document.querySelectorAll(".theme-option").forEach((btn) => {
+      const el = btn as HTMLElement;
+      const isActive = el.dataset.theme === theme;
+
+      if (isActive) {
+        el.classList.add(...activeClasses);
+        el.classList.remove(...inactiveClasses);
+        } else {
+        el.classList.remove(...activeClasses);
+        el.classList.add(...inactiveClasses);
+        }
+      });
+    }
+
+    function setTheme(theme: string) {
+      try {
+        localStorage.setItem("theme", theme);
+      } catch (e) {
+      console.warn("Theme save failed", e);
+      }
+    updateUI(theme);
+      document.dispatchEvent(
+        new CustomEvent("theme-changed", { detail: { theme } })
+      );
+    }
+
+  function init() {
+    // Initial State
+    const saved = localStorage.getItem("theme") || "light";
+    updateUI(saved);
+
+    // Attach listeners (prevent duplicates with custom property)
+    document.querySelectorAll(".theme-option").forEach((btn) => {
+      if ((btn as any).__themeListener) return;
+
+      btn.addEventListener("click", (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const theme = target.dataset.theme;
+        if (theme) {
+          setTheme(theme);
+          const details = target.closest("details");
+          if (details) details.open = false;
+        }
+      });
+      (btn as any).__themeListener = true;
+    });
+  }
+
+  // Run on load and after swaps
+  init();
+  document.addEventListener("astro:after-swap", init);
+</script>

@@ -1,0 +1,11 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import WorksPage from "../../components/pages/WorksPage.astro";
+
+const currentLang = "de";
+---
+
+<BaseLayout title="Unsere Arbeiten">
+  <WorksPage lang={currentLang} />
+</BaseLayout>
+

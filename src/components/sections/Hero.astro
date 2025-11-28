@@ -1,0 +1,425 @@
+---
+import { getHeroSection, getServices, getAssetUrl, getFileMetadata } from '../../lib/cms';
+import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
+import { t } from '../../lib/translations';
+
+const currentPath = Astro.url.pathname;
+const currentLang = getCurrentLanguage(Astro.url);
+const langPrefix = `/${currentLang}`;
+
+// Fetch data from Directus
+const heroData = await getHeroSection();
+// Only fetch necessary fields for services (name/title, slug, show_in_hero)
+const servicesData = await getServices({ 
+  limit: 4,
+  fields: ['title_en', 'title_de', 'slug', 'show_in_hero'],
+  filter: {
+    show_in_hero: { _eq: true }
+  }
+});
+// Header is handled by `components/Header.astro`
+
+// Use Directus data (no hardcoded fallbacks)
+const headingLine1 = heroData?.heading_line1 || "";
+const headingLine2 = heroData?.heading_line2 || "";
+const tagline = heroData?.tagline_en && heroData?.tagline_de 
+  ? (currentLang === 'de' ? heroData.tagline_de : heroData.tagline_en)
+  : "";
+const ctaButtonText = heroData?.cta_button_text || "";
+const ctaButtonLink = heroData?.cta_button_link || "#contact";
+const showServicesGrid = heroData?.show_services_grid ?? true;
+
+const servicesTitle = await t('hero.services_title', currentLang, currentLang === 'de' ? 'DIENSTLEISTUNGEN' : 'SERVICES');
+const defaultServiceTitle = await t('hero.service_default_title', currentLang, "Service");
+
+// Get background media (video or image, theme-specific or fallback)
+const mediaLightId = heroData?.background_video_light;
+const mediaDarkId = heroData?.background_video_dark;
+const mediaLight = mediaLightId ? getAssetUrl(mediaLightId) : '/hero.mp4';
+const mediaDark = mediaDarkId ? getAssetUrl(mediaDarkId) : '/hero.mp4';
+
+// Fetch file metadata from Directus to determine type
+const lightFileMetadata = mediaLightId ? await getFileMetadata(mediaLightId) : null;
+const darkFileMetadata = mediaDarkId ? await getFileMetadata(mediaDarkId) : null;
+
+// Determine if media is video based on file type from Directus or file extension
+const isVideoLight = lightFileMetadata?.type?.startsWith('video/') || mediaLight?.match(/\.(mp4|webm|ogg)$/i);
+const isVideoDark = darkFileMetadata?.type?.startsWith('video/') || mediaDark?.match(/\.(mp4|webm|ogg)$/i);
+
+// Services with fallback and localization
+const services = servicesData.length > 0
+  ? servicesData
+      .filter((s) => s.show_in_hero !== false)
+      .map((s) => ({
+        name:
+          getLocalizedField(s, "title", currentLang) ||
+          s.title_en ||
+          s.title_de ||
+          defaultServiceTitle,
+        href: `/${currentLang}/${s.slug}`,
+      }))
+  : [];
+
+// Header weather/time are handled in the Header component
+---
+
+<!-- Hero Section - Sticky on mobile so content scrolls over it -->
+<section class="hero-wrapper relative md:h-auto md:min-h-screen">
+  <!-- Hero Background - Video or Image for Light Theme -->
+  {isVideoLight ? (
+    <video id="hero-media-light" data-is-video="true" class="hero-video hero-video-light" autoplay muted loop playsinline aria-hidden="true" preload="auto">
+      <source src={mediaLight} type="video/mp4" />
+    </video>
+  ) : (
+    <div id="hero-media-light" data-is-video="false" class="hero-video hero-video-light" style={`background-image: url(${mediaLight}); background-size: cover; background-position: center;`} aria-hidden="true"></div>
+  )}
+  
+  <!-- Hero Background - Video or Image for Dark Theme -->
+  {isVideoDark ? (
+    <video id="hero-media-dark" data-is-video="true" class="hero-video hero-video-dark" autoplay muted loop playsinline aria-hidden="true" preload="auto">
+      <source src={mediaDark} type="video/mp4" />
+    </video>
+  ) : (
+    <div id="hero-media-dark" data-is-video="false" class="hero-video hero-video-dark" style={`background-image: url(${mediaDark}); background-size: cover; background-position: center;`} aria-hidden="true"></div>
+  )}
+  
+  <!-- Hero Content -->
+  <section class="relative z-10 px-4 sm:px-6 lg:px-8 pt-24 pb-8 md:h-auto md:min-h-screen flex flex-col justify-center md:justify-start hero-content">
+    <div class="w-full mx-auto md:flex-1 flex flex-col justify-center md:justify-center mb-6 md:mb-0">
+      <!-- Main Heading -->
+      <h1 class="font-stylebender text-8xl lg:text-9xl xl:text-[160px] leading-none mb-4 md:mb-16 hero-heading max-w-[50%] md:max-w-none">
+        <span class="block">{headingLine1}</span>
+        <span class="block">{headingLine2}</span>
+      </h1>
+    </div>
+    
+    <!-- Services Section - Bottom -->
+    {showServicesGrid && (
+      <div class="md:mt-auto mb-4 sm:mb-8 pb-[calc(env(safe-area-inset-bottom)+5rem)] md:pb-0">
+        <!-- Services Title -->
+        <h2 class="hidden md:block text-sm sm:text-base font-mono font-semibold mb-6 sm:mb-8">{servicesTitle}</h2>
+        
+        <!-- Services Grid and Description/CTA Flex Container -->
+        <div class="flex flex-col xl:flex-row xl:justify-between xl:items-end gap-6 xl:gap-8">
+          <!-- Services Grid -->
+          <div class="hidden md:grid grid-cols-1 gap-x-4 sm:gap-x-8 gap-y-4 sm:gap-y-8 max-w-4xl">
+            {services.map((service) => (
+              <a href={service.href} class="service-item hero-text block text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-light py-2 sm:py-3 border-b transition-colors duration-200">
+                {service.name}
+              </a>
+            ))}
+          </div>
+          
+          <!-- Description and CTA -->
+          <div class="xl:w-[30rem] space-y-6 xl:space-y-8 xl:shrink-0">
+            <p class="text-lg sm:text-xl lg:text-2xl xl:text-3xl hero-text font-light tracking-[-.025em]">
+              {tagline}
+            </p>
+            <a
+              href={ctaButtonLink}
+              class="inline-flex items-center px-6 sm:px-8 lg:px-10 py-4 lg:py-5 rounded-full font-medium text-base lg:text-lg tracking-wide transition-all duration-200 bg-[var(--color-foreground)] text-[var(--color-background)] hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-foreground)] group"
+            >
+              {ctaButtonText}
+              <span
+                class="ml-3 sm:ml-4 w-10 h-10 rounded-full flex items-center justify-center text-xs bg-[var(--color-background)] text-[var(--color-foreground)] transition-all duration-300 ease-in-out transform -rotate-45 group-hover:rotate-0"
+                aria-hidden="true"
+              >
+                <svg class="w-5 h-5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+    )}
+
+    <!-- Video Control Button (only show when current theme has a video) -->
+    {(isVideoLight || isVideoDark) && (
+      <button 
+        id="video-control" 
+        class="video-control" 
+        aria-label="Pause/Play background video"
+        data-has-light-video={isVideoLight ? 'true' : 'false'}
+        data-has-dark-video={isVideoDark ? 'true' : 'false'}
+      >
+        <svg id="pause-icon" viewBox="0 0 24 24">
+          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+        </svg>
+        <svg id="play-icon" viewBox="0 0 24 24" class="hidden">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </button>
+    )}
+  </section>
+</section>
+
+<style>
+  @media (max-width: 767px) {
+    .hero-wrapper {
+      position: sticky;
+      top: 0;
+      left: 0;
+      width: 100%;
+      min-height: 100dvh;
+      z-index: 0;
+    }
+    
+    .hero-content {
+      padding-bottom: 8rem;
+    }
+  }
+
+  .hero-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+  }
+
+  .service-item {
+    position: relative;
+    padding-right: 3rem;
+    transition: all 0.3s ease;
+  }
+
+  .service-item::after {
+    content: '↗';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%) rotate(0deg);
+    opacity: 0.7;
+    transition: all 0.3s ease;
+  }
+
+  .service-item:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  .video-control {
+    position: absolute;
+    bottom: 6rem;
+    right: 2rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 40;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  @media (min-width: 768px) {
+    .video-control {
+      bottom: 2rem;
+    }
+  }
+
+  .video-control:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .video-control svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: white;
+  }
+
+  .hero-video-light { display: none; }
+  .hero-video-dark { display: none; }
+
+  :global(.hydrated) .hero-video-light { display: block; }
+  :global(.hydrated) .hero-video-dark { display: none; }
+
+  :global(.hydrated.dark) .hero-video-light { display: none; }
+  :global(.hydrated.dark) .hero-video-dark { display: block; }
+
+  :global(html:not(.dark)) .service-item {
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  :global(html:not(.dark)) .service-item:hover {
+    border-color: rgba(0, 0, 0, 0.4);
+  }
+</style>
+
+<script>
+  // Video control functionality
+  function initVideoControl() {
+    const controlButton = document.getElementById('video-control');
+    const pauseIcon = document.getElementById('pause-icon');
+    const playIcon = document.getElementById('play-icon');
+
+    // Only set up controls if button exists
+    if (!controlButton) return;
+
+    const setIconState = (playing: boolean) => {
+      if (pauseIcon) pauseIcon.style.display = playing ? 'block' : 'none';
+      if (playIcon) playIcon.style.display = playing ? 'none' : 'block';
+    };
+
+    const previousHandler = (controlButton as any).__videoToggleHandler;
+    if (previousHandler) {
+      controlButton.removeEventListener('click', previousHandler);
+    }
+
+    // Initialize state
+    if (!controlButton.dataset.state) {
+      controlButton.dataset.state = 'playing';
+    }
+    setIconState(controlButton.dataset.state !== 'paused');
+
+    const handler = () => {
+      const currentState = controlButton.dataset.state;
+      const newState = currentState === 'paused' ? 'playing' : 'paused';
+      
+      controlButton.dataset.state = newState;
+      setIconState(newState === 'playing');
+      
+      // Update actual video playback
+      updateVideoPlayback();
+    };
+
+    controlButton.addEventListener('click', handler);
+    (controlButton as any).__videoToggleHandler = handler;
+  }
+
+  // Update video control button visibility based on current theme
+  function updateControlButtonVisibility() {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const controlButton = document.getElementById('video-control');
+    
+    if (!controlButton) return;
+    
+    const hasLightVideo = controlButton.getAttribute('data-has-light-video') === 'true';
+    const hasDarkVideo = controlButton.getAttribute('data-has-dark-video') === 'true';
+    
+    // Show button only if current theme has a video
+    if ((isDarkMode && hasDarkVideo) || (!isDarkMode && hasLightVideo)) {
+      controlButton.style.display = 'flex';
+    } else {
+      controlButton.style.display = 'none';
+    }
+  }
+
+  // Robust video playback helper
+  async function playVideo(video: HTMLVideoElement) {
+    if (!video) return;
+    
+    try {
+      video.muted = true;
+      video.playsInline = true;
+      
+      if (video.readyState === 0) {
+        video.load();
+      }
+
+      await video.play();
+    } catch (err) {
+      console.warn('Autoplay failed, retrying:', err);
+      // Progressive retry
+      const retryDelays = [100, 300, 500];
+      
+      const attemptRetry = (index: number) => {
+        if (index >= retryDelays.length) return;
+        
+        setTimeout(async () => {
+          try {
+             if (video.readyState === 0) video.load();
+             await video.play();
+          } catch (e) {
+            console.error(`Retry ${index + 1} failed:`, e);
+            attemptRetry(index + 1);
+          }
+        }, retryDelays[index]);
+      };
+      
+      attemptRetry(0);
+    }
+  }
+
+  function pauseVideo(video: HTMLVideoElement) {
+    if (video && !video.paused) {
+      video.pause();
+    }
+  }
+
+  // Central function to manage video states based on theme and user preference
+  function updateVideoPlayback() {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const mediaLight = document.getElementById('hero-media-light');
+    const mediaDark = document.getElementById('hero-media-dark');
+    const controlButton = document.getElementById('video-control');
+    
+    const isVideoLight = mediaLight?.getAttribute('data-is-video') === 'true';
+    const isVideoDark = mediaDark?.getAttribute('data-is-video') === 'true';
+    
+    // Check user preference (default to playing)
+    const userPaused = controlButton?.dataset.state === 'paused';
+
+    if (userPaused) {
+      if (mediaLight instanceof HTMLVideoElement) pauseVideo(mediaLight);
+      if (mediaDark instanceof HTMLVideoElement) pauseVideo(mediaDark);
+      return;
+    }
+
+    // Play correct video based on theme
+    if (isDarkMode) {
+      if (isVideoDark && mediaDark instanceof HTMLVideoElement) {
+        playVideo(mediaDark);
+      }
+      if (isVideoLight && mediaLight instanceof HTMLVideoElement) {
+        pauseVideo(mediaLight);
+      }
+    } else {
+      if (isVideoLight && mediaLight instanceof HTMLVideoElement) {
+        playVideo(mediaLight);
+      }
+      if (isVideoDark && mediaDark instanceof HTMLVideoElement) {
+        pauseVideo(mediaDark);
+      }
+    }
+  }
+
+  function initializeHeroMedia() {
+    // Ensure hydrated class is present for visibility logic
+    if (!document.documentElement.classList.contains('hydrated')) {
+        document.documentElement.classList.add('hydrated');
+    }
+
+    initVideoControl();
+    updateControlButtonVisibility();
+    updateVideoPlayback();
+  }
+
+  // Use astro:page-load for View Transitions compatibility
+  document.addEventListener('astro:page-load', initializeHeroMedia);
+
+  // Also listen for theme changes to switch videos
+  // Remove existing listener if present to avoid duplicates
+  const themeChangeHandler = () => {
+    updateControlButtonVisibility();
+    updateVideoPlayback();
+  };
+
+  // We use a unique property on the document to track the handler
+  if ((document as any).__heroThemeHandler) {
+    document.removeEventListener('theme-changed', (document as any).__heroThemeHandler);
+  }
+  
+  document.addEventListener('theme-changed', themeChangeHandler);
+  (document as any).__heroThemeHandler = themeChangeHandler;
+</script>
