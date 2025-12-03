@@ -13,7 +13,7 @@ services:
 
       # URLs
       - DIRECTUS_URL=http://directus:8055 # Internal
-      - PUBLIC_DIRECTUS_URL=https://api.${DOMAIN_NAME:-ura.design} # Public
+      - PUBLIC_DIRECTUS_URL=https://cms.${DOMAIN_NAME:-ura.design} # Public
       - SITE_URL=https://${DOMAIN_NAME:-ura.design}
 
       # Weather API
@@ -62,7 +62,7 @@ services:
       REDIS: ${REDIS_URL:-redis://redis:6379}
 
       # IMPORTANT: Public URL must match the domain configured in Nginx
-      PUBLIC_URL: https://api.${DOMAIN_NAME:-ura.design}
+      PUBLIC_URL: https://cms.${DOMAIN_NAME:-ura.design}
       WEBSOCKETS_ENABLED: "true"
 
       # File Upload Settings

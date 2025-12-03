@@ -214,74 +214,76 @@ const worksLink = `/${lang}/works`;
 
   {/* Dynamic Sections */}
   {
-    study.sections && study.sections.length > 0 ? (
-      study.sections.map((section: any) => (
-        <section class="py-8 lg:py-20 px-6 sm:px-8 lg:px-12 xl:px-24 w-full mx-auto">
-          <div class="flex flex-col lg:flex-row gap-6 lg:gap-24">
-            {/* Left: Section Title */}
-            <div class="lg:w-1/6 lg:sticky lg:top-32 h-fit">
-              <h2 class="text-sm font-mono opacity-70">{section.title}</h2>
+    study.sections && study.sections.length > 0
+      ? study.sections.map((section: any) => (
+          <section class="py-8 lg:py-20 px-6 sm:px-8 lg:px-12 xl:px-24 w-full mx-auto">
+            <div class="flex flex-col lg:flex-row gap-6 lg:gap-24">
+              {/* Left: Section Title */}
+              <div class="lg:w-1/6 lg:sticky lg:top-32 h-fit">
+                <h2 class="text-lg font-mono opacity-80 font-medium">
+                  {section.title}
+                </h2>
+              </div>
+
+              {/* Right: Content Grid */}
+              <div
+                class={`lg:w-5/6 grid sm:gap-32 gap-4 ${
+                  section.layout === "3-cols"
+                    ? "lg:grid-cols-3"
+                    : section.layout === "2-cols"
+                      ? "lg:grid-cols-2"
+                      : "grid-cols-1"
+                }`}
+              >
+                {/* Column 1 */}
+                {(section.content_1 || section.custom_code_1) && (
+                  <div class="flex flex-col gap-8">
+                    {section.content_1 && (
+                      <div
+                        class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display w-full"
+                        set:html={section.content_1}
+                      />
+                    )}
+                    {section.custom_code_1 && (
+                      <div class="w-full" set:html={section.custom_code_1} />
+                    )}
+                  </div>
+                )}
+
+                {/* Column 2 */}
+                {(section.content_2 || section.custom_code_2) && (
+                  <div class="flex flex-col gap-8">
+                    {section.content_2 && (
+                      <div
+                        class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display w-full"
+                        set:html={section.content_2}
+                      />
+                    )}
+                    {section.custom_code_2 && (
+                      <div class="w-full" set:html={section.custom_code_2} />
+                    )}
+                  </div>
+                )}
+
+                {/* Column 3 */}
+                {(section.content_3 || section.custom_code_3) && (
+                  <div class="flex flex-col gap-8">
+                    {section.content_3 && (
+                      <div
+                        class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display w-full"
+                        set:html={section.content_3}
+                      />
+                    )}
+                    {section.custom_code_3 && (
+                      <div class="w-full" set:html={section.custom_code_3} />
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-
-            {/* Right: Content Grid */}
-            <div
-              class={`lg:w-5/6 grid sm:gap-32 gap-4 ${
-                section.layout === "3-cols"
-                  ? "lg:grid-cols-3"
-                  : section.layout === "2-cols"
-                    ? "lg:grid-cols-2"
-                    : "grid-cols-1"
-              }`}
-            >
-              {/* Column 1 */}
-              {(section.content_1 || section.custom_code_1) && (
-                <div class="flex flex-col gap-8">
-                  {section.content_1 && (
-                    <div
-                      class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display w-full"
-                      set:html={section.content_1}
-                    />
-                  )}
-                  {section.custom_code_1 && (
-                    <div class="w-full" set:html={section.custom_code_1} />
-                  )}
-                </div>
-              )}
-
-              {/* Column 2 */}
-              {(section.content_2 || section.custom_code_2) && (
-                <div class="flex flex-col gap-8">
-                  {section.content_2 && (
-                    <div
-                      class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display w-full"
-                      set:html={section.content_2}
-                    />
-                  )}
-                  {section.custom_code_2 && (
-                    <div class="w-full" set:html={section.custom_code_2} />
-                  )}
-                </div>
-              )}
-
-              {/* Column 3 */}
-              {(section.content_3 || section.custom_code_3) && (
-                <div class="flex flex-col gap-8">
-                  {section.content_3 && (
-                    <div
-                      class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display w-full"
-                      set:html={section.content_3}
-                    />
-                  )}
-                  {section.custom_code_3 && (
-                    <div class="w-full" set:html={section.custom_code_3} />
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-      ))
-    ) : null
+          </section>
+        ))
+      : null
   }
 
   <!-- Inject the custom element script for Before/After toggle -->

@@ -311,14 +311,13 @@ if (showWeather && weatherLocation) {
   </div>
 </header>
 
-<!-- Mobile Navigation Bar (Starts at bottom of hero, moves up) -->
+<!-- Mobile Navigation Bar -->
 <nav 
   id="mobile-nav" 
-  class="mobile-nav md:hidden absolute w-full z-[100] transition-all duration-300 pointer-events-none"
+  class="mobile-nav md:hidden fixed left-0 right-0 bottom-0 z-[100]"
   aria-label={mobileNavLabel}
-  style="top: 100dvh; transform: translateY(-100%);"
 >
-  <div class="mobile-nav-bar relative flex items-center justify-between h-16 pointer-events-auto px-4 isolate">
+  <div class="mobile-nav-bar relative flex items-center justify-between h-16 px-4 isolate">
     
     <!-- Background -->
     <div class="mobile-nav-bg absolute inset-0 w-full h-full -z-10 transition-colors duration-300"></div>
@@ -583,25 +582,19 @@ if (showWeather && weatherLocation) {
     
     if (!toggle || !overlay || !mobileNav) return;
 
-    // Move mobile nav to body to avoid fixed header context
-    if (mobileNav.parentElement !== document.body) {
-      document.body.appendChild(mobileNav);
-      document.body.appendChild(overlay); // Overlay needs to be outside too
-    }
+    // Store references after null check for TypeScript
+    const menuToggle = toggle;
+    const menuOverlay = overlay;
+    const nav = mobileNav;
 
-    // Initial positioning logic for "stacking paper" effect
-    // Mobile Nav sits at bottom of the fixed hero, which is 100dvh tall.
-    const heroHeight = window.innerHeight;
-    mobileNav.style.position = 'absolute';
-    // Position at the bottom of the viewport initially
-    mobileNav.style.top = `${heroHeight}px`;
-    mobileNav.style.transform = 'translateY(-100%)';
-    mobileNav.style.width = '100%';
+    // Move overlay to body to avoid stacking context issues
+    if (menuOverlay.parentElement !== document.body) {
+      document.body.appendChild(menuOverlay);
+    }
     
-    const hamburgerIcon = toggle.querySelector('.hamburger-icon');
-    const closeIcon = toggle.querySelector('.close-icon');
-    const menuToggle = toggle; // non-null reference
-    const menuOverlay = overlay; // non-null reference
+    const hamburgerIcon = menuToggle.querySelector('.hamburger-icon');
+    const closeIcon = menuToggle.querySelector('.close-icon');
+    const navHeight = 64; // 4rem = 64px
 
     let isMenuOpen = false;
 
@@ -616,14 +609,10 @@ if (showWeather && weatherLocation) {
         closeIcon?.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
         
-        // Force strip to top when menu is open
-        mobileNav!.classList.add('is-sticky');
-        mobileNav!.style.position = 'fixed';
-        mobileNav!.style.top = '0';
-        mobileNav!.style.bottom = 'auto';
-        mobileNav!.style.transform = 'none';
+        // Force nav to top when menu is open
+        nav.classList.add('is-sticky');
         
-        // Ensure CTA/Weather visibility matches "sticky" state (CTA visible)
+        // Show CTA, Hide Weather when menu open
         if (weatherEl) weatherEl.style.opacity = '0';
         if (ctaEl) {
            ctaEl.style.opacity = '1';
@@ -638,10 +627,8 @@ if (showWeather && weatherLocation) {
         closeIcon?.classList.add('hidden');
         document.body.style.overflow = '';
         
-        // Restore strip position based on scroll
-        requestAnimationFrame(() => {
-           updateNavState();
-        });
+        // Restore nav position based on scroll
+        requestAnimationFrame(updateNavState);
       }
     }
 
@@ -658,21 +645,18 @@ if (showWeather && weatherLocation) {
       if (e.key === 'Escape' && isMenuOpen) toggleMenu();
     };
 
-    // Scroll Logic for Sticky Behavior & Weather/CTA Toggle
+    // Scroll Logic: Switch from bottom to top when hero is scrolled past
     let ticking = false;
     function updateNavState() {
       if (isMenuOpen) return;
 
       const scrollY = window.scrollY;
-      const navHeight = mobileNav!.offsetHeight;
-      const triggerPoint = window.innerHeight - navHeight;
+      // Switch to top when user has scrolled past the hero section (approximately 1 viewport height)
+      const stickyThreshold = window.innerHeight - navHeight;
       
-      if (scrollY >= triggerPoint) {
-        mobileNav!.classList.add('is-sticky');
-        // When sticky, we fix it to top
-        mobileNav!.style.position = 'fixed';
-        mobileNav!.style.top = '0';
-        mobileNav!.style.transform = 'none';
+      if (scrollY >= stickyThreshold) {
+        // Sticky to top
+        nav.classList.add('is-sticky');
         
         // Show CTA, Hide Weather
         if (weatherEl) weatherEl.style.opacity = '0';
@@ -681,11 +665,8 @@ if (showWeather && weatherLocation) {
            ctaEl.style.pointerEvents = 'auto';
         }
       } else {
-        mobileNav!.classList.remove('is-sticky');
-        // Reset to initial absolute position
-        mobileNav!.style.position = 'absolute';
-        mobileNav!.style.top = `${window.innerHeight}px`;
-        mobileNav!.style.transform = 'translateY(-100%)';
+        // Fixed at bottom
+        nav.classList.remove('is-sticky');
         
         // Show Weather, Hide CTA
         if (weatherEl) weatherEl.style.opacity = '1';
@@ -708,15 +689,6 @@ if (showWeather && weatherLocation) {
     
     // Initial check
     updateNavState();
-    
-    // Handle Resize
-    window.addEventListener('resize', () => {
-       if (!mobileNav!.classList.contains('is-sticky') && !isMenuOpen) {
-         const h = window.innerHeight;
-         mobileNav!.style.top = `${h}px`;
-       }
-       updateNavState();
-    });
   }
 
   // Initialize on load
@@ -874,11 +846,17 @@ if (showWeather && weatherLocation) {
     width: 28px;
   }
 
-  .mobile-nav.is-sticky {
+  /* Mobile nav: fixed at bottom initially */
+  .mobile-nav {
     position: fixed;
+    bottom: 0;
+    top: auto;
+  }
+
+  /* When sticky: fixed at top of viewport */
+  .mobile-nav.is-sticky {
     top: 0;
     bottom: auto;
-    transform: none !important;
   }
   
   .mobile-nav .mobile-nav-bg {
@@ -890,13 +868,13 @@ if (showWeather && weatherLocation) {
   }
 
   .mobile-nav.is-sticky .mobile-nav-bg {
-    background-color: rgba(255, 255, 255, 0.2) !important;
+    background-color: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
   
   :global(.dark) .mobile-nav.is-sticky .mobile-nav-bg {
-    background-color: rgba(0, 0, 0, 0.2) !important;
+    background-color: rgba(17, 24, 39, 0.85);
   }
   
   .mobile-logo-link {

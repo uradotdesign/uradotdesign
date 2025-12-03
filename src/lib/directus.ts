@@ -525,7 +525,7 @@ export interface Approach {
   description_en?: string;
   description_de?: string;
   border_animation?: "friction" | "teamwork" | "strength";
-  sort_order?: number;
+  sort?: number;
   status?: "draft" | "published" | "archived";
 }
 
@@ -603,12 +603,18 @@ interface Schema {
 }
 
 // Get Directus URL from environment
-// Use internal URL if running on server (SSR), otherwise use public URL
+// Use internal URL for API calls during SSR (container-to-container)
 const directusUrl = import.meta.env.SSR
   ? import.meta.env.DIRECTUS_URL ||
     process.env.DIRECTUS_URL ||
     "http://localhost:8055" // Default to localhost for bare metal
   : import.meta.env.PUBLIC_DIRECTUS_URL || "http://localhost:8055"; // Browser Public
+
+// Public URL for assets (must be accessible from browser)
+const publicDirectusUrl =
+  process.env.PUBLIC_DIRECTUS_URL ||
+  import.meta.env.PUBLIC_DIRECTUS_URL ||
+  "http://localhost:8055";
 
 const CONFIG_CACHE_ENABLED = import.meta.env.DIRECTUS_CONFIG_CACHE !== "false";
 const CONFIG_CACHE_TTL = parseInt(
@@ -702,13 +708,15 @@ function coerceBoolean(value: unknown): boolean {
   return false;
 }
 
-// Create Directus client with REST API (no authentication for public access)
+// Create Directus client with REST API (public access)
+// Permissions are configured in Directus Admin → Settings → Access Control → Public
 export const directus = createDirectus<Schema>(directusUrl).with(rest());
 
 // Helper function to get asset URL
+// Always use public URL for assets since they're loaded by the browser
 export function getAssetUrl(fileId: string | undefined): string | null {
   if (!fileId) return null;
-  return `${directusUrl}/assets/${fileId}`;
+  return `${publicDirectusUrl}/assets/${fileId}`;
 }
 
 type CollectionFetchOptions = {
@@ -1462,7 +1470,7 @@ export async function getAboutPage(): Promise<AboutPage | null> {
 export async function getApproaches() {
   return cacheConfig("approaches", () =>
     fetchCollection<Approach>("approaches", {
-      sort: ["sort_order"],
+      sort: ["sort"],
     })
   );
 }

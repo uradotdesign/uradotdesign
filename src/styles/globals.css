@@ -311,11 +311,6 @@ body {
 .logo-text {
   transform-origin: left center;
   transform: translateX(0);
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.logo-container:hover .logo-text {
-  transform: translateX(-100px);
 }
 
 .logo-icon {

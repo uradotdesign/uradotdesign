@@ -16,22 +16,24 @@ const teamMembers = await getContactTeamMembers({
   fields: ["id", "full_name", "role_en", "role_de", "photo", "email"],
 });
 
-// Get localized content (no hardcoded fallbacks)
-const label = contactData
-  ? getLocalizedField(contactData, "label", currentLang)
-  : null;
+// Get localized content with fallbacks for production
+const label =
+  getLocalizedField(contactData, "label", currentLang) ||
+  (currentLang === "de" ? "Kontakt" : "Got a project in mind?");
 
-const heading = contactData
-  ? getLocalizedField(contactData, "heading", currentLang)
-  : null;
+const heading =
+  getLocalizedField(contactData, "heading", currentLang) ||
+  (currentLang === "de"
+    ? "Lassen Sie uns zusammen etwas Großartiges erschaffen."
+    : "Let’s bring clarity to your project, together");
 
-const responseTime = contactData
-  ? getLocalizedField(contactData, "response_time", currentLang)
-  : null;
+const responseTime =
+  getLocalizedField(contactData, "response_time", currentLang) ||
+  (currentLang === "de" ? "72 Stunden" : "72 hours");
 
-const buttonText = contactData
-  ? getLocalizedField(contactData, "button_text", currentLang)
-  : null;
+const buttonText =
+  getLocalizedField(contactData, "button_text", currentLang) ||
+  (currentLang === "de" ? "Nachricht senden" : "Send request");
 
 // Form labels (localized)
 const labels = {
@@ -150,21 +152,25 @@ const clientMessages = {
           {heading}
         </h2>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-6">
           {
             teamMembers.length > 0 && (
-              <div class="flex items-center -space-x-5">
+              <div class="flex items-center -space-x-4">
                 {teamMembers.map(
                   (member, index) =>
                     member.photo && (
-                      <img
-                        src={getAssetUrl(member.photo)}
-                        alt={member.full_name}
-                        class="w-14 h-14 rounded-full object-cover border-2 border-white transition-transform hover:scale-110 hover:z-10"
-                        style={`z-index: ${teamMembers.length - index}`}
-                        loading="lazy"
+                      <div
+                        class="avatar-ring-container"
+                        style={`z-index: ${teamMembers.length - index}; --ring-index: ${index}`}
                         title={member.full_name}
-                      />
+                      >
+                        <div class="avatar-ring" />
+                        <img
+                          src={getAssetUrl(member.photo)}
+                          alt={member.full_name}
+                          loading="lazy"
+                        />
+                      </div>
                     )
                 )}
               </div>
@@ -199,7 +205,7 @@ const clientMessages = {
                 name="first_name"
                 required
                 aria-required="true"
-                class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all text-base"
+                class="w-full px-5 py-4 rounded-md border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-md transition-all text-base"
                 placeholder={labels.firstName}
               />
               <p
@@ -220,7 +226,7 @@ const clientMessages = {
                 name="last_name"
                 required
                 aria-required="true"
-                class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all text-base"
+                class="w-full px-5 py-4 rounded-md border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-md transition-all text-base"
                 placeholder={labels.lastName}
               />
               <p
@@ -243,7 +249,7 @@ const clientMessages = {
               name="email"
               required
               aria-required="true"
-              class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all text-base"
+              class="w-full px-5 py-4 rounded-md border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-md transition-all text-base"
               placeholder="you@company.com"
             />
             <p
@@ -273,7 +279,7 @@ const clientMessages = {
               type="tel"
               id="phone"
               name="phone"
-              class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all text-base"
+              class="w-full px-5 py-4 rounded-md border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-md transition-all text-base"
               placeholder="+49 123 456789"
             />
           </div>
@@ -326,7 +332,7 @@ const clientMessages = {
               required
               aria-required="true"
               rows="5"
-              class="w-full px-5 py-4 rounded-2xl border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-2xl transition-all resize-y text-base"
+              class="w-full px-5 py-4 rounded-md border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-md transition-all resize-y text-base"
               placeholder={labels.messagePlaceholder}></textarea>
             <p
               class="error-message hidden text-xs text-red-500 mt-1"
@@ -338,36 +344,19 @@ const clientMessages = {
           <!-- Submit Button -->
           <button
             type="submit"
-            class="group w-full inline-flex items-center justify-between px-8 py-5 rounded-lg uppercase transition-all focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-900 dark:bg-[radial-gradient(76.48%_303.08%_at_11.02%_16.43%,#55F9D6_0%,#98FFFC_52.4%,#42D6FF_100%)]"
+            class="submit-button w-full px-8 py-5 rounded-lg text-lg font-medium text-white transition-all focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-cyan-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={buttonText ||
               (currentLang === "de" ? "Senden" : "Send")}
           >
-            <span class="text-lg font-medium" id="button-text"
+            <span id="button-text"
               >{buttonText || (currentLang === "de" ? "Senden" : "Send")}</span
             >
-            <span
-              class="flex items-center justify-center w-12 h-12 rounded-2xl transition-colors bg-[linear-gradient(144.49deg,#70FFAC_5.79%,#45C0FF_108.23%)] dark:bg-none dark:bg-transparent"
-            >
-              <svg
-                class="w-6 h-6 transform -rotate-45 group-hover:rotate-0 transition-transform duration-300 ease-in-out text-gray-900 transform-gpu origin-center"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                stroke-width="2.5"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M5 12h14M12 5l7 7-7 7"></path>
-              </svg>
-            </span>
           </button>
 
           <!-- Status Messages -->
           <div
             id="form-status"
-            class="hidden p-4 rounded-lg"
+            class="hidden p-4 rounded-md"
             role="status"
             aria-live="polite"
           >
@@ -550,7 +539,7 @@ const clientMessages = {
           // Show success message
           statusDiv.textContent = msg.success;
           statusDiv.className =
-            "block p-4 rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200";
+            "block p-4 rounded-md bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200";
           statusDiv.classList.remove("hidden");
 
           // Reset form
@@ -567,7 +556,7 @@ const clientMessages = {
         // Show error message
         statusDiv.textContent = msg.error;
         statusDiv.className =
-          "block p-4 rounded-lg bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
+          "block p-4 rounded-md bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
         statusDiv.classList.remove("hidden");
       } finally {
         // Restore button
@@ -579,6 +568,126 @@ const clientMessages = {
 </script>
 
 <style>
+  /* Submit button gradient */
+  .submit-button {
+    cursor: pointer;
+    background: linear-gradient(
+      89.07deg,
+      #8ad4a9 -9.97%,
+      #084d70 2.23%,
+      #061c26 24.58%
+    );
+  }
+
+  :global(.dark) .submit-button {
+    background: linear-gradient(
+      89.07deg,
+      #a6fffa -3.33%,
+      #51d1e9 2.02%,
+      #05a8ff 34.54%
+    );
+    color: #000;
+  }
+
+  /* Animated gradient rings for avatars */
+  .avatar-ring-container {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+  }
+
+  .avatar-ring-container:hover {
+    transform: scale(1.15);
+    z-index: 20 !important;
+  }
+
+  .avatar-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+      from calc(var(--ring-index, 0) * 60deg),
+      var(--ring-color-1),
+      var(--ring-color-2),
+      var(--ring-color-3, var(--ring-color-1)),
+      var(--ring-color-1)
+    );
+    animation: ring-spin 2.5s linear infinite;
+    animation-delay: calc(var(--ring-index, 0) * -0.6s);
+  }
+
+  .avatar-ring::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border-radius: 50%;
+    background: #f9fafb;
+  }
+
+  :global(.dark) .avatar-ring::before {
+    background: #111827;
+  }
+
+  .avatar-ring-container img {
+    position: relative;
+    z-index: 1;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  /* Vibrant gradient colors for each avatar */
+  .avatar-ring-container:nth-child(1) {
+    --ring-color-1: #22c55e;
+    --ring-color-2: #86efac;
+    --ring-color-3: #15803d;
+  }
+
+  .avatar-ring-container:nth-child(2) {
+    --ring-color-1: #ec4899;
+    --ring-color-2: #f9a8d4;
+    --ring-color-3: #be185d;
+  }
+
+  .avatar-ring-container:nth-child(3) {
+    --ring-color-1: #eab308;
+    --ring-color-2: #fde047;
+    --ring-color-3: #ca8a04;
+  }
+
+  .avatar-ring-container:nth-child(4) {
+    --ring-color-1: #8b5cf6;
+    --ring-color-2: #c4b5fd;
+    --ring-color-3: #6d28d9;
+  }
+
+  .avatar-ring-container:nth-child(5) {
+    --ring-color-1: #0ea5e9;
+    --ring-color-2: #7dd3fc;
+    --ring-color-3: #0369a1;
+  }
+
+  .avatar-ring-container:nth-child(6) {
+    --ring-color-1: #f97316;
+    --ring-color-2: #fdba74;
+    --ring-color-3: #c2410c;
+  }
+
+  @keyframes ring-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   /* Custom border and background color for inputs that works with dark mode */
   /* Using specificity instead of !important where possible */
   :global(#contact-form) input[type="text"],

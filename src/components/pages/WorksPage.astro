@@ -207,10 +207,8 @@ while (featuredCards.length < 3 && fallbackPool.length) {
   featuredCards.push(fallbackPool.shift()!);
 }
 
-const featuredIds = new Set(featuredCards.map((item) => item.id));
-const remainingCaseStudies = normalizedCaseStudies.filter(
-  (item) => !featuredIds.has(item.id)
-);
+// All case studies should appear in the catalog (including featured ones)
+const allCaseStudies = normalizedCaseStudies;
 
 const filters: NormalizedCategory[] = [
   { id: -1, slug: "all", label: translations.allFilter },
@@ -354,7 +352,7 @@ const filters: NormalizedCategory[] = [
           </div>
 
           <div class="case-list border border-[var(--color-border)] rounded-[32px] overflow-hidden">
-            {remainingCaseStudies.map((study) => (
+            {allCaseStudies.map((study) => (
               <article
                 class="group border-b last:border-b-0 border-[var(--color-border)] py-12 px-6 sm:px-10 transition-colors duration-300"
                 data-case-item

@@ -13,7 +13,9 @@ interface WeatherData {
 }
 
 async function fetchWeather(location: string): Promise<WeatherData> {
-  const apiKey = import.meta.env.OPENWEATHER_API_KEY;
+  // Use process.env for SSR runtime (import.meta.env doesn't work for non-PUBLIC_ vars in production)
+  const apiKey =
+    process.env.OPENWEATHER_API_KEY || import.meta.env.OPENWEATHER_API_KEY;
 
   // Development fallback data
   if (!apiKey || apiKey === "get_your_key_at_openweathermap.org") {

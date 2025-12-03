@@ -127,9 +127,7 @@ const valuesImageDark = valuesImageDarkId
                 <>
                   {part}
                   {i < arr.length - 1 && (
-                    <span class="italic text-transparent bg-clip-text bg-gradient-to-r from-[#82FFB6] to-[#129EE6]">
-                      clarity
-                    </span>
+                    <span class="clarity-gradient italic">clarity</span>
                   )}
                 </>
               ))
@@ -226,6 +224,18 @@ const valuesImageDark = valuesImageDarkId
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Clarity gradient - darker on light theme for better contrast */
+  .clarity-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-image: linear-gradient(to right, #0d9b4e, #0b7ab8);
+  }
+
+  :global(html.dark) .clarity-gradient {
+    background-image: linear-gradient(to right, #82ffb6, #129ee6);
   }
 
   .hero-bg {

@@ -1,13 +1,273 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getBlogPosts, getAssetUrl } from "../../lib/directus";
 
-const currentLang = 'de';
+export const prerender = false;
+
+const currentLang = "de";
+
+const articles = await getBlogPosts({
+  filter: { status: { _eq: "published" } },
+  sort: ["-published_date"],
+  fields: ["*", "author.*"],
+});
+
+function calculateReadingTime(text: string): number {
+  if (!text) return 0;
+  const wordsPerMinute = 200;
+  const words = text.trim().split(/\s+/).length;
+  return Math.ceil(words / wordsPerMinute);
+}
+
+// Get featured article (first one)
+const featuredArticle = articles[0];
+const remainingArticles = articles.slice(1);
 ---
 
-<BaseLayout title="Blog">
-  <div class="container mx-auto px-4 py-16">
-    <h1 class="text-4xl font-bold mb-8">Blog</h1>
-    <p>German blog page - Content coming soon</p>
-  </div>
+<BaseLayout
+  title="Blog | Ura Design"
+  description="Einblicke, Tutorials und Updates vom Ura Design Team"
+>
+  {/* Hero Section */}
+  <section
+    class="relative flex items-end bg-[var(--color-background)] text-[var(--color-foreground)]"
+  >
+    <div
+      class="w-full max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-24 lg:py-32"
+    >
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-end">
+        {/* Left: Title */}
+        <div>
+          <span
+            class="block text-xs uppercase font-mono font-medium tracking-wider opacity-60 mb-6"
+          >
+            Journal
+          </span>
+          <h1
+            class="font-display text-6xl sm:text-7xl lg:text-8xl xl:text-9xl leading-[0.9]"
+          >
+            Blog
+          </h1>
+        </div>
+
+        {/* Right: Description */}
+        <div class="lg:pb-4">
+          <p class="text-xl lg:text-2xl opacity-80 max-w-lg">
+            Einblicke, Tutorials und Updates von unserem Team zu Design, Open
+            Source und besseren digitalen Erlebnissen.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* Featured Article */}
+  {
+    featuredArticle && (
+      <section class="bg-[var(--color-background)] text-[var(--color-foreground)] border-t border-[var(--color-border)]">
+        <div class="max-w-[1440px] mx-auto">
+          <a
+            href={`/${currentLang}/blog/${featuredArticle.slug}`}
+            class="group grid grid-cols-1 lg:grid-cols-2 min-h-[60vh]"
+          >
+            {/* Image */}
+            <div class="relative aspect-[4/3] lg:aspect-auto overflow-hidden bg-gray-100 dark:bg-gray-900">
+              {featuredArticle.cover_image ? (
+                <img
+                  src={getAssetUrl(featuredArticle.cover_image) || ""}
+                  alt=""
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="eager"
+                />
+              ) : (
+                <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900" />
+              )}
+            </div>
+
+            {/* Content */}
+            <div class="flex flex-col justify-between p-8 lg:p-12 xl:p-16">
+              <div>
+                <div class="flex items-center gap-4 mb-8">
+                  {featuredArticle.badge && (
+                    <span class="bg-[var(--color-foreground)] text-[var(--color-background)] px-3 py-1 text-xs font-medium uppercase tracking-wider">
+                      {featuredArticle.badge}
+                    </span>
+                  )}
+                  <span class="text-sm font-mono opacity-60">
+                    {calculateReadingTime(featuredArticle.content || "")} Min.
+                    Lesezeit
+                  </span>
+                </div>
+
+                <h2 class="font-display text-4xl sm:text-5xl lg:text-6xl mb-6 leading-tight">
+                  {featuredArticle.title}
+                </h2>
+
+                {featuredArticle.excerpt && (
+                  <p class="text-lg opacity-80 max-w-xl font-serif leading-relaxed">
+                    {featuredArticle.excerpt}
+                  </p>
+                )}
+              </div>
+
+              <div class="flex items-center justify-between pt-8 mt-8 border-t border-[var(--color-border)]">
+                <div class="flex items-center gap-4">
+                  {featuredArticle.author &&
+                    typeof featuredArticle.author === "object" && (
+                      <>
+                        {featuredArticle.author.photo && (
+                          <img
+                            src={
+                              getAssetUrl(featuredArticle.author.photo) || ""
+                            }
+                            alt={featuredArticle.author.full_name}
+                            class="w-10 h-10 rounded-full object-cover grayscale"
+                          />
+                        )}
+                        <span class="text-sm font-medium">
+                          {featuredArticle.author.full_name}
+                        </span>
+                      </>
+                    )}
+                </div>
+
+                <div class="flex items-center gap-2 text-sm font-medium">
+                  <span>Artikel lesen</span>
+                  <svg
+                    class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </section>
+    )
+  }
+
+  {/* Articles Grid */}
+  <section
+    class="py-16 lg:py-24 bg-[var(--color-background)] text-[var(--color-foreground)]"
+  >
+    <div class="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
+      {/* Section Header */}
+      <div class="flex items-center gap-6 mb-12">
+        <h2 class="uppercase text-xs font-semibold tracking-wider">
+          Alle Artikel
+        </h2>
+        <div class="flex-1 h-px bg-[var(--color-border)]" aria-hidden="true">
+        </div>
+        <span class="text-xs font-mono opacity-60"
+          >{articles.length} Beiträge</span
+        >
+      </div>
+
+      {
+        articles.length === 0 ? (
+          <div class="text-center py-24 border border-[var(--color-border)] rounded-2xl">
+            <h3 class="font-display text-3xl mb-4">Noch keine Beiträge</h3>
+            <p class="opacity-60 max-w-md mx-auto">
+              Schau bald wieder vorbei. Wir arbeiten an tollen Artikeln.
+            </p>
+          </div>
+        ) : (
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+            {remainingArticles.map((article) => (
+              <article class="group flex flex-col">
+                {/* Image */}
+                <a
+                  href={`/${currentLang}/blog/${article.slug}`}
+                  class="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-900 mb-6"
+                >
+                  {article.cover_image ? (
+                    <img
+                      src={getAssetUrl(article.cover_image) || ""}
+                      alt=""
+                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900" />
+                  )}
+                </a>
+
+                {/* Content */}
+                <div class="flex flex-col flex-1">
+                  <div class="flex items-center gap-3 mb-4">
+                    {article.badge && (
+                      <span class="text-xs font-mono uppercase tracking-wider opacity-60">
+                        {article.badge}
+                      </span>
+                    )}
+                    {article.badge && article.published_date && (
+                      <span class="w-1 h-1 rounded-full bg-current opacity-30" />
+                    )}
+                    {article.published_date && (
+                      <time class="text-xs font-mono opacity-60">
+                        {new Date(article.published_date).toLocaleDateString(
+                          "de-DE",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          }
+                        )}
+                      </time>
+                    )}
+                  </div>
+
+                  <h3 class="font-display text-2xl lg:text-3xl mb-3 leading-tight">
+                    <a
+                      href={`/${currentLang}/blog/${article.slug}`}
+                      class="hover:underline decoration-1 underline-offset-4"
+                    >
+                      {article.title}
+                    </a>
+                  </h3>
+
+                  {article.excerpt && (
+                    <p class="text-sm opacity-70 line-clamp-2 mb-4 flex-1">
+                      {article.excerpt}
+                    </p>
+                  )}
+
+                  <div class="flex items-center justify-between pt-4 mt-auto border-t border-[var(--color-border)]/40">
+                    {article.author && typeof article.author === "object" ? (
+                      <span class="text-xs font-medium opacity-70">
+                        {article.author.full_name}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    <span class="text-xs font-mono opacity-60">
+                      {calculateReadingTime(article.content || "")} Min.
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </section>
 </BaseLayout>
 
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

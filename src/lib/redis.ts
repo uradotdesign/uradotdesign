@@ -2,11 +2,15 @@ import Redis from "ioredis";
 
 let redis: Redis | null = null;
 
+// Use process.env for server-side environment variables in SSR
+const REDIS_HOST = process.env.REDIS_HOST || "localhost";
+const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379");
+
 export function getRedisClient(): Redis {
   if (!redis) {
     redis = new Redis({
-      host: import.meta.env.REDIS_HOST || "localhost",
-      port: parseInt(import.meta.env.REDIS_PORT || "6379"),
+      host: REDIS_HOST,
+      port: REDIS_PORT,
       retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
         return delay;
@@ -19,7 +23,9 @@ export function getRedisClient(): Redis {
     });
 
     redis.on("connect", () => {
-      console.log("✅ Redis connected successfully");
+      console.log(
+        `✅ Redis connected successfully to ${REDIS_HOST}:${REDIS_PORT}`
+      );
     });
   }
 
