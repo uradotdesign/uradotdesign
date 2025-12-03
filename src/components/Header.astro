@@ -287,6 +287,13 @@ if (showWeather && weatherLocation) {
             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
           </svg>
         )}
+        {weather.icon === 'cloud-sun' && (
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="10" r="3" stroke-width="2"/>
+            <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        )}
         {weather.icon === 'cloud' && (
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -298,7 +305,7 @@ if (showWeather && weatherLocation) {
           </svg>
         )}
         {/* Fallback for other icons */}
-        {['sun', 'cloud', 'cloud-rain'].indexOf(weather.icon) === -1 && (
+        {['sun', 'cloud-sun', 'cloud', 'cloud-rain'].indexOf(weather.icon) === -1 && (
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
              <circle cx="12" cy="12" r="4" stroke-width="2"/>
              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
@@ -372,6 +379,13 @@ if (showWeather && weatherLocation) {
                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
                  </svg>
                )}
+               {weather.icon === 'cloud-sun' && (
+                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                   <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2" stroke-width="2" stroke-linecap="round"/>
+                   <circle cx="12" cy="10" r="3" stroke-width="2"/>
+                   <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                 </svg>
+               )}
                {weather.icon === 'cloud' && (
                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                    <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -383,7 +397,7 @@ if (showWeather && weatherLocation) {
                  </svg>
                )}
                {/* Fallback for other icons to avoid blank if mapped but not specific handled */}
-               {['sun', 'cloud', 'cloud-rain'].indexOf(weather.icon) === -1 && (
+               {['sun', 'cloud-sun', 'cloud', 'cloud-rain'].indexOf(weather.icon) === -1 && (
                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                    <circle cx="12" cy="12" r="4" stroke-width="2"/>
                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>

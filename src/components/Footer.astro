@@ -283,25 +283,36 @@ const showTemperature = footerSettings?.show_temperature ?? true;
               {newsletterSubtitle && (
                 <p class="text-sm opacity-80 max-w-sm">{newsletterSubtitle}</p>
               )}
-              <form class="newsletter-form space-y-8">
-                <div class="grid grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    name="first_name"
-                    placeholder={
-                      currentLang === "de" ? "Vorname" : "First name"
-                    }
-                    class="newsletter-input w-full px-0 py-2 bg-transparent border-b border-current/30 text-sm placeholder-current/50 focus:outline-none focus:border-emerald-400 transition-colors"
-                    required
-                  />
+              <form 
+                class="newsletter-form space-y-6"
+                method="POST"
+                action="https://eab0068f.sibforms.com/serve/MUIFABAJjLy8Pzg7D4CiU0PfcyRmtex9-NyTuMMarHq9C_byw9Z2NEPHF7nR-jkL-hr5NgVIEa_HG_CsstcAbSEt1der_Gfw91_SCXA1swRSOX003ZMflxoOg1VXjBE68T5sxT314TtVfMOzTkIMk5Ar7NkKxwa6fAUEvwe2TFPXKmzkR3-ifnznlYJzI3GE4IjabeazQDFwGUQiPw=="
+                data-type="subscription"
+              >
+                <div class="space-y-4">
                   <input
                     type="email"
-                    name="email"
-                    placeholder="Email"
+                    name="EMAIL"
+                    id="EMAIL-desktop"
+                    placeholder={currentLang === "de" ? "E-Mail-Adresse" : "Email address"}
+                    autocomplete="off"
                     class="newsletter-input w-full px-0 py-2 bg-transparent border-b border-current/30 text-sm placeholder-current/50 focus:outline-none focus:border-emerald-400 transition-colors"
                     required
                   />
+                  <label class="flex items-start gap-2 text-xs opacity-70 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="OPT_IN"
+                      value="1"
+                      required
+                      class="mt-0.5 accent-emerald-400"
+                    />
+                    <span>{currentLang === "de" ? "Ich stimme zu, den Newsletter zu erhalten und akzeptiere die Datenschutzerklärung." : "I agree to receive the newsletter and accept the privacy policy."}</span>
+                  </label>
                 </div>
+                <!-- Honeypot field for spam protection -->
+                <input type="text" name="email_address_check" value="" class="hidden" tabindex="-1" autocomplete="off" />
+                <input type="hidden" name="locale" value={currentLang} />
                 <button
                   type="submit"
                   class="group inline-flex items-center gap-2 pl-6 pr-2 py-2 bg-white text-gray-900 uppercase rounded-full text-sm font-medium hover:bg-gray-100 transition-all"
@@ -504,23 +515,36 @@ const showTemperature = footerSettings?.show_temperature ?? true;
           {newsletterSubtitle && (
             <p class="text-sm opacity-80 mb-6">{newsletterSubtitle}</p>
           )}
-          <form class="newsletter-form space-y-8">
-            <div class="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="first_name"
-                placeholder={currentLang === "de" ? "Vorname" : "First name"}
-                class="newsletter-input w-full px-0 py-2 bg-transparent border-b border-current/30 text-sm placeholder-current/50 focus:outline-none focus:border-emerald-400 transition-colors"
-                required
-              />
+          <form 
+            class="newsletter-form space-y-6"
+            method="POST"
+            action="https://eab0068f.sibforms.com/serve/MUIFABAJjLy8Pzg7D4CiU0PfcyRmtex9-NyTuMMarHq9C_byw9Z2NEPHF7nR-jkL-hr5NgVIEa_HG_CsstcAbSEt1der_Gfw91_SCXA1swRSOX003ZMflxoOg1VXjBE68T5sxT314TtVfMOzTkIMk5Ar7NkKxwa6fAUEvwe2TFPXKmzkR3-ifnznlYJzI3GE4IjabeazQDFwGUQiPw=="
+            data-type="subscription"
+          >
+            <div class="space-y-4">
               <input
                 type="email"
-                name="email"
-                placeholder="Email"
+                name="EMAIL"
+                id="EMAIL-mobile"
+                placeholder={currentLang === "de" ? "E-Mail-Adresse" : "Email address"}
+                autocomplete="off"
                 class="newsletter-input w-full px-0 py-2 bg-transparent border-b border-current/30 text-sm placeholder-current/50 focus:outline-none focus:border-emerald-400 transition-colors"
                 required
               />
+              <label class="flex items-start gap-2 text-xs opacity-70 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="OPT_IN"
+                  value="1"
+                  required
+                  class="mt-0.5 accent-emerald-400"
+                />
+                <span>{currentLang === "de" ? "Ich stimme zu, den Newsletter zu erhalten und akzeptiere die Datenschutzerklärung." : "I agree to receive the newsletter and accept the privacy policy."}</span>
+              </label>
             </div>
+            <!-- Honeypot field for spam protection -->
+            <input type="text" name="email_address_check" value="" class="hidden" tabindex="-1" autocomplete="off" />
+            <input type="hidden" name="locale" value={currentLang} />
             <button
               type="submit"
               class="group inline-flex items-center gap-2 pl-6 pr-2 py-2 bg-white text-gray-900 uppercase rounded-full text-sm font-medium hover:bg-gray-100 transition-all"
@@ -773,50 +797,19 @@ const showTemperature = footerSettings?.show_temperature ?? true;
   // Optionally update every 15 minutes
   setInterval(updateTemperature, 900000);
 
-  // Newsletter form handling
+  // Newsletter form handling (Brevo integration)
+  // Note: Brevo doesn't support CORS, so we submit directly and let Brevo handle the redirect
   document.querySelectorAll(".newsletter-form").forEach((form) => {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form as HTMLFormElement);
-      const firstName = formData.get("first_name") as string;
-      const email = formData.get("email") as string;
-
+    form.addEventListener("submit", (e) => {
       const button = form.querySelector("button[type='submit']");
-      const originalContent = button?.innerHTML;
-
+      
       if (button) {
-        button.innerHTML = `<span class="animate-pulse">Subscribing...</span>`;
+        button.innerHTML = `<span class="animate-pulse">${document.documentElement.lang === 'de' ? 'Anmelden...' : 'Subscribing...'}</span>`;
         (button as HTMLButtonElement).disabled = true;
       }
-
-      try {
-        // TODO: Implement actual newsletter subscription API
-        console.log("Newsletter signup:", { firstName, email });
-
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        if (button) {
-          button.innerHTML = `<span class="text-emerald-600">✓ Subscribed!</span>`;
-        }
-
-        // Reset form
-        (form as HTMLFormElement).reset();
-
-        // Restore button after 3 seconds
-        setTimeout(() => {
-          if (button && originalContent) {
-            button.innerHTML = originalContent;
-            (button as HTMLButtonElement).disabled = false;
-          }
-        }, 3000);
-      } catch (error) {
-        console.error("Newsletter signup error:", error);
-        if (button && originalContent) {
-          button.innerHTML = originalContent;
-          (button as HTMLButtonElement).disabled = false;
-        }
-      }
+      
+      // Form submits normally to Brevo, which handles the redirect
+      // Configure redirect URL in Brevo dashboard
     });
   });
 </script>

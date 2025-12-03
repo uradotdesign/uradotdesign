@@ -1,0 +1,178 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Confirm Your Subscription">
+  <section
+    class="relative min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-24"
+  >
+    <!-- Animated background gradient -->
+    <div
+      class="absolute inset-0 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
+      <div class="confirmation-gradient absolute inset-0 opacity-30"></div>
+    </div>
+
+    <div class="relative z-10 max-w-2xl mx-auto text-center">
+      <!-- Animated checkmark icon -->
+      <div
+        class="confirmation-icon mx-auto mb-8 w-24 h-24 rounded-full flex items-center justify-center"
+      >
+        <svg
+          class="w-12 h-12 text-emerald-500 dark:text-emerald-400 checkmark-animate"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+        >
+          <path
+            class="checkmark-path"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+
+      <!-- Label -->
+      <span
+        class="inline-block text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4 font-medium"
+      >
+        Newsletter
+      </span>
+
+      <!-- Heading -->
+      <h1
+        class="text-4xl sm:text-5xl lg:text-6xl font-serif font-normal mb-6 text-gray-900 dark:text-white leading-tight"
+      >
+        <span class="block">Check Your</span>
+        <span class="confirmation-gradient-text">Inbox</span>
+      </h1>
+
+      <!-- Description -->
+      <p
+        class="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-lg mx-auto leading-relaxed"
+      >
+        We've sent you a confirmation email. Please click the link in the email
+        to complete your subscription.
+      </p>
+
+      <!-- Info box -->
+      <div
+        class="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 mb-10 max-w-md mx-auto"
+      >
+        <div class="flex items-start gap-4 text-left">
+          <div
+            class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-amber-600 dark:text-amber-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              ></path>
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              <strong class="text-gray-900 dark:text-white">Important:</strong> You
+              won't be subscribed until you click the confirmation link in the email.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Back to home button -->
+      <a
+        href="/en/"
+        class="group inline-flex items-center gap-3 px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-all"
+      >
+        <svg
+          class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        <span>Back to Home</span>
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .confirmation-gradient {
+    background: conic-gradient(
+      from 180deg at 50% 50%,
+      rgba(52, 211, 153, 0.3) 0deg,
+      rgba(56, 189, 248, 0.3) 120deg,
+      rgba(168, 85, 247, 0.2) 240deg,
+      rgba(52, 211, 153, 0.3) 360deg
+    );
+    animation: gradient-rotate 20s linear infinite;
+    filter: blur(100px);
+  }
+
+  @keyframes gradient-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .confirmation-icon {
+    background: linear-gradient(
+      135deg,
+      rgba(52, 211, 153, 0.1) 0%,
+      rgba(56, 189, 248, 0.1) 100%
+    );
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    animation: icon-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes icon-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 20px rgba(52, 211, 153, 0);
+    }
+  }
+
+  .checkmark-path {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: checkmark-draw 1s ease forwards 0.3s;
+  }
+
+  @keyframes checkmark-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .confirmation-gradient-text {
+    background: linear-gradient(135deg, #34d399 0%, #38bdf8 50%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  :global(html.dark) .confirmation-gradient {
+    opacity: 0.2;
+  }
+</style>
