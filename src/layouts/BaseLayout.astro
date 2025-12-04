@@ -10,6 +10,7 @@ import { t } from "../lib/translations";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import SkipLinks from "../components/SkipLinks.astro";
+import ContactModal from "../components/ContactModal.astro";
 import "../styles/globals.css";
 
 export interface Props {
@@ -203,6 +204,7 @@ const screenReaderAnnouncements =
             <slot />
           </main>
           <Footer transition:persist="footer" />
+          <ContactModal />
         </>
       ) : (
         <>
@@ -216,6 +218,7 @@ const screenReaderAnnouncements =
             <slot />
           </div>
           <Footer transition:persist="footer" />
+          <ContactModal />
         </>
       )
     }

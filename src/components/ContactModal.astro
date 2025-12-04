@@ -1,0 +1,820 @@
+---
+import {
+  getContactSection,
+  getContactTeamMembers,
+  getAssetUrl,
+} from "../lib/directus";
+import { t } from "../lib/translations";
+import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
+
+// Get current language
+const currentLang = getCurrentLanguage(Astro.url);
+
+// Fetch contact section data
+const contactData = await getContactSection();
+const teamMembers = await getContactTeamMembers({
+  fields: ["id", "full_name", "role_en", "role_de", "photo", "email"],
+});
+
+// Get localized content with fallbacks
+const label =
+  getLocalizedField(contactData, "label", currentLang) ||
+  (currentLang === "de" ? "Kontakt" : "Got a project in mind?");
+
+const heading =
+  getLocalizedField(contactData, "heading", currentLang) ||
+  (currentLang === "de"
+    ? "Lassen Sie uns zusammen etwas Großartiges erschaffen."
+    : "Let's bring clarity to your project, together");
+
+const responseTime =
+  getLocalizedField(contactData, "response_time", currentLang) ||
+  (currentLang === "de" ? "72 Stunden" : "72 hours");
+
+const buttonText =
+  getLocalizedField(contactData, "button_text", currentLang) ||
+  (currentLang === "de" ? "Nachricht senden" : "Send request");
+
+// Form labels (localized)
+const labels = {
+  firstName: await t(
+    "contact.first_name",
+    currentLang,
+    currentLang === "de" ? "Vorname" : "First name"
+  ),
+  lastName: await t(
+    "contact.last_name",
+    currentLang,
+    currentLang === "de" ? "Nachname" : "Last name"
+  ),
+  email: await t(
+    "contact.email",
+    currentLang,
+    currentLang === "de" ? "E-Mail" : "Email"
+  ),
+  phone: await t(
+    "contact.phone",
+    currentLang,
+    currentLang === "de" ? "Telefonnummer" : "Phone number"
+  ),
+  contactPreference: await t(
+    "contact.contact_preference",
+    currentLang,
+    currentLang === "de"
+      ? "Wie können wir Sie kontaktieren?"
+      : "How can we contact you?"
+  ),
+  message: await t(
+    "contact.message",
+    currentLang,
+    currentLang === "de" ? "Wie können wir helfen?" : "How can we help?"
+  ),
+  phoneOption: await t(
+    "contact.phone_option",
+    currentLang,
+    currentLang === "de" ? "Telefon" : "Phone"
+  ),
+  emailOption: await t("contact.email_option", currentLang, "E-Mail"),
+  signalOption: await t("contact.signal_option", currentLang, "Signal"),
+  messagePlaceholder: await t(
+    "contact.message_placeholder",
+    currentLang,
+    currentLang === "de"
+      ? "Hinterlassen Sie uns eine Nachricht..."
+      : "Leave us a message..."
+  ),
+  successMessage: await t(
+    "contact.success_message",
+    currentLang,
+    currentLang === "de"
+      ? "Vielen Dank! Wir melden uns bald bei Ihnen."
+      : "Thank you! We'll get back to you soon."
+  ),
+  errorMessage: await t(
+    "contact.error_message",
+    currentLang,
+    currentLang === "de"
+      ? "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut."
+      : "Something went wrong. Please try again."
+  ),
+  responseTimePrefix: await t(
+    "contact.response_time_prefix",
+    currentLang,
+    currentLang === "de"
+      ? "Wir melden uns innerhalb von"
+      : "Our team will get back to you within"
+  ),
+  closeModal: currentLang === "de" ? "Schließen" : "Close",
+};
+
+const clientMessages = {
+  sending: await t(
+    "contact.sending",
+    currentLang,
+    currentLang === "de" ? "Wird gesendet..." : "Sending..."
+  ),
+  success: labels.successMessage,
+  error: labels.errorMessage,
+  requiredField: await t(
+    "contact.required_field",
+    currentLang,
+    currentLang === "de"
+      ? "Dieses Feld ist erforderlich"
+      : "This field is required"
+  ),
+  invalidEmail: await t(
+    "contact.invalid_email",
+    currentLang,
+    currentLang === "de"
+      ? "Bitte geben Sie eine gültige E-Mail-Adresse ein"
+      : "Please enter a valid email address"
+  ),
+};
+---
+
+<!-- Contact Modal -->
+<div
+  id="contact-modal"
+  class="contact-modal fixed inset-0 z-[200] opacity-0 invisible pointer-events-none transition-all duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="contact-modal-title"
+  aria-hidden="true"
+>
+  <!-- Backdrop -->
+  <div
+    class="contact-modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm"
+    aria-hidden="true"
+  >
+  </div>
+
+  <!-- Modal Content -->
+  <div
+    class="contact-modal-container relative z-10 h-full overflow-y-auto py-8 px-4 flex items-start md:items-center justify-center"
+  >
+    <div
+      class="contact-modal-content relative w-full max-w-3xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl transform scale-95 opacity-0 transition-all duration-300"
+    >
+      <!-- Close Button -->
+      <button
+        type="button"
+        class="contact-modal-close absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        aria-label={labels.closeModal}
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+
+      <div class="p-6 md:p-10">
+        <!-- Header -->
+        <div class="mb-8 space-y-4">
+          {
+            label && (
+              <p class="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+            )
+          }
+
+          <h2
+            id="contact-modal-title"
+            class="text-2xl md:text-3xl lg:text-4xl font-display text-gray-900 dark:text-white"
+          >
+            {heading}
+          </h2>
+
+          <div class="flex items-center gap-4">
+            {
+              teamMembers.length > 0 && (
+                <div class="flex items-center -space-x-3">
+                  {teamMembers.slice(0, 3).map(
+                    (member, index) =>
+                      member.photo && (
+                        <div
+                          class="modal-avatar-ring-container"
+                          style={`z-index: ${teamMembers.length - index}; --ring-index: ${index}`}
+                          title={member.full_name}
+                        >
+                          <div class="modal-avatar-ring" />
+                          <img
+                            src={getAssetUrl(member.photo)}
+                            alt={member.full_name}
+                            loading="lazy"
+                          />
+                        </div>
+                      )
+                  )}
+                </div>
+              )
+            }
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              {labels.responseTimePrefix}
+              <strong class="text-gray-900 dark:text-white"
+                >{responseTime}</strong
+              >
+            </p>
+          </div>
+        </div>
+
+        <!-- Form -->
+        <form
+          id="contact-modal-form"
+          class="space-y-5"
+          data-language={currentLang}
+          data-messages={JSON.stringify(clientMessages)}
+          novalidate
+        >
+          <!-- Name Fields -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                for="modal-first-name"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
+                {labels.firstName}
+                <span class="text-blue-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="modal-first-name"
+                name="first_name"
+                required
+                aria-required="true"
+                class="modal-input w-full px-4 py-3 rounded-lg border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder={labels.firstName}
+              />
+              <p
+                class="error-message hidden text-xs text-red-500 mt-1"
+                role="alert"
+              >
+              </p>
+            </div>
+
+            <div>
+              <label
+                for="modal-last-name"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
+                {labels.lastName}
+                <span class="text-blue-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="modal-last-name"
+                name="last_name"
+                required
+                aria-required="true"
+                class="modal-input w-full px-4 py-3 rounded-lg border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder={labels.lastName}
+              />
+              <p
+                class="error-message hidden text-xs text-red-500 mt-1"
+                role="alert"
+              >
+              </p>
+            </div>
+          </div>
+
+          <!-- Email & Phone -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                for="modal-email"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
+                {labels.email}
+                <span class="text-blue-500">*</span>
+              </label>
+              <input
+                type="email"
+                id="modal-email"
+                name="email"
+                required
+                aria-required="true"
+                class="modal-input w-full px-4 py-3 rounded-lg border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="you@company.com"
+              />
+              <p
+                class="error-message hidden text-xs text-red-500 mt-1"
+                role="alert"
+              >
+              </p>
+            </div>
+
+            <div>
+              <label
+                for="modal-phone"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
+                {labels.phone}
+              </label>
+              <input
+                type="tel"
+                id="modal-phone"
+                name="phone"
+                class="modal-input w-full px-4 py-3 rounded-lg border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="+49 123 456789"
+              />
+            </div>
+          </div>
+
+          <!-- Honeypot field -->
+          <input
+            type="text"
+            id="modal-website"
+            name="website"
+            tabindex="-1"
+            autocomplete="off"
+            class="sr-only"
+            aria-hidden="true"
+          />
+
+          <!-- Contact Preference -->
+          <fieldset>
+            <legend
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              {labels.contactPreference}
+            </legend>
+            <div class="flex flex-wrap gap-4 md:gap-6">
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="contact_preference"
+                  value="phone"
+                  class="w-4 h-4 rounded border text-emerald-500 focus:ring-0 focus:ring-offset-0"
+                />
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                  >{labels.phoneOption}</span
+                >
+              </label>
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="contact_preference"
+                  value="email"
+                  class="w-4 h-4 rounded border text-emerald-500 focus:ring-0 focus:ring-offset-0"
+                />
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                  >{labels.emailOption}</span
+                >
+              </label>
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="contact_preference"
+                  value="signal"
+                  class="w-4 h-4 rounded border text-emerald-500 focus:ring-0 focus:ring-offset-0"
+                />
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                  >{labels.signalOption}</span
+                >
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Message -->
+          <div>
+            <label
+              for="modal-message"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >
+              {labels.message}
+              <span class="text-blue-500">*</span>
+            </label>
+            <textarea
+              id="modal-message"
+              name="message"
+              required
+              aria-required="true"
+              rows="4"
+              class="modal-input w-full px-4 py-3 rounded-lg border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-y"
+              placeholder={labels.messagePlaceholder}></textarea>
+            <p
+              class="error-message hidden text-xs text-red-500 mt-1"
+              role="alert"
+            >
+            </p>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            class="modal-submit-button w-full px-6 py-4 rounded-lg text-base font-medium text-white transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={buttonText ||
+              (currentLang === "de" ? "Senden" : "Send")}
+          >
+            <span id="modal-button-text"
+              >{buttonText || (currentLang === "de" ? "Senden" : "Send")}</span
+            >
+          </button>
+
+          <!-- Status Messages -->
+          <div
+            id="modal-form-status"
+            class="hidden p-4 rounded-lg"
+            role="status"
+            aria-live="polite"
+          >
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function initContactModal() {
+    const modal = document.getElementById("contact-modal");
+    const modalContent = modal?.querySelector(".contact-modal-content");
+    const closeButton = modal?.querySelector(".contact-modal-close");
+    const backdrop = modal?.querySelector(".contact-modal-backdrop");
+
+    if (!modal || !modalContent) return;
+
+    // Track modal state
+    let isOpen = false;
+
+    // Open modal
+    function openModal() {
+      if (isOpen) return;
+      isOpen = true;
+
+      modal.classList.remove("opacity-0", "invisible", "pointer-events-none");
+      modal.classList.add("opacity-100", "visible", "pointer-events-auto");
+      modal.setAttribute("aria-hidden", "false");
+
+      modalContent.classList.remove("scale-95", "opacity-0");
+      modalContent.classList.add("scale-100", "opacity-100");
+
+      // Prevent body scroll
+      document.body.style.overflow = "hidden";
+
+      // Focus first input
+      setTimeout(() => {
+        const firstInput = modal.querySelector(
+          "input:not([type='hidden'])"
+        ) as HTMLInputElement;
+        firstInput?.focus();
+      }, 100);
+    }
+
+    // Close modal
+    function closeModal() {
+      if (!isOpen) return;
+      isOpen = false;
+
+      modalContent.classList.remove("scale-100", "opacity-100");
+      modalContent.classList.add("scale-95", "opacity-0");
+
+      setTimeout(() => {
+        modal.classList.remove("opacity-100", "visible", "pointer-events-auto");
+        modal.classList.add("opacity-0", "invisible", "pointer-events-none");
+        modal.setAttribute("aria-hidden", "true");
+
+        // Restore body scroll
+        document.body.style.overflow = "";
+      }, 200);
+    }
+
+    // Event listeners
+    closeButton?.addEventListener("click", closeModal);
+    backdrop?.addEventListener("click", closeModal);
+
+    // Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && isOpen) {
+        closeModal();
+      }
+    });
+
+    // Open modal triggers
+    document
+      .querySelectorAll('[data-contact-modal="true"]')
+      .forEach((trigger) => {
+        trigger.addEventListener("click", (e) => {
+          e.preventDefault();
+          openModal();
+        });
+      });
+
+    // Handle hash-based opening
+    if (window.location.hash === "#contact-modal") {
+      openModal();
+    }
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", () => {
+      if (window.location.hash === "#contact-modal") {
+        openModal();
+      }
+    });
+
+    // Form handling
+    const form = modal.querySelector("#contact-modal-form") as HTMLFormElement;
+    const statusDiv = modal.querySelector("#modal-form-status");
+    const submitButton = form?.querySelector(
+      'button[type="submit"]'
+    ) as HTMLButtonElement;
+    const buttonText = submitButton?.querySelector("#modal-button-text");
+
+    if (form && statusDiv && submitButton && buttonText) {
+      const language = form.getAttribute("data-language") || "en";
+
+      let msg = {
+        sending: "Sending...",
+        success: "Thank you! We'll get back to you soon.",
+        error: "Something went wrong. Please try again.",
+        requiredField: "This field is required",
+        invalidEmail: "Please enter a valid email address",
+      };
+
+      try {
+        const messagesAttr = form.getAttribute("data-messages");
+        if (messagesAttr) {
+          msg = JSON.parse(messagesAttr);
+        }
+      } catch (e) {
+        console.warn("Could not parse form messages", e);
+      }
+
+      let formInteractionStart: number | null = null;
+
+      const trackFirstInteraction = () => {
+        if (!formInteractionStart) {
+          formInteractionStart = Date.now();
+        }
+      };
+
+      form.querySelectorAll("input, textarea").forEach((input) => {
+        input.addEventListener("focus", trackFirstInteraction, { once: true });
+        input.addEventListener("input", trackFirstInteraction, { once: true });
+      });
+
+      function clearError(input: HTMLInputElement | HTMLTextAreaElement) {
+        const errorMsg = input.parentElement?.querySelector(
+          ".error-message"
+        ) as HTMLElement;
+        if (errorMsg) {
+          errorMsg.textContent = "";
+          errorMsg.classList.add("hidden");
+        }
+        input.setAttribute("aria-invalid", "false");
+        input.classList.remove("border-red-500");
+      }
+
+      function showError(
+        input: HTMLInputElement | HTMLTextAreaElement,
+        message: string
+      ) {
+        const errorMsg = input.parentElement?.querySelector(
+          ".error-message"
+        ) as HTMLElement;
+        if (errorMsg) {
+          errorMsg.textContent = message;
+          errorMsg.classList.remove("hidden");
+        }
+        input.setAttribute("aria-invalid", "true");
+        input.classList.add("border-red-500");
+      }
+
+      function validateField(
+        input: HTMLInputElement | HTMLTextAreaElement
+      ): boolean {
+        clearError(input);
+
+        if (input.hasAttribute("required") && !input.value.trim()) {
+          showError(input, msg.requiredField);
+          return false;
+        }
+
+        if (input.type === "email" && input.value.trim()) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(input.value)) {
+            showError(input, msg.invalidEmail);
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      const inputs = form.querySelectorAll(
+        "input[required], textarea[required]"
+      );
+      inputs.forEach((input) => {
+        input.addEventListener("blur", () => {
+          validateField(input as HTMLInputElement | HTMLTextAreaElement);
+        });
+        input.addEventListener("input", () => {
+          if (input.classList.contains("border-red-500")) {
+            validateField(input as HTMLInputElement | HTMLTextAreaElement);
+          }
+        });
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        let isValid = true;
+        inputs.forEach((input) => {
+          if (!validateField(input as HTMLInputElement | HTMLTextAreaElement)) {
+            isValid = false;
+          }
+        });
+
+        if (!isValid) {
+          const firstInvalid = form.querySelector(
+            '[aria-invalid="true"]'
+          ) as HTMLElement;
+          firstInvalid?.focus();
+          return;
+        }
+
+        submitButton.disabled = true;
+        const originalText = buttonText.textContent;
+        buttonText.textContent = msg.sending;
+        statusDiv.classList.add("hidden");
+
+        const formData = new FormData(form);
+        const contactPreferences = Array.from(
+          form.querySelectorAll('input[name="contact_preference"]:checked')
+        ).map((cb) => (cb as HTMLInputElement).value);
+
+        const data = {
+          first_name: formData.get("first_name") as string,
+          last_name: formData.get("last_name") as string,
+          email: formData.get("email") as string,
+          phone: (formData.get("phone") as string) || undefined,
+          contact_preference: contactPreferences[0] || "email",
+          message: formData.get("message") as string,
+          website: formData.get("website") as string,
+          language,
+          user_agent: navigator.userAgent,
+          timestamp: formInteractionStart,
+        };
+
+        try {
+          const response = await fetch("/api/contact", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+
+          if (response.ok && result.success) {
+            statusDiv.textContent = msg.success;
+            statusDiv.className =
+              "block p-4 rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200";
+            statusDiv.classList.remove("hidden");
+
+            form.reset();
+
+            // Close modal after success (with delay)
+            setTimeout(() => {
+              closeModal();
+              // Reset status after modal closes
+              setTimeout(() => {
+                statusDiv.classList.add("hidden");
+              }, 500);
+            }, 2000);
+          } else {
+            throw new Error(result.error || "Submission failed");
+          }
+        } catch (error) {
+          console.error("Contact form error:", error);
+          statusDiv.textContent = msg.error;
+          statusDiv.className =
+            "block p-4 rounded-lg bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
+          statusDiv.classList.remove("hidden");
+        } finally {
+          submitButton.disabled = false;
+          buttonText.textContent = originalText;
+        }
+      });
+    }
+  }
+
+  // Initialize on page load and after View Transitions
+  document.addEventListener("astro:page-load", initContactModal);
+</script>
+
+<style>
+  /* Modal input styling */
+  .modal-input {
+    background-color: #f9fafb;
+    border-color: #e5e7eb;
+  }
+
+  :global(.dark) .modal-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: #374151;
+  }
+
+  /* Submit button gradient */
+  .modal-submit-button {
+    cursor: pointer;
+    background: linear-gradient(
+      89.07deg,
+      #8ad4a9 -9.97%,
+      #084d70 2.23%,
+      #061c26 24.58%
+    );
+  }
+
+  :global(.dark) .modal-submit-button {
+    background: linear-gradient(
+      89.07deg,
+      #a6fffa -3.33%,
+      #51d1e9 2.02%,
+      #05a8ff 34.54%
+    );
+    color: #000;
+  }
+
+  /* Avatar rings (smaller version for modal) */
+  .modal-avatar-ring-container {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-avatar-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+      from calc(var(--ring-index, 0) * 60deg),
+      var(--ring-color-1),
+      var(--ring-color-2),
+      var(--ring-color-3, var(--ring-color-1)),
+      var(--ring-color-1)
+    );
+    animation: modal-ring-spin 2.5s linear infinite;
+    animation-delay: calc(var(--ring-index, 0) * -0.6s);
+  }
+
+  .modal-avatar-ring::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: #ffffff;
+  }
+
+  :global(.dark) .modal-avatar-ring::before {
+    background: #111827;
+  }
+
+  .modal-avatar-ring-container img {
+    position: relative;
+    z-index: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  /* Avatar colors */
+  .modal-avatar-ring-container:nth-child(1) {
+    --ring-color-1: #22c55e;
+    --ring-color-2: #86efac;
+    --ring-color-3: #15803d;
+  }
+
+  .modal-avatar-ring-container:nth-child(2) {
+    --ring-color-1: #ec4899;
+    --ring-color-2: #f9a8d4;
+    --ring-color-3: #be185d;
+  }
+
+  .modal-avatar-ring-container:nth-child(3) {
+    --ring-color-1: #eab308;
+    --ring-color-2: #fde047;
+    --ring-color-3: #ca8a04;
+  }
+
+  @keyframes modal-ring-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
