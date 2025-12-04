@@ -1,12 +1,18 @@
 import type { APIRoute } from "astro";
 import { getRedisClient } from "../../lib/redis";
 
+// Use process.env for runtime values in SSR
 const DIRECTUS_URL =
+  process.env.DIRECTUS_URL ||
   import.meta.env.DIRECTUS_URL ||
   import.meta.env.PUBLIC_DIRECTUS_URL ||
   "http://localhost:8055";
 const DIRECTUS_TOKEN =
-  import.meta.env.DIRECTUS_TOKEN || import.meta.env.DIRECTUS_API_TOKEN || "";
+  process.env.DIRECTUS_TOKEN ||
+  process.env.DIRECTUS_API_TOKEN ||
+  import.meta.env.DIRECTUS_TOKEN ||
+  import.meta.env.DIRECTUS_API_TOKEN ||
+  "";
 
 // Fallback in-memory rate limiting (per IP)
 const submissionTimestamps = new Map<string, number[]>();
@@ -102,42 +108,45 @@ export const POST: APIRoute = async ({ request }) => {
 
     // SPAM PROTECTION 3: Rate limiting
     let rateLimited = false;
-    
+
     try {
       // Try Redis first
       const redis = getRedisClient();
       const key = `rate_limit:contact:${clientIP}`;
-      
+
       // Increment count
       const currentCount = await redis.incr(key);
-      
+
       // Set expiry on first request
       if (currentCount === 1) {
         await redis.expire(key, RATE_LIMIT_WINDOW_SECONDS);
       }
-      
+
       if (currentCount > MAX_SUBMISSIONS_PER_WINDOW) {
         rateLimited = true;
       }
     } catch (redisError) {
       // Fallback to in-memory if Redis fails
-      console.warn("Redis rate limit check failed, falling back to memory:", redisError);
-      
-    const now = Date.now();
-    const ipSubmissions = submissionTimestamps.get(clientIP) || [];
+      console.warn(
+        "Redis rate limit check failed, falling back to memory:",
+        redisError
+      );
 
-    // Remove old submissions outside the window
-    const recentSubmissions = ipSubmissions.filter(
-      (timestamp) => now - timestamp < RATE_LIMIT_WINDOW
-    );
+      const now = Date.now();
+      const ipSubmissions = submissionTimestamps.get(clientIP) || [];
 
-    if (recentSubmissions.length >= MAX_SUBMISSIONS_PER_WINDOW) {
+      // Remove old submissions outside the window
+      const recentSubmissions = ipSubmissions.filter(
+        (timestamp) => now - timestamp < RATE_LIMIT_WINDOW
+      );
+
+      if (recentSubmissions.length >= MAX_SUBMISSIONS_PER_WINDOW) {
         rateLimited = true;
       } else {
         // Add current submission timestamp
         recentSubmissions.push(now);
         submissionTimestamps.set(clientIP, recentSubmissions);
-        
+
         // Clean up old entries periodically
         if (submissionTimestamps.size > 100) {
           for (const [ip, timestamps] of submissionTimestamps.entries()) {
