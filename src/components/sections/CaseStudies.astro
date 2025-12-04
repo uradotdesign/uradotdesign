@@ -163,7 +163,7 @@ const caseStudies = caseStudiesData.length > 0
             <div class="w-full flex items-center justify-between text-sm sm:text-base font-medium text-[var(--color-foreground)] border-b border-[var(--color-foreground)]/60 pb-3 transition-all duration-300 group-hover:border-[var(--color-foreground)]">
               <span>{caseStudy.ctaText}</span>
               <svg 
-                class="w-5 h-5 opacity-70 rotate-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:rotate-45" 
+                class="case-study-arrow w-5 h-5" 
                 viewBox="0 0 24 24" 
                 fill="none" 
                 stroke="currentColor" 
@@ -231,6 +231,18 @@ const caseStudies = caseStudiesData.length > 0
   :global(.dark) {
     --card-gradient-start: #0C111D;
     --card-gradient-end: rgba(12, 17, 29, 0);
+  }
+
+  /* Case Study arrow animation */
+  .case-study-arrow {
+    opacity: 0.7;
+    transform: rotate(0deg);
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  }
+
+  .group:hover .case-study-arrow {
+    opacity: 1;
+    transform: rotate(45deg);
   }
 </style>
 

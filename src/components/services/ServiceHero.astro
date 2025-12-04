@@ -254,7 +254,7 @@ const allServices = await Promise.all(
               >{letsTalk}</span
             >
             <span
-              class="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--hero-accent)] transition-transform duration-300 ease-in-out transform -rotate-45 group-hover:rotate-0"
+              class="service-hero-arrow w-10 h-10 rounded-full flex items-center justify-center bg-[var(--hero-accent)]"
               aria-hidden="true"
             >
               <svg
@@ -365,6 +365,16 @@ const allServices = await Promise.all(
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+  }
+
+  /* Service Hero CTA arrow animation */
+  .service-hero-arrow {
+    transform: rotate(-45deg);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .group:hover .service-hero-arrow {
+    transform: rotate(0deg);
   }
 </style>
 

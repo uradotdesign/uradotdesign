@@ -47,7 +47,7 @@ const valuesImageDark = valuesImageDarkId
 <BaseLayout title="About Us">
   <!-- Hero Section -->
   <section
-    class="relative flex flex-col px-4 sm:px-6 lg:px-8 md:pt-24 pb-32 overflow-hidden md:h-auto md:min-h-screen md:pb-16"
+    class="about-hero relative flex flex-col px-4 sm:px-6 lg:px-8 pt-20 pb-16 md:pt-24 md:pb-16 overflow-hidden"
   >
     <!-- Background Media -->
     {
@@ -112,7 +112,7 @@ const valuesImageDark = valuesImageDarkId
 
     <div class="container mx-auto relative z-10">
       <!-- Hero Content -->
-      <div class="min-h-[60vh] flex items-center md:h-auto">
+      <div class="flex items-center py-8 md:min-h-[50vh] md:py-0">
         <div class="max-w-4xl">
           <p
             class="text-xs sm:text-sm font-mono uppercase mb-6 text-muted-foreground"
@@ -248,14 +248,21 @@ const valuesImageDark = valuesImageDarkId
     z-index: 0;
   }
 
-  /* Sticky mobile hero behavior */
+  /* Mobile: Shorter hero */
   @media (max-width: 767px) {
-    /* We don't use sticky on about page hero yet, but if we did: */
-    /* section { position: sticky; top: 0; height: 100dvh; } */
+    .about-hero {
+      min-height: auto;
+    }
 
-    /* Just ensure min-height is viewport */
-    section.relative.flex.flex-col {
-      min-height: 100dvh;
+    .about-hero .hero-bg {
+      height: 70%;
+    }
+  }
+
+  /* Desktop: Full height hero */
+  @media (min-width: 768px) {
+    .about-hero {
+      min-height: 100vh;
     }
   }
 

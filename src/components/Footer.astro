@@ -219,28 +219,26 @@ const showTemperature = footerSettings?.show_temperature ?? true;
 
     <!-- Mobile: CTA at the top -->
     <div class="space-y-2 mb-12 lg:hidden">
-      <p class="text-3xl sm:text-4xl font-display font-normal">
+      <p class="text-3xl sm:text-4xl font-normal">
         {ctaHeading}
       </p>
       <a
         href="#contact-modal"
         data-contact-modal="true"
-        class="group inline-flex items-center gap-3 text-3xl sm:text-4xl font-display font-normal text-emerald-400 hover:text-emerald-300 transition-colors"
+        class="group inline-flex items-center gap-3 text-3xl sm:text-4xl font-normal text-emerald-400 hover:text-emerald-300"
       >
-        <span
-          class="relative flex items-center justify-center w-10 h-10 -rotate-45 transition-transform duration-300 ease-in-out group-hover:rotate-0"
-        >
+        <span class="footer-arrow-icon flex-shrink-0">
           <svg
-            class="w-10 h-10 opacity-100 flex-shrink-0 text-emerald-400"
+            class="w-8 h-8 sm:w-10 sm:h-10"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            stroke-width="2"
+            stroke-width="2.5"
           >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
-              d="M5 12h14M12 5l7 7-7 7"></path>
+              d="M7 17L17 7M17 7H7M17 7V17"></path>
           </svg>
         </span>
         <span class="underline underline-offset-4">{ctaLinkText}</span>
@@ -259,22 +257,20 @@ const showTemperature = footerSettings?.show_temperature ?? true;
         <a
           href="#contact-modal"
           data-contact-modal="true"
-          class="group inline-flex items-center gap-3 text-4xl lg:text-5xl font-normal text-emerald-400 hover:text-emerald-300 transition-colors"
+          class="group relative inline-flex items-center text-4xl lg:text-5xl font-normal text-emerald-400 hover:text-emerald-300"
         >
-          <span
-            class="relative flex items-center justify-center w-12 h-12 -rotate-45 transition-transform duration-300 ease-in-out group-hover:rotate-0"
-          >
+          <span class="footer-arrow-icon absolute -left-14 lg:-left-16 flex-shrink-0">
             <svg
-              class="w-12 h-12 opacity-100 flex-shrink-0 text-emerald-400"
+              class="w-10 h-10 lg:w-12 lg:h-12"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              stroke-width="2"
+              stroke-width="2.5"
             >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                d="M5 12h14M12 5l7 7-7 7"></path>
+                d="M7 17L17 7M17 7H7M17 7V17"></path>
             </svg>
           </span>
           <span class="underline underline-offset-4">{ctaLinkText}</span>
@@ -320,7 +316,7 @@ const showTemperature = footerSettings?.show_temperature ?? true;
                   class="group inline-flex items-center gap-2 pl-6 pr-2 py-2 bg-white text-gray-900 uppercase rounded-full text-sm font-medium hover:bg-gray-100 transition-all"
                 >
                   <span>{newsletterButtonText}</span>
-                  <span class="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full transform group-hover:rotate-45 transition-transform">
+                  <span class="newsletter-btn-arrow flex items-center justify-center w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full">
                     <svg
                       class="w-4 h-4 text-gray-900"
                       fill="none"
@@ -552,7 +548,7 @@ const showTemperature = footerSettings?.show_temperature ?? true;
               class="group inline-flex items-center gap-2 pl-6 pr-2 py-2 bg-white text-gray-900 uppercase rounded-full text-sm font-medium hover:bg-gray-100 transition-all"
             >
               <span>{newsletterButtonText}</span>
-              <span class="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full transform group-hover:rotate-45 transition-transform">
+              <span class="newsletter-btn-arrow flex items-center justify-center w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full">
                 <svg
                   class="w-4 h-4 text-gray-900"
                   fill="none"
@@ -691,6 +687,25 @@ const showTemperature = footerSettings?.show_temperature ?? true;
   .newsletter-input::placeholder {
     color: currentColor;
     opacity: 0.5;
+  }
+
+  /* Footer CTA arrow animation */
+  .footer-arrow-icon {
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .group:hover .footer-arrow-icon {
+    transform: rotate(45deg);
+  }
+
+  /* Newsletter button arrow animation */
+  .newsletter-btn-arrow {
+    transform: rotate(0deg);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .group:hover .newsletter-btn-arrow {
+    transform: rotate(45deg);
   }
 </style>
 

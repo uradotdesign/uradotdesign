@@ -189,7 +189,7 @@ const defaultLinkText = caseStudy?.linkText || "See how it worked";
                   >
                     <span>{defaultLinkText}</span>
                     <svg
-                      class="w-5 h-5 opacity-70 rotate-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:rotate-45"
+                      class="activity-arrow w-5 h-5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -348,5 +348,17 @@ const defaultLinkText = caseStudy?.linkText || "See how it worked";
     --card-gradient-start: rgba(3, 7, 18, 0.9);
     --card-gradient-mid: rgba(3, 7, 18, 0.6);
     --card-gradient-end: rgba(3, 7, 18, 0.1);
+  }
+
+  /* Activity arrow animation */
+  .activity-arrow {
+    opacity: 0.7;
+    transform: rotate(0deg);
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  }
+
+  .group:hover .activity-arrow {
+    opacity: 1;
+    transform: rotate(45deg);
   }
 </style>

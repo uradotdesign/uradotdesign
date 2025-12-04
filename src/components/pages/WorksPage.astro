@@ -388,11 +388,11 @@ const filters: NormalizedCategory[] = [
                   <div class="lg:col-span-3 flex lg:justify-end pt-2">
                     <a
                       href={study.url}
-                      class="inline-flex items-center gap-2 font-medium text-base group-hover:opacity-70 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black/40 dark:focus-visible:ring-white/60 border-b border-[var(--color-foreground)] pb-0.5"
+                      class="view-project-link inline-flex items-center gap-2 font-medium text-base hover:opacity-70 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black/40 dark:focus-visible:ring-white/60 border-b border-[var(--color-foreground)] pb-0.5"
                     >
                       {translations.viewProject}
                       <svg
-                        class="w-4 h-4"
+                        class="view-project-arrow w-4 h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -535,5 +535,15 @@ const filters: NormalizedCategory[] = [
 
   :global(html.dark) .work-card-gradient-top-dark {
     opacity: 1;
+  }
+
+  /* View Project arrow animation */
+  .view-project-arrow {
+    transform: rotate(0deg);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .view-project-link:hover .view-project-arrow {
+    transform: rotate(45deg);
   }
 </style>

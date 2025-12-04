@@ -136,7 +136,7 @@ const url =
         >
           <span>{ctaText}</span>
           <svg
-            class="w-6 h-6 opacity-70 transform rotate-0 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:rotate-45"
+            class="relevant-case-arrow w-6 h-6"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -198,5 +198,19 @@ const url =
   :global(.dark) {
     --card-gradient-start: #0c111d;
     --card-gradient-end: rgba(12, 17, 29, 0);
+  }
+
+  /* Relevant Case Study arrow animation */
+  .relevant-case-arrow {
+    opacity: 0.7;
+    transform: rotate(0deg);
+    transition:
+      transform 0.3s ease-in-out,
+      opacity 0.3s ease-in-out;
+  }
+
+  .group:hover .relevant-case-arrow {
+    opacity: 1;
+    transform: rotate(45deg);
   }
 </style>
