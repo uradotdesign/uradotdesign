@@ -440,6 +440,10 @@ const clientMessages = {
 
     if (!modal || !modalContent) return;
 
+    // Store references after null check for TypeScript
+    const modalEl = modal;
+    const contentEl = modalContent;
+
     // Track modal state
     let isOpen = false;
 
@@ -448,19 +452,19 @@ const clientMessages = {
       if (isOpen) return;
       isOpen = true;
 
-      modal.classList.remove("opacity-0", "invisible", "pointer-events-none");
-      modal.classList.add("opacity-100", "visible", "pointer-events-auto");
-      modal.setAttribute("aria-hidden", "false");
+      modalEl.classList.remove("opacity-0", "invisible", "pointer-events-none");
+      modalEl.classList.add("opacity-100", "visible", "pointer-events-auto");
+      modalEl.setAttribute("aria-hidden", "false");
 
-      modalContent.classList.remove("scale-95", "opacity-0");
-      modalContent.classList.add("scale-100", "opacity-100");
+      contentEl.classList.remove("scale-95", "opacity-0");
+      contentEl.classList.add("scale-100", "opacity-100");
 
       // Prevent body scroll
       document.body.style.overflow = "hidden";
 
       // Focus first input
       setTimeout(() => {
-        const firstInput = modal.querySelector(
+        const firstInput = modalEl.querySelector(
           "input:not([type='hidden'])"
         ) as HTMLInputElement;
         firstInput?.focus();
@@ -472,13 +476,17 @@ const clientMessages = {
       if (!isOpen) return;
       isOpen = false;
 
-      modalContent.classList.remove("scale-100", "opacity-100");
-      modalContent.classList.add("scale-95", "opacity-0");
+      contentEl.classList.remove("scale-100", "opacity-100");
+      contentEl.classList.add("scale-95", "opacity-0");
 
       setTimeout(() => {
-        modal.classList.remove("opacity-100", "visible", "pointer-events-auto");
-        modal.classList.add("opacity-0", "invisible", "pointer-events-none");
-        modal.setAttribute("aria-hidden", "true");
+        modalEl.classList.remove(
+          "opacity-100",
+          "visible",
+          "pointer-events-auto"
+        );
+        modalEl.classList.add("opacity-0", "invisible", "pointer-events-none");
+        modalEl.setAttribute("aria-hidden", "true");
 
         // Restore body scroll
         document.body.style.overflow = "";
