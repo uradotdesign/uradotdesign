@@ -63,8 +63,8 @@ const services = servicesData.length > 0
 // Header weather/time are handled in the Header component
 ---
 
-<!-- Hero Section - Sticky on mobile so content scrolls over it -->
-<section class="hero-wrapper relative md:h-auto md:min-h-screen">
+<!-- Hero Section - Full viewport height minimum on all devices -->
+<section class="hero-wrapper relative min-h-[100dvh] md:min-h-screen">
   <!-- Hero Background - Video or Image for Light Theme -->
   {isVideoLight ? (
     <video id="hero-media-light" data-is-video="true" class="hero-video hero-video-light" autoplay muted loop playsinline aria-hidden="true" preload="auto">
@@ -84,10 +84,10 @@ const services = servicesData.length > 0
   )}
   
   <!-- Hero Content -->
-  <section class="relative z-10 px-4 sm:px-6 lg:px-8 pt-24 pb-8 md:h-auto md:min-h-screen flex flex-col justify-center md:justify-start hero-content">
-    <div class="w-full mx-auto md:flex-1 flex flex-col justify-center md:justify-center mb-6 md:mb-0">
+  <section class="hero-content relative z-10 min-h-[100dvh] md:min-h-screen px-4 sm:px-6 lg:px-8 pt-20 md:pt-24 pb-20 md:pb-8 flex flex-col justify-between">
+    <div class="flex-1 flex flex-col justify-center py-4 md:py-8">
       <!-- Main Heading -->
-      <h1 class="font-stylebender text-8xl lg:text-9xl xl:text-[160px] leading-none mb-4 md:mb-16 hero-heading max-w-[50%] md:max-w-none">
+      <h1 class="font-stylebender text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[140px] leading-[0.95] hero-heading max-w-[80%] md:max-w-none">
         <span class="block">{headingLine1}</span>
         <span class="block">{headingLine2}</span>
       </h1>
@@ -95,7 +95,7 @@ const services = servicesData.length > 0
     
     <!-- Services Section - Bottom -->
     {showServicesGrid && (
-      <div class="md:mt-auto mb-4 sm:mb-8 pb-[calc(env(safe-area-inset-bottom)+5rem)] md:pb-0">
+      <div class="hero-bottom-section mt-auto">
         <!-- Services Title -->
         <h2 class="hidden md:block text-sm sm:text-base font-mono font-semibold mb-6 sm:mb-8">{servicesTitle}</h2>
         
@@ -156,18 +156,19 @@ const services = servicesData.length > 0
 </section>
 
 <style>
+  /* Mobile: Sticky hero so content scrolls over it */
   @media (max-width: 767px) {
     .hero-wrapper {
       position: sticky;
       top: 0;
       left: 0;
       width: 100%;
-      min-height: 100dvh;
       z-index: 0;
     }
     
     .hero-content {
-      padding-bottom: 8rem;
+      /* Account for bottom nav bar (64px) + safe area */
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
     }
   }
 
