@@ -201,7 +201,10 @@ const clientMessages = {
                         <div
                           class="modal-avatar-ring-container"
                           style={`z-index: ${teamMembers.length - index}; --ring-index: ${index}`}
-                          title={member.full_name}
+                          data-modal-tooltip-target
+                          role="button"
+                          tabindex="0"
+                          aria-label={member.full_name}
                         >
                           <div class="modal-avatar-ring" />
                           <img
@@ -209,6 +212,14 @@ const clientMessages = {
                             alt={member.full_name}
                             loading="lazy"
                           />
+                          <div class="modal-avatar-tooltip">
+                            <span class="font-medium">{member.full_name}</span>
+                            {getLocalizedField(member, "role", currentLang) && (
+                              <span class="text-gray-400 dark:text-gray-500 text-xs block">
+                                {getLocalizedField(member, "role", currentLang)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )
                   )}
@@ -803,6 +814,64 @@ const clientMessages = {
   // Initialize spotlight
   initModalSpotlightButton();
   document.addEventListener("astro:page-load", initModalSpotlightButton);
+
+  // Mobile tooltip support for modal avatars
+  function initModalAvatarTooltips() {
+    const avatars = document.querySelectorAll("[data-modal-tooltip-target]");
+
+    avatars.forEach((avatar) => {
+      if ((avatar as any).__tooltipInit) return;
+      (avatar as any).__tooltipInit = true;
+
+      const el = avatar as HTMLElement;
+
+      // Touch support for mobile
+      el.addEventListener(
+        "touchstart",
+        (e) => {
+          e.preventDefault();
+
+          // Remove active class from all other tooltips
+          avatars.forEach((a) => a.classList.remove("tooltip-active"));
+
+          // Toggle this tooltip
+          el.classList.add("tooltip-active");
+
+          // Remove after delay
+          setTimeout(() => {
+            el.classList.remove("tooltip-active");
+          }, 2500);
+        },
+        { passive: false }
+      );
+
+      // Click support (for accessibility)
+      el.addEventListener("click", () => {
+        avatars.forEach((a) => a.classList.remove("tooltip-active"));
+        el.classList.add("tooltip-active");
+
+        setTimeout(() => {
+          el.classList.remove("tooltip-active");
+        }, 2500);
+      });
+
+      // Keyboard support
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          avatars.forEach((a) => a.classList.remove("tooltip-active"));
+          el.classList.add("tooltip-active");
+
+          setTimeout(() => {
+            el.classList.remove("tooltip-active");
+          }, 2500);
+        }
+      });
+    });
+  }
+
+  initModalAvatarTooltips();
+  document.addEventListener("astro:page-load", initModalAvatarTooltips);
 </script>
 
 <style>
@@ -869,6 +938,62 @@ const clientMessages = {
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    outline: none;
+  }
+
+  .modal-avatar-ring-container:hover,
+  .modal-avatar-ring-container:focus {
+    transform: scale(1.1);
+    z-index: 20 !important;
+  }
+
+  /* Modal tooltip styles */
+  .modal-avatar-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 8px 12px;
+    background: #111827;
+    color: white;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    z-index: 50;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .modal-avatar-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #111827;
+  }
+
+  :global(.dark) .modal-avatar-tooltip {
+    background: #374151;
+  }
+
+  :global(.dark) .modal-avatar-tooltip::after {
+    border-top-color: #374151;
+  }
+
+  .modal-avatar-ring-container:hover .modal-avatar-tooltip,
+  .modal-avatar-ring-container:focus .modal-avatar-tooltip,
+  .modal-avatar-ring-container.tooltip-active .modal-avatar-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
   }
 
   .modal-avatar-ring {
