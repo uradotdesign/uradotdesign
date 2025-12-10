@@ -344,11 +344,13 @@ const clientMessages = {
           <!-- Submit Button -->
           <button
             type="submit"
-            class="submit-button w-full px-8 py-5 rounded-lg text-lg font-medium text-white transition-all focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-cyan-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="submit-button relative overflow-hidden w-full px-8 py-5 rounded-lg text-lg font-medium transition-all focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-cyan-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={buttonText ||
               (currentLang === "de" ? "Senden" : "Send")}
+            data-spotlight-button
           >
-            <span id="button-text"
+            <span class="submit-button-glow"></span>
+            <span id="button-text" class="relative z-10"
               >{buttonText || (currentLang === "de" ? "Senden" : "Send")}</span
             >
           </button>
@@ -565,28 +567,75 @@ const clientMessages = {
       }
     });
   }
+
+  // Spotlight effect for submit button
+  function initSpotlightButton() {
+    const buttons = document.querySelectorAll("[data-spotlight-button]");
+
+    buttons.forEach((button) => {
+      if ((button as any).__spotlightInit) return;
+      (button as any).__spotlightInit = true;
+
+      const btn = button as HTMLElement;
+
+      btn.addEventListener("mousemove", (e: MouseEvent) => {
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        btn.style.setProperty("--mouse-x", `${x}px`);
+        btn.style.setProperty("--mouse-y", `${y}px`);
+      });
+    });
+  }
+
+  // Initialize spotlight on load and after page transitions
+  initSpotlightButton();
+  document.addEventListener("astro:page-load", initSpotlightButton);
 </script>
 
 <style>
-  /* Submit button gradient */
+  /* Submit button with spotlight effect */
   .submit-button {
     cursor: pointer;
-    background: linear-gradient(
-      89.07deg,
-      #8ad4a9 -9.97%,
-      #084d70 2.23%,
-      #061c26 24.58%
-    );
+    background: #111827;
+    color: white;
+    --mouse-x: 50%;
+    --mouse-y: 50%;
   }
 
   :global(.dark) .submit-button {
-    background: linear-gradient(
-      89.07deg,
-      #a6fffa -3.33%,
-      #51d1e9 2.02%,
-      #05a8ff 34.54%
+    background: #1f2937;
+    color: white;
+  }
+
+  .submit-button-glow {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: radial-gradient(
+      circle 150px at var(--mouse-x) var(--mouse-y),
+      rgba(16, 185, 129, 0.5) 0%,
+      transparent 100%
     );
-    color: #000;
+    pointer-events: none;
+  }
+
+  :global(.dark) .submit-button-glow {
+    background: radial-gradient(
+      circle 150px at var(--mouse-x) var(--mouse-y),
+      rgba(6, 182, 212, 0.5) 0%,
+      transparent 100%
+    );
+  }
+
+  .submit-button:hover .submit-button-glow {
+    opacity: 1;
+  }
+
+  .submit-button:disabled .submit-button-glow {
+    opacity: 0;
   }
 
   /* Animated gradient rings for avatars */
