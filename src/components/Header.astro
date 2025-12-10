@@ -254,7 +254,7 @@ if (showWeather && weatherLocation) {
     <a 
       href="#contact-modal"
       data-contact-modal="true"
-      class={['hidden md:inline-flex items-center uppercase px-6 py-2.5 rounded-full font-medium font-mono text-sm transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer', isOverlay ? 'adaptive-color bg-white/30 hover:bg-white dark:bg-white/30 dark:hover:bg-white/40 text-gray-900 focus-visible:ring-white/30' : 'bg-white/20 hover:bg-white/30 text-foreground backdrop-blur-sm focus-visible:ring-foreground/30'].join(' ')}
+      class={['header-cta-button hidden md:inline-flex items-center uppercase px-6 py-2.5 rounded-full font-medium font-mono text-sm transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer', isOverlay ? 'adaptive-color bg-white/30 hover:bg-white dark:bg-white/30 dark:hover:bg-white/40 text-gray-900 focus-visible:ring-white/30' : 'bg-white/20 hover:bg-white/30 text-foreground backdrop-blur-sm focus-visible:ring-foreground/30'].join(' ')}
     >
       {ctaText}
     </a>
@@ -947,6 +947,25 @@ if (showWeather && weatherLocation) {
   ::view-transition-old(mobile-nav),
   ::view-transition-new(mobile-nav) {
     animation: none;
+  }
+
+  /* CTA button scrolled state - Light theme: darker, Dark theme: lighter */
+  header.scrolled .header-cta-button {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #111827;
+  }
+
+  header.scrolled .header-cta-button:hover {
+    background-color: rgba(0, 0, 0, 0.15);
+  }
+
+  :global(.dark) header.scrolled .header-cta-button {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+
+  :global(.dark) header.scrolled .header-cta-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
   }
 </style>
 
