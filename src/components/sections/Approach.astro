@@ -29,7 +29,7 @@ const { sectionTitle = defaultTitle, approaches } = Astro.props;
     </div>
 
     <!-- Approach Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 md:gap-24 gap-4 max-w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-3 lg:gap-24 gap-4 max-w-full">
       {
         approaches.map((approach, index) => (
           <div
@@ -94,7 +94,7 @@ const { sectionTitle = defaultTitle, approaches } = Astro.props;
   }
 
   /* Mobile: Stack cards without dividers */
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     .approach-card {
       border-bottom: 1px solid var(--color-border);
       padding-bottom: 3rem;
@@ -111,5 +111,4 @@ const { sectionTitle = defaultTitle, approaches } = Astro.props;
       padding-right: 2rem;
     }
   }
-
 </style>
