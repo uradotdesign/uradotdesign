@@ -95,12 +95,20 @@ const { steps, lottieLight, lottieDark, accentColor = "#10b981" } = Astro.props;
     dark: AnimationItem | null;
   }
 
-  // Store global cleanup function to prevent listener leaks
+  // Store global cleanup function and initialization state
   let cleanup: (() => void) | null = null;
+  let isInitializing = false;
+  let initializationId = 0;
 
   async function initServiceSteps() {
+    // Prevent multiple simultaneous initializations
+    if (isInitializing) return;
+    
     // Cleanup previous listeners if any
-    if (cleanup) cleanup();
+    if (cleanup) {
+      cleanup();
+      cleanup = null;
+    }
 
     const container = document.querySelector('.service-steps-container');
     if (!container) return;
@@ -110,6 +118,13 @@ const { steps, lottieLight, lottieDark, accentColor = "#10b981" } = Astro.props;
     
     if (!lottieContainer || stepItems.length === 0) return;
 
+    // Track this initialization instance
+    isInitializing = true;
+    const currentInitId = ++initializationId;
+
+    // Clear any existing content immediately
+    lottieContainer.innerHTML = '';
+
     let lottieCache: LottieCache = { light: null, dark: null };
     const lottieLight = lottieContainer.getAttribute('data-lottie-light');
     const lottieDark = lottieContainer.getAttribute('data-lottie-dark');
@@ -117,12 +132,18 @@ const { steps, lottieLight, lottieDark, accentColor = "#10b981" } = Astro.props;
     // Detect current theme
     let currentTheme: 'light' | 'dark' = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
-    // Load Lottie
+    // Load Lottie with race condition protection
     async function loadLottie(path: string | null, theme: 'light' | 'dark'): Promise<AnimationItem | null> {
       if (!path) return null;
       
+      // Check if this initialization is still valid
+      if (currentInitId !== initializationId) return null;
+      
       try {
         const lottie = (await import('lottie-web')).default;
+        
+        // Double-check we're still the current initialization
+        if (currentInitId !== initializationId) return null;
         
         // Clear any existing content
         lottieContainer.innerHTML = '';
@@ -283,23 +304,47 @@ const { steps, lottieLight, lottieDark, accentColor = "#10b981" } = Astro.props;
       if (rafId) cancelAnimationFrame(rafId);
       
       // Destroy lottie instances
-      if (lottieCache.light) lottieCache.light.destroy();
-      if (lottieCache.dark) lottieCache.dark.destroy();
+      if (lottieCache.light) {
+        lottieCache.light.destroy();
+        lottieCache.light = null;
+      }
+      if (lottieCache.dark) {
+        lottieCache.dark.destroy();
+        lottieCache.dark = null;
+      }
+      
+      // Clear the container
+      if (lottieContainer) {
+        lottieContainer.innerHTML = '';
+      }
     };
+
+    // Mark initialization as complete
+    isInitializing = false;
   }
 
-  // Initialize when DOM is ready
+  // Single initialization function that handles all cases
+  function safeInit() {
+    // Small delay to ensure DOM is fully ready
+    requestAnimationFrame(() => {
+      initServiceSteps();
+    });
+  }
+
+  // Initialize when DOM is ready (only once)
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => initServiceSteps());
+    document.addEventListener('DOMContentLoaded', safeInit, { once: true });
   } else {
-    initServiceSteps();
+    safeInit();
   }
 
-  // Re-initialize after custom page lifecycle events (View Transitions)
-  document.addEventListener('ura:page-ready', () => initServiceSteps());
+  // Re-initialize after Astro page transitions
+  document.addEventListener('astro:page-load', safeInit);
   
-  // Cleanup on swap
+  // Cleanup before swap
   document.addEventListener('astro:before-swap', () => {
+    isInitializing = false;
+    initializationId++; // Invalidate any pending async operations
     if (cleanup) {
       cleanup();
       cleanup = null;
