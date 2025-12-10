@@ -8,7 +8,7 @@
     aria-label="Toggle theme"
     aria-haspopup="menu"
   >
-    <span class="theme-text">NIGHT</span>
+    <span class="theme-text inline-block min-w-[5ch] text-right">NIGHT</span>
     <svg
       class="w-3 h-3 transition-transform duration-300 group-open:-rotate-180"
       fill="none"
@@ -51,18 +51,18 @@
 
 <script>
   const activeClasses = [
-            "font-bold",
-            "text-gray-900",
-            "dark:text-white",
-            "bg-gray-100",
+    "font-bold",
+    "text-gray-900",
+    "dark:text-white",
+    "bg-gray-100",
     "dark:bg-gray-800",
   ];
   const inactiveClasses = [
-            "text-gray-700",
-            "dark:text-gray-300",
-            "hover:bg-gray-100",
-            "dark:hover:bg-gray-800",
-            "hover:text-gray-900",
+    "text-gray-700",
+    "dark:text-gray-300",
+    "hover:bg-gray-100",
+    "dark:hover:bg-gray-800",
+    "hover:text-gray-900",
     "dark:hover:text-white",
   ];
 
@@ -83,24 +83,24 @@
       if (isActive) {
         el.classList.add(...activeClasses);
         el.classList.remove(...inactiveClasses);
-        } else {
+      } else {
         el.classList.remove(...activeClasses);
         el.classList.add(...inactiveClasses);
-        }
-      });
-    }
-
-    function setTheme(theme: string) {
-      try {
-        localStorage.setItem("theme", theme);
-      } catch (e) {
-      console.warn("Theme save failed", e);
       }
-    updateUI(theme);
-      document.dispatchEvent(
-        new CustomEvent("theme-changed", { detail: { theme } })
-      );
+    });
+  }
+
+  function setTheme(theme: string) {
+    try {
+      localStorage.setItem("theme", theme);
+    } catch (e) {
+      console.warn("Theme save failed", e);
     }
+    updateUI(theme);
+    document.dispatchEvent(
+      new CustomEvent("theme-changed", { detail: { theme } })
+    );
+  }
 
   function init() {
     // Initial State
