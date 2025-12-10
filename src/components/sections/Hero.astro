@@ -64,7 +64,7 @@ const services = servicesData.length > 0
 ---
 
 <!-- Hero Section - Full viewport height minimum on all devices -->
-<section class="hero-wrapper relative min-h-[100dvh] md:min-h-screen">
+<section class="hero-wrapper relative min-h-[100dvh] lg:min-h-screen">
   <!-- Hero Background - Video or Image for Light Theme -->
   {isVideoLight ? (
     <video id="hero-media-light" data-is-video="true" class="hero-video hero-video-light" autoplay muted loop playsinline aria-hidden="true" preload="auto">
@@ -84,7 +84,7 @@ const services = servicesData.length > 0
   )}
   
   <!-- Hero Content -->
-  <section class="hero-content relative z-10 min-h-[100dvh] md:min-h-screen px-4 sm:px-6 lg:px-8 pt-20 md:pt-24 pb-20 md:pb-8 flex flex-col justify-between">
+  <section class="hero-content relative z-10 min-h-[100dvh] lg:min-h-screen px-4 sm:px-6 lg:px-8 pt-20 lg:pt-24 pb-20 lg:pb-8 flex flex-col justify-between">
     <div class="flex-1 flex flex-col justify-center py-4 md:py-8">
       <!-- Main Heading -->
       <h1 class="font-stylebender text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[140px] leading-[0.95] hero-heading max-w-[80%] md:max-w-none">
@@ -97,12 +97,12 @@ const services = servicesData.length > 0
     {showServicesGrid && (
       <div class="hero-bottom-section mt-auto">
         <!-- Services Title -->
-        <h2 class="hidden md:block text-sm sm:text-base font-mono font-semibold mb-6 sm:mb-8">{servicesTitle}</h2>
+        <h2 class="text-sm sm:text-base font-mono font-semibold mb-6 sm:mb-8">{servicesTitle}</h2>
         
         <!-- Services Grid and Description/CTA Flex Container -->
         <div class="flex flex-col xl:flex-row xl:justify-between xl:items-end gap-6 xl:gap-8">
           <!-- Services Grid -->
-          <div class="hidden md:grid grid-cols-1 gap-x-4 sm:gap-x-8 gap-y-4 sm:gap-y-8 max-w-4xl">
+          <div class="grid grid-cols-1 gap-x-4 sm:gap-x-8 gap-y-4 sm:gap-y-8 max-w-4xl">
             {services.map((service) => (
               <a href={service.href} class="service-item hero-text block text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-light py-2 sm:py-3 border-b transition-colors duration-200">
                 {service.name}
@@ -156,8 +156,8 @@ const services = servicesData.length > 0
 </section>
 
 <style>
-  /* Mobile: Sticky hero so content scrolls over it */
-  @media (max-width: 767px) {
+  /* Mobile/Tablet: Sticky hero so content scrolls over it */
+  @media (max-width: 1023px) {
     .hero-wrapper {
       position: sticky;
       top: 0;
@@ -222,7 +222,7 @@ const services = servicesData.length > 0
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .video-control {
       bottom: 2rem;
     }
@@ -300,6 +300,13 @@ const services = servicesData.length > 0
       
       controlButton.dataset.state = newState;
       setIconState(newState === 'playing');
+      
+      // Dispatch event for time colon animation in header
+      if (newState === 'paused') {
+        document.dispatchEvent(new CustomEvent('hero-video-paused'));
+      } else {
+        document.dispatchEvent(new CustomEvent('hero-video-playing'));
+      }
       
       // Update actual video playback
       updateVideoPlayback();

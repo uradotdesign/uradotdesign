@@ -26,7 +26,7 @@ export async function t(
 
   const cacheKey = language;
   const now = Date.now();
-
+  
   // Check if cache is still valid
   if (
     translationsCache[cacheKey] &&
@@ -35,14 +35,14 @@ export async function t(
   ) {
     return translationsCache[cacheKey][key] || fallback || key;
   }
-
+  
   // Fetch fresh translations
   try {
     const translations = await getTranslations(language);
     translationsCollectionExists = true;
     translationsCache[cacheKey] = translations;
     lastFetchTime[cacheKey] = now;
-
+    
     return translations[key] || fallback || key;
   } catch (error: any) {
     // If 403 Forbidden, the collection likely doesn't exist or has no public access
@@ -69,7 +69,7 @@ export async function getNamespaceTranslations(
 
   const cacheKey = `${language}:${namespace}`;
   const now = Date.now();
-
+  
   // Check cache
   if (
     translationsCache[cacheKey] &&
@@ -78,14 +78,14 @@ export async function getNamespaceTranslations(
   ) {
     return translationsCache[cacheKey];
   }
-
+  
   // Fetch fresh translations
   try {
     const translations = await getTranslationsByNamespace(language, namespace);
     translationsCollectionExists = true;
     translationsCache[cacheKey] = translations;
     lastFetchTime[cacheKey] = now;
-
+    
     return translations;
   } catch (error: any) {
     // If 403 Forbidden, the collection likely doesn't exist or has no public access
@@ -109,7 +109,7 @@ export function getNestedValue(
 ): string {
   const parts = path.split(".");
   let current = obj;
-
+  
   for (const part of parts) {
     if (current && typeof current === "object" && part in current) {
       current = current[part];
@@ -117,7 +117,7 @@ export function getNestedValue(
       return fallback || path;
     }
   }
-
+  
   return typeof current === "string" ? current : fallback || path;
 }
 

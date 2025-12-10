@@ -263,9 +263,10 @@ const clientMessages = {
                 placeholder={labels.firstName}
               />
               <p
-                class="error-message hidden text-xs text-red-500 mt-1"
+                class="error-message invisible text-xs text-red-500 mt-1 h-4"
                 role="alert"
               >
+                &nbsp;
               </p>
             </div>
 
@@ -287,9 +288,10 @@ const clientMessages = {
                 placeholder={labels.lastName}
               />
               <p
-                class="error-message hidden text-xs text-red-500 mt-1"
+                class="error-message invisible text-xs text-red-500 mt-1 h-4"
                 role="alert"
               >
+                &nbsp;
               </p>
             </div>
           </div>
@@ -314,9 +316,10 @@ const clientMessages = {
                 placeholder="you@company.com"
               />
               <p
-                class="error-message hidden text-xs text-red-500 mt-1"
+                class="error-message invisible text-xs text-red-500 mt-1 h-4"
                 role="alert"
               >
+                &nbsp;
               </p>
             </div>
 
@@ -410,9 +413,10 @@ const clientMessages = {
               class="modal-input w-full px-4 py-3 rounded-lg border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-y"
               placeholder={labels.messagePlaceholder}></textarea>
             <p
-              class="error-message hidden text-xs text-red-500 mt-1"
+              class="error-message invisible text-xs text-red-500 mt-1 h-4"
               role="alert"
             >
+              &nbsp;
             </p>
           </div>
 
@@ -645,8 +649,8 @@ const clientMessages = {
           ".error-message"
         ) as HTMLElement;
         if (errorMsg) {
-          errorMsg.textContent = "";
-          errorMsg.classList.add("hidden");
+          errorMsg.innerHTML = "&nbsp;";
+          errorMsg.classList.add("invisible");
         }
         input.setAttribute("aria-invalid", "false");
         input.classList.remove("border-red-500");
@@ -661,7 +665,7 @@ const clientMessages = {
         ) as HTMLElement;
         if (errorMsg) {
           errorMsg.textContent = message;
-          errorMsg.classList.remove("hidden");
+          errorMsg.classList.remove("invisible");
         }
         input.setAttribute("aria-invalid", "true");
         input.classList.add("border-red-500");
@@ -762,14 +766,7 @@ const clientMessages = {
 
             form.reset();
 
-            // Close modal after success (with delay)
-            setTimeout(() => {
-              closeModal();
-              // Reset status after modal closes
-              setTimeout(() => {
-                statusDiv.classList.add("hidden");
-              }, 500);
-            }, 2000);
+            // Keep modal open - let user decide when to close
           } else {
             throw new Error(result.error || "Submission failed");
           }

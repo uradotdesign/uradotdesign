@@ -143,7 +143,7 @@ if (showWeather && weatherLocation) {
 <header 
   class:list={[
     isOverlay ? 'fixed' : (stickyHeader ? 'sticky' : 'relative'),
-    'hidden md:flex top-0 left-0 right-0 z-50 items-center justify-between px-4 sm:px-6 lg:px-8 py-4 lg:py-5 font-body transition-all duration-300',
+    'hidden lg:flex top-0 left-0 right-0 z-50 items-center justify-between px-4 sm:px-6 lg:px-8 py-4 lg:py-5 font-body transition-all duration-300',
     isOverlay ? 'bg-transparent' : ''
   ]}
   data-scroll-threshold={scrollThreshold}
@@ -182,7 +182,7 @@ if (showWeather && weatherLocation) {
 
   <!-- Navigation with Dropdowns -->
   <nav id="main-navigation" role="navigation" aria-label={mainNavLabel} class="flex items-center gap-8">
-    <ul role="menubar" class={['hidden md:flex items-center gap-8 text-sm font-medium font-mono', isOverlay ? 'adaptive-color' : 'text-white'].join(' ')}>
+    <ul role="menubar" class={['hidden lg:flex items-center gap-8 text-sm font-medium font-mono', isOverlay ? 'adaptive-color' : 'text-white'].join(' ')}>
       {showServicesMenu && services.length > 0 && (
       <li class="relative" role="none">
         <details class="group relative">
@@ -254,23 +254,23 @@ if (showWeather && weatherLocation) {
     <a 
       href="#contact-modal"
       data-contact-modal="true"
-      class={['header-cta-button hidden md:inline-flex items-center uppercase px-6 py-2.5 rounded-full font-medium font-mono text-sm transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer', isOverlay ? 'adaptive-color bg-white/30 hover:bg-white dark:bg-white/30 dark:hover:bg-white/40 text-gray-900 focus-visible:ring-white/30' : 'bg-white/20 hover:bg-white/30 text-foreground backdrop-blur-sm focus-visible:ring-foreground/30'].join(' ')}
+      class={['header-cta-button hidden lg:inline-flex items-center uppercase px-6 py-2.5 rounded-full font-medium font-mono text-sm transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer', isOverlay ? 'adaptive-color bg-white/30 hover:bg-white dark:bg-white/30 dark:hover:bg-white/40 text-gray-900 focus-visible:ring-white/30' : 'bg-white/20 hover:bg-white/30 text-foreground backdrop-blur-sm focus-visible:ring-foreground/30'].join(' ')}
     >
       {ctaText}
     </a>
 
     <!-- Vertical divider -->
-    <div class={['hidden md:block w-px h-4 header-divider', overlay ? 'adaptive-color' : 'bg-current'].join(' ')}></div>
+    <div class={['hidden lg:block w-px h-4 header-divider', overlay ? 'adaptive-color' : 'bg-current'].join(' ')}></div>
     
     <!-- Theme & Language -->
-    <div class={['hidden md:flex items-center gap-4', isOverlay ? 'adaptive-color' : ''].join(' ')}>
+    <div class={['hidden lg:flex items-center gap-4', isOverlay ? 'adaptive-color' : ''].join(' ')}>
       <ThemeToggle />
       {showLanguageSwitcher && <LanguageSwitcher />}
     </div>
   </nav>
 
   <!-- Right Side: Weather & Time (Desktop only) -->
-  <div class="hidden md:flex items-center gap-4">
+  <div class="hidden lg:flex items-center gap-4">
     {showWeather && weatherLocation && weather && (
       <!-- Location Time & Weather -->
       <div 
@@ -312,7 +312,7 @@ if (showWeather && weatherLocation) {
           </svg>
         )}
       </span>
-      <time id="header-time" datetime="" class="ml-2">--:-- CEST</time>
+      <time id="header-time" datetime="" class="ml-2"><span class="time-hours">--</span><span class="time-colon">:</span><span class="time-minutes">--</span> CEST</time>
       </div>
     )}
   </div>
@@ -321,7 +321,7 @@ if (showWeather && weatherLocation) {
 <!-- Mobile Navigation Bar -->
 <nav 
   id="mobile-nav" 
-  class="mobile-nav md:hidden fixed left-0 right-0 bottom-0 z-[100]"
+  class="mobile-nav lg:hidden fixed left-0 right-0 bottom-0 z-[100]"
   aria-label={mobileNavLabel}
 >
   <div class="mobile-nav-bar relative flex items-center justify-between h-16 px-4 isolate">
@@ -403,7 +403,7 @@ if (showWeather && weatherLocation) {
                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
                  </svg>
                )}
-               <time id="mobile-header-time" class="ml-1">--:--</time>
+               <time id="mobile-header-time" class="ml-1"><span class="time-hours">--</span><span class="time-colon">:</span><span class="time-minutes">--</span></time>
              </span>
           </span>
         ) || (
@@ -431,7 +431,7 @@ if (showWeather && weatherLocation) {
 <!-- Mobile Menu Overlay -->
 <div 
   id="mobile-menu-overlay" 
-  class="mobile-menu-overlay md:hidden fixed inset-0 z-[99] pointer-events-none transition-transform duration-300"
+  class="mobile-menu-overlay lg:hidden fixed inset-0 z-[99] pointer-events-none transition-transform duration-300"
   aria-hidden="true"
 >
   <!-- Background Layer matches mobile nav strip (static color, no blur) -->
@@ -553,6 +553,9 @@ if (showWeather && weatherLocation) {
   }
   
   // Update CEST time in real-time
+  let colonVisible = true;
+  let videoPaused = false;
+  
   function updateTime() {
     const timeElement = document.getElementById('header-time');
     const mobileTimeElement = document.getElementById('mobile-header-time');
@@ -565,23 +568,63 @@ if (showWeather && weatherLocation) {
       hour12: false
     };
     const currentTime = new Intl.DateTimeFormat('en-US', timeOptions).format(now);
+    const [hours, minutes] = currentTime.split(':');
     
+    // Update desktop time
     if (timeElement) {
-      timeElement.textContent = `${currentTime} CEST`;
+      const hoursSpan = timeElement.querySelector('.time-hours');
+      const minutesSpan = timeElement.querySelector('.time-minutes');
+      if (hoursSpan) hoursSpan.textContent = hours;
+      if (minutesSpan) minutesSpan.textContent = minutes;
       timeElement.setAttribute('datetime', now.toISOString());
     }
 
+    // Update mobile time
     if (mobileTimeElement) {
-      mobileTimeElement.textContent = `${currentTime} CEST`;
+      const hoursSpan = mobileTimeElement.querySelector('.time-hours');
+      const minutesSpan = mobileTimeElement.querySelector('.time-minutes');
+      if (hoursSpan) hoursSpan.textContent = hours;
+      if (minutesSpan) minutesSpan.textContent = minutes;
       mobileTimeElement.setAttribute('datetime', now.toISOString());
     }
   }
 
+  // Toggle colon visibility for blinking effect
+  function toggleColon() {
+    // If video is paused, always show colon
+    if (videoPaused) {
+      document.querySelectorAll('.time-colon').forEach(colon => {
+        (colon as HTMLElement).style.visibility = 'visible';
+      });
+      return;
+    }
+    
+    colonVisible = !colonVisible;
+    document.querySelectorAll('.time-colon').forEach(colon => {
+      (colon as HTMLElement).style.visibility = colonVisible ? 'visible' : 'hidden';
+    });
+  }
+
+  // Listen for video pause/play events from Hero
+  document.addEventListener('hero-video-paused', () => {
+    videoPaused = true;
+    document.querySelectorAll('.time-colon').forEach(colon => {
+      (colon as HTMLElement).style.visibility = 'visible';
+    });
+  });
+
+  document.addEventListener('hero-video-playing', () => {
+    videoPaused = false;
+  });
+
   // Update immediately on load
   updateTime();
 
-  // Update every second for real-time display
-  setInterval(updateTime, 1000);
+  // Update time every minute (no need for every second now)
+  setInterval(updateTime, 60000);
+  
+  // Blink colon every second
+  setInterval(toggleColon, 1000);
 
   // ========================================
   // MOBILE NAVIGATION

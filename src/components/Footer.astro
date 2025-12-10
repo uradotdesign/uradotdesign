@@ -819,12 +819,12 @@ const showTemperature = footerSettings?.show_temperature ?? true;
   document.querySelectorAll(".newsletter-form").forEach((form) => {
     form.addEventListener("submit", (e) => {
       const button = form.querySelector("button[type='submit']");
-      
+
       if (button) {
         button.innerHTML = `<span class="animate-pulse">${document.documentElement.lang === 'de' ? 'Anmelden...' : 'Subscribing...'}</span>`;
         (button as HTMLButtonElement).disabled = true;
       }
-      
+
       // Form submits normally to Brevo, which handles the redirect
       // Configure redirect URL in Brevo dashboard
     });
