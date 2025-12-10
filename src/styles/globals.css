@@ -11,33 +11,11 @@ html.hydrated {
   visibility: visible;
 }
 
-/* View Transitions */
-@view-transition {
-  navigation: auto;
-}
-
-::view-transition-group(root) {
-  animation-duration: 0ms;
-}
-
-/* Header and Footer - no animation, instant swap */
-::view-transition-old(header),
-::view-transition-new(header),
-::view-transition-old(footer),
-::view-transition-new(footer) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-::view-transition-group(header),
-::view-transition-group(footer) {
-  animation-duration: 0ms;
-}
-
-/* Smooth crossfade on main content only */
+/* View Transitions - Let Astro handle the animations */
+/* Main content crossfade */
 ::view-transition-old(main-content),
 ::view-transition-new(main-content) {
-  animation-duration: 250ms;
+  animation-duration: 200ms;
   animation-timing-function: ease-in-out;
 }
 
@@ -47,6 +25,14 @@ html.hydrated {
 
 ::view-transition-new(main-content) {
   animation-name: fade-in-quick;
+}
+
+/* Header and Footer - persist without animation */
+::view-transition-old(header),
+::view-transition-new(header),
+::view-transition-old(footer),
+::view-transition-new(footer) {
+  animation: none;
 }
 
 @keyframes fade-out-quick {
