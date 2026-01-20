@@ -61,7 +61,7 @@ const url =
             <img
               src={backgroundImage}
               alt=""
-              class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              class="absolute inset-0 w-full h-full object-cover"
               loading="lazy"
               decoding="async"
             />
@@ -70,14 +70,14 @@ const url =
               <img
                 src={backgroundImage.light}
                 alt=""
-                class="case-study-bg case-study-bg-light absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                class="case-study-bg case-study-bg-light absolute inset-0 w-full h-full object-cover"
                 loading="lazy"
                 decoding="async"
               />
               <img
                 src={backgroundImage.dark}
                 alt=""
-                class="case-study-bg case-study-bg-dark absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                class="case-study-bg case-study-bg-dark absolute inset-0 w-full h-full object-cover"
                 loading="lazy"
                 decoding="async"
               />
@@ -163,6 +163,16 @@ const url =
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   }
 
+  /* Smooth image zoom effect */
+  .case-study-card img {
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transform: scale(1);
+  }
+
+  .case-study-card:hover img {
+    transform: scale(1.1) !important;
+  }
+
   .case-study-bg-light {
     display: block;
   }
@@ -179,24 +189,27 @@ const url =
     display: block;
   }
 
-  /* Card Gradient Overlay */
+  /* Card Gradient Overlay - stronger gradient for better logo/text visibility */
   .card-gradient-overlay {
     background: linear-gradient(
       to top,
-      var(--card-gradient-start) 11.87%,
-      var(--card-gradient-end) 76.06%
+      var(--card-gradient-start) 0%,
+      var(--card-gradient-mid) 35%,
+      var(--card-gradient-end) 70%
     );
   }
 
   /* Default (Light) Theme Variables */
   :root {
-    --card-gradient-start: #fafafa;
+    --card-gradient-start: rgba(250, 250, 250, 0.98);
+    --card-gradient-mid: rgba(250, 250, 250, 0.7);
     --card-gradient-end: rgba(250, 250, 250, 0);
   }
 
   /* Dark Theme Variables */
   :global(.dark) {
-    --card-gradient-start: #0c111d;
+    --card-gradient-start: rgba(12, 17, 29, 0.98);
+    --card-gradient-mid: rgba(12, 17, 29, 0.7);
     --card-gradient-end: rgba(12, 17, 29, 0);
   }
 

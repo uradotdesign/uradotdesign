@@ -40,32 +40,34 @@ const headingId = "service-case-study-heading";
       <div>
         <a
           href={link}
-          class="group block relative overflow-hidden rounded-2xl border border-foreground/10 hover:border-foreground/20 transition-all duration-300 hover:-translate-y-0.5"
+          class="group block relative overflow-hidden rounded-2xl border border-foreground/10 hover:border-foreground/20 transition-all duration-300"
         >
           <!-- Background Image (if provided) -->
           {
             image && (
-              <div class="absolute inset-0 z-0">
+              <div class="absolute inset-0 z-0 overflow-hidden">
                 {typeof image === "string" ? (
                   <img
                     src={image}
                     alt={title}
-                    class="w-full h-full object-cover opacity-30 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700"
+                    class="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
                   />
                 ) : (
                   <>
                     <img
                       src={image.light}
                       alt={title}
-                      class="w-full h-full object-cover opacity-30 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700 dark:hidden"
+                      class="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 dark:hidden"
                     />
                     <img
                       src={image.dark}
                       alt={title}
-                      class="w-full h-full object-cover opacity-30 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700 hidden dark:block"
+                      class="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 hidden dark:block"
                     />
                   </>
                 )}
+                <!-- Gradient Overlay for better text visibility -->
+                <div class="service-case-gradient absolute inset-0"></div>
               </div>
             )
           }
@@ -116,6 +118,36 @@ const headingId = "service-case-study-heading";
 </section>
 
 <style>
+  /* Smooth image zoom effect */
+  .group img {
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .group:hover img {
+    transform: scale(1.1);
+  }
+
+  /* Gradient overlay for better text visibility */
+  .service-case-gradient {
+    background: linear-gradient(
+      to top,
+      rgba(250, 250, 250, 0.95) 0%,
+      rgba(250, 250, 250, 0.85) 30%,
+      rgba(250, 250, 250, 0.4) 60%,
+      rgba(250, 250, 250, 0) 100%
+    );
+  }
+
+  :global(.dark) .service-case-gradient {
+    background: linear-gradient(
+      to top,
+      rgba(12, 17, 29, 0.95) 0%,
+      rgba(12, 17, 29, 0.85) 30%,
+      rgba(12, 17, 29, 0.4) 60%,
+      rgba(12, 17, 29, 0) 100%
+    );
+  }
+
   /* Service Case Study arrow animation */
   .service-case-arrow {
     opacity: 0.7;

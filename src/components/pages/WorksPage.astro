@@ -233,7 +233,7 @@ const filters: NormalizedCategory[] = [
                 <img
                   src={project.imageLight}
                   alt=""
-                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 dark:hidden"
+                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 dark:hidden"
                   loading="lazy"
                   decoding="async"
                   aria-hidden="true"
@@ -241,7 +241,7 @@ const filters: NormalizedCategory[] = [
                 <img
                   src={project.imageDark || project.imageLight}
                   alt=""
-                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 hidden dark:block"
+                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 hidden dark:block"
                   loading="lazy"
                   decoding="async"
                   aria-hidden="true"
@@ -302,7 +302,7 @@ const filters: NormalizedCategory[] = [
                 <div class="w-full flex items-center justify-between text-base lg:text-lg font-medium border-b border-[var(--color-foreground)]/60 pb-3 transition-all duration-300 group-hover:border-[var(--color-foreground)]">
                   <span>{project.cta}</span>
                   <svg
-                    class="w-5 h-5 lg:w-6 lg:h-6 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
+                    class="featured-card-arrow w-5 h-5 lg:w-6 lg:h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -465,6 +465,15 @@ const filters: NormalizedCategory[] = [
 </script>
 
 <style>
+  /* Smooth image zoom effect for featured hero cards */
+  .featured-hero-card img {
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .featured-hero-card:hover img {
+    transform: scale(1.1);
+  }
+
   .featured-card {
     min-height: 420px;
     color: #0f1117;
@@ -544,6 +553,16 @@ const filters: NormalizedCategory[] = [
   }
 
   .view-project-link:hover .view-project-arrow {
+    transform: rotate(45deg);
+  }
+
+  /* Featured card arrow animation */
+  .featured-card-arrow {
+    transform: rotate(0deg);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .group:hover .featured-card-arrow {
     transform: rotate(45deg);
   }
 </style>
