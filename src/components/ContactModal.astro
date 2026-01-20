@@ -40,39 +40,39 @@ const labels = {
   firstName: await t(
     "contact.first_name",
     currentLang,
-    currentLang === "de" ? "Vorname" : "First name"
+    currentLang === "de" ? "Vorname" : "First name",
   ),
   lastName: await t(
     "contact.last_name",
     currentLang,
-    currentLang === "de" ? "Nachname" : "Last name"
+    currentLang === "de" ? "Nachname" : "Last name",
   ),
   email: await t(
     "contact.email",
     currentLang,
-    currentLang === "de" ? "E-Mail" : "Email"
+    currentLang === "de" ? "E-Mail" : "Email",
   ),
   phone: await t(
     "contact.phone",
     currentLang,
-    currentLang === "de" ? "Telefonnummer" : "Phone number"
+    currentLang === "de" ? "Telefonnummer" : "Phone number",
   ),
   contactPreference: await t(
     "contact.contact_preference",
     currentLang,
     currentLang === "de"
       ? "Wie können wir Sie kontaktieren?"
-      : "How can we contact you?"
+      : "How can we contact you?",
   ),
   message: await t(
     "contact.message",
     currentLang,
-    currentLang === "de" ? "Wie können wir helfen?" : "How can we help?"
+    currentLang === "de" ? "Wie können wir helfen?" : "How can we help?",
   ),
   phoneOption: await t(
     "contact.phone_option",
     currentLang,
-    currentLang === "de" ? "Telefon" : "Phone"
+    currentLang === "de" ? "Telefon" : "Phone",
   ),
   emailOption: await t("contact.email_option", currentLang, "E-Mail"),
   signalOption: await t("contact.signal_option", currentLang, "Signal"),
@@ -81,28 +81,28 @@ const labels = {
     currentLang,
     currentLang === "de"
       ? "Hinterlassen Sie uns eine Nachricht..."
-      : "Leave us a message..."
+      : "Leave us a message...",
   ),
   successMessage: await t(
     "contact.success_message",
     currentLang,
     currentLang === "de"
       ? "Vielen Dank! Wir melden uns bald bei Ihnen."
-      : "Thank you! We'll get back to you soon."
+      : "Thank you! We'll get back to you soon.",
   ),
   errorMessage: await t(
     "contact.error_message",
     currentLang,
     currentLang === "de"
       ? "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut."
-      : "Something went wrong. Please try again."
+      : "Something went wrong. Please try again.",
   ),
   responseTimePrefix: await t(
     "contact.response_time_prefix",
     currentLang,
     currentLang === "de"
       ? "Wir melden uns innerhalb von"
-      : "Our team will get back to you within"
+      : "Our team will get back to you within",
   ),
   closeModal: currentLang === "de" ? "Schließen" : "Close",
 };
@@ -111,7 +111,7 @@ const clientMessages = {
   sending: await t(
     "contact.sending",
     currentLang,
-    currentLang === "de" ? "Wird gesendet..." : "Sending..."
+    currentLang === "de" ? "Wird gesendet..." : "Sending...",
   ),
   success: labels.successMessage,
   error: labels.errorMessage,
@@ -120,14 +120,14 @@ const clientMessages = {
     currentLang,
     currentLang === "de"
       ? "Dieses Feld ist erforderlich"
-      : "This field is required"
+      : "This field is required",
   ),
   invalidEmail: await t(
     "contact.invalid_email",
     currentLang,
     currentLang === "de"
       ? "Bitte geben Sie eine gültige E-Mail-Adresse ein"
-      : "Please enter a valid email address"
+      : "Please enter a valid email address",
   ),
 };
 ---
@@ -150,15 +150,15 @@ const clientMessages = {
 
   <!-- Modal Content -->
   <div
-    class="contact-modal-container relative z-10 h-full overflow-y-auto py-8 px-4 flex items-start md:items-center justify-center"
+    class="contact-modal-container relative z-10 h-full p-4 flex items-center justify-center"
   >
     <div
-      class="contact-modal-content relative w-full max-w-3xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl transform scale-95 opacity-0 transition-all duration-300"
+      class="contact-modal-content relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-2xl transform scale-95 opacity-0 transition-all duration-300"
     >
       <!-- Close Button -->
       <button
         type="button"
-        class="contact-modal-close absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        class="contact-modal-close absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         aria-label={labels.closeModal}
       >
         <svg
@@ -175,9 +175,9 @@ const clientMessages = {
         </svg>
       </button>
 
-      <div class="p-6 md:p-10">
-        <!-- Header -->
-        <div class="mb-8 space-y-4">
+      <!-- Fixed Header -->
+      <div class="flex-shrink-0 p-6 md:px-10 md:pt-10 md:pb-6">
+        <div class="space-y-4">
           {
             label && (
               <p class="text-sm text-gray-500 dark:text-gray-400">{label}</p>
@@ -221,7 +221,7 @@ const clientMessages = {
                             )}
                           </div>
                         </div>
-                      )
+                      ),
                   )}
                 </div>
               )
@@ -234,8 +234,10 @@ const clientMessages = {
             </p>
           </div>
         </div>
+      </div>
 
-        <!-- Form -->
+      <!-- Scrollable Form Area -->
+      <div class="flex-1 overflow-y-auto overscroll-contain px-6 md:px-10 py-4">
         <form
           id="contact-modal-form"
           class="space-y-5"
@@ -419,30 +421,33 @@ const clientMessages = {
               &nbsp;
             </p>
           </div>
-
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            class="modal-submit-button relative overflow-hidden w-full px-6 py-4 rounded-lg text-base font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label={buttonText ||
-              (currentLang === "de" ? "Senden" : "Send")}
-            data-modal-spotlight-button
-          >
-            <span class="modal-submit-button-glow"></span>
-            <span id="modal-button-text" class="relative z-10"
-              >{buttonText || (currentLang === "de" ? "Senden" : "Send")}</span
-            >
-          </button>
-
-          <!-- Status Messages -->
-          <div
-            id="modal-form-status"
-            class="hidden p-4 rounded-lg"
-            role="status"
-            aria-live="polite"
-          >
-          </div>
         </form>
+      </div>
+
+      <!-- Fixed Footer with Submit Button -->
+      <div class="flex-shrink-0 p-6 md:px-10 md:pb-10 md:pt-4">
+        <!-- Status Messages -->
+        <div
+          id="modal-form-status"
+          class="hidden p-4 rounded-lg mb-4"
+          role="status"
+          aria-live="polite"
+        >
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          form="contact-modal-form"
+          class="modal-submit-button relative overflow-hidden w-full px-6 py-4 rounded-lg text-base font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label={buttonText || (currentLang === "de" ? "Senden" : "Send")}
+          data-modal-spotlight-button
+        >
+          <span class="modal-submit-button-glow"></span>
+          <span id="modal-button-text" class="relative z-10"
+            >{buttonText || (currentLang === "de" ? "Senden" : "Send")}</span
+          >
+        </button>
       </div>
     </div>
   </div>
@@ -453,7 +458,7 @@ const clientMessages = {
     const modal = document.getElementById("contact-modal");
     const modalContent = modal?.querySelector(".contact-modal-content");
     const closeButton = modal?.querySelector(
-      ".contact-modal-close"
+      ".contact-modal-close",
     ) as HTMLButtonElement;
     const backdrop = modal?.querySelector(".contact-modal-backdrop");
 
@@ -479,7 +484,7 @@ const clientMessages = {
       ].join(", ");
 
       return Array.from(
-        contentEl.querySelectorAll(focusableSelectors)
+        contentEl.querySelectorAll(focusableSelectors),
       ) as HTMLElement[];
     }
 
@@ -530,7 +535,7 @@ const clientMessages = {
           closeButton.focus();
         } else {
           const firstInput = modalEl.querySelector(
-            "input:not([type='hidden'])"
+            "input:not([type='hidden'])",
           ) as HTMLInputElement;
           firstInput?.focus();
         }
@@ -555,7 +560,7 @@ const clientMessages = {
         modalEl.classList.remove(
           "opacity-100",
           "visible",
-          "pointer-events-auto"
+          "pointer-events-auto",
         );
         modalEl.classList.add("opacity-0", "invisible", "pointer-events-none");
         modalEl.setAttribute("aria-hidden", "true");
@@ -606,8 +611,8 @@ const clientMessages = {
     // Form handling
     const form = modal.querySelector("#contact-modal-form") as HTMLFormElement;
     const statusDiv = modal.querySelector("#modal-form-status");
-    const submitButton = form?.querySelector(
-      'button[type="submit"]'
+    const submitButton = modal.querySelector(
+      'button[form="contact-modal-form"]',
     ) as HTMLButtonElement;
     const buttonText = submitButton?.querySelector("#modal-button-text");
 
@@ -646,7 +651,7 @@ const clientMessages = {
 
       function clearError(input: HTMLInputElement | HTMLTextAreaElement) {
         const errorMsg = input.parentElement?.querySelector(
-          ".error-message"
+          ".error-message",
         ) as HTMLElement;
         if (errorMsg) {
           errorMsg.innerHTML = "&nbsp;";
@@ -658,10 +663,10 @@ const clientMessages = {
 
       function showError(
         input: HTMLInputElement | HTMLTextAreaElement,
-        message: string
+        message: string,
       ) {
         const errorMsg = input.parentElement?.querySelector(
-          ".error-message"
+          ".error-message",
         ) as HTMLElement;
         if (errorMsg) {
           errorMsg.textContent = message;
@@ -672,7 +677,7 @@ const clientMessages = {
       }
 
       function validateField(
-        input: HTMLInputElement | HTMLTextAreaElement
+        input: HTMLInputElement | HTMLTextAreaElement,
       ): boolean {
         clearError(input);
 
@@ -693,7 +698,7 @@ const clientMessages = {
       }
 
       const inputs = form.querySelectorAll(
-        "input[required], textarea[required]"
+        "input[required], textarea[required]",
       );
       inputs.forEach((input) => {
         input.addEventListener("blur", () => {
@@ -718,7 +723,7 @@ const clientMessages = {
 
         if (!isValid) {
           const firstInvalid = form.querySelector(
-            '[aria-invalid="true"]'
+            '[aria-invalid="true"]',
           ) as HTMLElement;
           firstInvalid?.focus();
           return;
@@ -731,7 +736,7 @@ const clientMessages = {
 
         const formData = new FormData(form);
         const contactPreferences = Array.from(
-          form.querySelectorAll('input[name="contact_preference"]:checked')
+          form.querySelectorAll('input[name="contact_preference"]:checked'),
         ).map((cb) => (cb as HTMLInputElement).value);
 
         const data = {
@@ -839,7 +844,7 @@ const clientMessages = {
             el.classList.remove("tooltip-active");
           }, 2500);
         },
-        { passive: false }
+        { passive: false },
       );
 
       // Click support (for accessibility)
