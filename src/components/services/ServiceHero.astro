@@ -81,7 +81,7 @@ const allServices = await Promise.all(
 ---
 
 <section
-  class="relative pt-20 lg:pt-32 pb-32 lg:pb-40 px-6 sm:px-8 lg:px-12 xl:px-16 overflow-hidden h-auto md:h-auto md:min-h-screen"
+  class="service-hero-section relative pt-20 lg:pt-28 pb-16 lg:pb-24 px-6 sm:px-8 lg:px-12 xl:px-16 overflow-hidden"
   style={`--hero-accent: ${currentService.colorAccent || "#10b981"};`}
 >
   <!-- Background Image with Gradient Bleed -->
@@ -335,6 +335,32 @@ const allServices = await Promise.all(
 </section>
 
 <style>
+  /* Responsive height for service hero */
+  .service-hero-section {
+    min-height: auto;
+  }
+  
+  /* On larger screens with enough height, fill the viewport */
+  @media (min-width: 1024px) and (min-height: 800px) {
+    .service-hero-section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .service-hero-section > div {
+      flex: 1;
+    }
+  }
+  
+  /* Shorter screens - reduce padding */
+  @media (min-width: 1024px) and (max-height: 799px) {
+    .service-hero-section {
+      padding-top: 5rem;
+      padding-bottom: 3rem;
+    }
+  }
+  
   .service-tab[data-active="true"] {
     pointer-events: none;
   }
