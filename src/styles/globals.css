@@ -190,6 +190,11 @@ html.astro-transitioning body {
   border-color: var(--color-border);
 }
 
+html,
+body {
+  overscroll-behavior: none;
+}
+
 body {
   font-family: var(--font-body);
   color: var(--color-foreground);
