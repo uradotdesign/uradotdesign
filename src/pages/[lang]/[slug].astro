@@ -236,7 +236,7 @@ const pageImage = type === 'service'
 
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription} image={pageImage}>
+<BaseLayout title={pageTitle} description={pageDescription} image={pageImage || undefined}>
   {type === 'service' && currentService && (
     <>
       <!-- Service Hero Section (now includes checklist) -->
