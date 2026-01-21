@@ -229,9 +229,14 @@ const pageDescription = type === 'service'
   ? currentService?.description || ""
   : pageContent?.seoDescription || "";
 
+// OG Image - use service hero background for services
+const pageImage = type === 'service' 
+  ? currentService?.backgroundLight || null
+  : null;
+
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription}>
+<BaseLayout title={pageTitle} description={pageDescription} image={pageImage}>
   {type === 'service' && currentService && (
     <>
       <!-- Service Hero Section (now includes checklist) -->
