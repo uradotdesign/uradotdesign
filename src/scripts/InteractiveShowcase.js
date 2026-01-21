@@ -6,6 +6,10 @@ class InteractiveShowcase extends HTMLElement {
     this.items = []; // Store references to the tab items
   }
 
+  get controlsPosition() {
+    return this.getAttribute("controls-position") || "bottom";
+  }
+
   connectedCallback() {
     this.render();
 
@@ -77,8 +81,19 @@ class InteractiveShowcase extends HTMLElement {
             height: auto;
             min-height: 700px;
           }
+          /* On mobile, controls always go to bottom center */
           .controls {
-            bottom: 0 !important;
+            bottom: 20px !important;
+            top: auto !important;
+            right: auto !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            flex-direction: row !important;
+            padding: 12px 24px !important;
+            gap: 24px !important;
+          }
+          .controls button span {
+            display: none !important;
           }
         }
 
@@ -215,10 +230,9 @@ class InteractiveShowcase extends HTMLElement {
             opacity: 0;
         }
 
+        /* Controls - base styles */
         .controls {
             position: absolute;
-            bottom: 40px;
-            transform: translateX(-50%);
             z-index: 50;
             display: flex;
             align-items: center;
@@ -226,12 +240,45 @@ class InteractiveShowcase extends HTMLElement {
             background: #141414 !important;
             padding: 16px 32px;
             border-radius: 12px;
-            width: max-content;
             box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-            opacity: 0;
-            animation: fadeIn 0.5s ease forwards;
             pointer-events: auto;
             isolation: isolate;
+        }
+
+        /* Horizontal controls (bottom) */
+        .controls.controls-bottom {
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: max-content;
+            opacity: 0;
+            animation: fadeInBottom 0.5s ease forwards;
+        }
+
+        /* Vertical controls (right) */
+        .controls.controls-right {
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+            padding: 24px 16px;
+            gap: 24px;
+            opacity: 0;
+            animation: fadeInRight 0.5s ease forwards;
+        }
+
+        .controls.controls-right button span {
+            display: none;
+        }
+
+        @keyframes fadeInBottom {
+          from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes fadeInRight {
+          from { opacity: 0; transform: translateY(-50%) translateX(10px); }
+          to { opacity: 1; transform: translateY(-50%) translateX(0); }
         }
 
         .controls button {
@@ -262,6 +309,7 @@ class InteractiveShowcase extends HTMLElement {
             fill: #fff;
             color: #fff;
             display: block;
+            flex-shrink: 0;
         }
         
         .controls button svg path {
@@ -284,10 +332,6 @@ class InteractiveShowcase extends HTMLElement {
             margin-top: 8px;
         }
 
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
 
       </style>
 
@@ -566,23 +610,24 @@ class InteractiveShowcase extends HTMLElement {
       existingControls.remove();
     }
 
+    const isVertical = this.controlsPosition === "right";
     let shadowControls = document.createElement("div");
-    shadowControls.className = "controls";
+    shadowControls.className = `controls controls-${isVertical ? 'right' : 'bottom'}`;
     shadowVisualWrapper.appendChild(shadowControls);
 
-    // Clean previous listeners/buttons
+    // Create buttons with span for text (allows hiding text in vertical mode)
     shadowControls.innerHTML = `
-        <button data-lottie-action="pause-all">
+        <button data-lottie-action="pause-all" title="Pause all">
           <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 14h2V4h-2v10ZM10.5 4v10h2V4h-2Z"/></svg>
-          Pause all
+          <span>Pause all</span>
         </button>
-        <button data-lottie-action="play-all">
+        <button data-lottie-action="play-all" title="Play all">
           <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4v10l8-5-8-5Z"/></svg>
-          Play all
+          <span>Play all</span>
         </button>
-        <button data-lottie-action="stop-all">
+        <button data-lottie-action="stop-all" title="Stop all">
            <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4h9v10h-9V4Z"/></svg>
-           Stop all
+           <span>Stop all</span>
         </button>
       `;
 
