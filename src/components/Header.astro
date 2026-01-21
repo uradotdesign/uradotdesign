@@ -318,10 +318,10 @@ if (showWeather && weatherLocation) {
   </div>
 </header>
 
-<!-- Mobile Navigation Bar -->
+<!-- Mobile Navigation Bar - Always fixed at top -->
 <nav 
   id="mobile-nav" 
-  class="mobile-nav lg:hidden fixed left-0 right-0 bottom-0 z-[100]"
+  class="mobile-nav lg:hidden fixed top-0 left-0 right-0 z-[100]"
   aria-label={mobileNavLabel}
 >
   <div class="mobile-nav-bar relative flex items-center justify-between h-16 px-4 isolate">
@@ -346,7 +346,7 @@ if (showWeather && weatherLocation) {
       </svg>
     </button>
 
-    <!-- Center: Logo (Direct SVG, Adaptive Color) -->
+    <!-- Center: Logo -->
     <div class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
        <a 
         href={langPrefix} 
@@ -367,7 +367,7 @@ if (showWeather && weatherLocation) {
     <!-- Right: Weather or CTA -->
     <div class="relative z-20 flex items-center justify-end min-w-[80px]">
       
-      <!-- Weather Display (Visible initially/at bottom) -->
+      <!-- Weather Display (Visible initially) -->
       <div id="mobile-nav-weather" class="flex items-center justify-end text-xs font-mono font-medium adaptive-color transition-opacity duration-300 opacity-100">
         {weather && (
           <span class="flex flex-col items-end leading-tight">
@@ -396,7 +396,6 @@ if (showWeather && weatherLocation) {
                    <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25M8 19v2M12 19v3M16 19v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                  </svg>
                )}
-               {/* Fallback for other icons to avoid blank if mapped but not specific handled */}
                {['sun', 'cloud-sun', 'cloud', 'cloud-rain'].indexOf(weather.icon) === -1 && (
                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                    <circle cx="12" cy="12" r="4" stroke-width="2"/>
@@ -413,7 +412,7 @@ if (showWeather && weatherLocation) {
         )}
       </div>
 
-      <!-- CTA Button (Visible when sticky/scrolled) -->
+      <!-- CTA Button (Visible when scrolled) -->
       <div id="mobile-nav-cta" class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
         <a 
           href="#contact-modal"
@@ -434,7 +433,7 @@ if (showWeather && weatherLocation) {
   class="mobile-menu-overlay lg:hidden fixed inset-0 z-[99] pointer-events-none transition-transform duration-300"
   aria-hidden="true"
 >
-  <!-- Background Layer matches mobile nav strip (static color, no blur) -->
+  <!-- Background Layer -->
   <div class="absolute inset-0 mobile-nav-bg"></div>
   
   <div class="relative h-full flex flex-col pt-24 pb-32 px-6 overflow-y-auto adaptive-color">
@@ -652,7 +651,6 @@ if (showWeather && weatherLocation) {
     
     if (!toggle || !overlay || !mobileNav) return;
 
-    // Store references after null check for TypeScript
     const menuToggle = toggle;
     const menuOverlay = overlay;
     const nav = mobileNav;
@@ -664,7 +662,6 @@ if (showWeather && weatherLocation) {
     
     const hamburgerIcon = menuToggle.querySelector('.hamburger-icon');
     const closeIcon = menuToggle.querySelector('.close-icon');
-    const navHeight = 64; // 4rem = 64px
 
     let isMenuOpen = false;
 
@@ -678,9 +675,6 @@ if (showWeather && weatherLocation) {
         hamburgerIcon?.classList.add('hidden');
         closeIcon?.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
-        
-        // Force nav to top when menu is open
-        nav.classList.add('is-sticky');
         
         // Show CTA, Hide Weather when menu open
         if (weatherEl) weatherEl.style.opacity = '0';
@@ -697,7 +691,7 @@ if (showWeather && weatherLocation) {
         closeIcon?.classList.add('hidden');
         document.body.style.overflow = '';
         
-        // Restore nav position based on scroll
+        // Restore based on scroll position
         requestAnimationFrame(updateNavState);
       }
     }
@@ -715,30 +709,30 @@ if (showWeather && weatherLocation) {
       if (e.key === 'Escape' && isMenuOpen) toggleMenu();
     };
 
-    // Scroll Logic: Switch from bottom to top when hero is scrolled past
+    // Scroll Logic: Background appears on scroll, CTA swaps after hero
     let ticking = false;
     function updateNavState() {
       if (isMenuOpen) return;
 
       const scrollY = window.scrollY;
-      // Switch to top when user has scrolled past the hero section (approximately 1 viewport height)
-      const stickyThreshold = window.innerHeight - navHeight;
+      const bgThreshold = 50; // Background appears after 50px scroll
+      const ctaThreshold = window.innerHeight * 0.5; // CTA swaps after 50% of viewport
       
-      if (scrollY >= stickyThreshold) {
-        // Sticky to top
-        nav.classList.add('is-sticky');
-        
-        // Show CTA, Hide Weather
+      // Background glass effect
+      if (scrollY >= bgThreshold) {
+        nav.classList.add('is-scrolled');
+      } else {
+        nav.classList.remove('is-scrolled');
+      }
+      
+      // Weather/CTA swap
+      if (scrollY >= ctaThreshold) {
         if (weatherEl) weatherEl.style.opacity = '0';
         if (ctaEl) {
            ctaEl.style.opacity = '1';
            ctaEl.style.pointerEvents = 'auto';
         }
       } else {
-        // Fixed at bottom
-        nav.classList.remove('is-sticky');
-        
-        // Show Weather, Hide CTA
         if (weatherEl) weatherEl.style.opacity = '1';
         if (ctaEl) {
            ctaEl.style.opacity = '0';
@@ -916,45 +910,37 @@ if (showWeather && weatherLocation) {
     width: 28px;
   }
 
-  /* Mobile nav: fixed at bottom initially */
+  /* Mobile nav: always fixed at top */
   .mobile-nav {
-    position: fixed;
-    bottom: 0;
-    top: auto;
-  }
-
-  /* When sticky: fixed at top of viewport */
-  .mobile-nav.is-sticky {
-    top: 0;
-    bottom: auto;
+    view-transition-name: mobile-nav;
   }
   
+  /* Initially transparent */
   .mobile-nav .mobile-nav-bg {
-    background-color: #FAFAFA;
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
   }
 
-  :global(.dark) .mobile-nav .mobile-nav-bg {
-    background-color: #111827;
-  }
-
-  .mobile-nav.is-sticky .mobile-nav-bg {
-    background-color: rgba(255, 255, 255, 0.85);
+  /* Scrolled: glass-like opaque background */
+  .mobile-nav.is-scrolled .mobile-nav-bg {
+    background-color: rgba(250, 250, 250, 0.9);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
   }
   
-  :global(.dark) .mobile-nav.is-sticky .mobile-nav-bg {
-    background-color: rgba(17, 24, 39, 0.85);
+  :global(.dark) .mobile-nav.is-scrolled .mobile-nav-bg {
+    background-color: rgba(17, 24, 39, 0.9);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
   }
   
   .mobile-logo-link {
     opacity: 1;
   }
 
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
+  /* Mobile Menu Overlay */
   .mobile-menu-overlay {
     transform: translateX(-100%);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -974,19 +960,6 @@ if (showWeather && weatherLocation) {
     opacity: 1;
     pointer-events: auto;
   }
-  
-  .mobile-menu-overlay :global(details) {
-    position: relative;
-  }
-  
-  .mobile-menu-overlay :global(details > div) {
-    bottom: 100%;
-    top: auto;
-    left: 0;
-    right: auto;
-    margin-bottom: 0.5rem;
-    transform-origin: bottom left;
-  }
 
   .mobile-accordion summary {
     list-style: none;
@@ -995,11 +968,7 @@ if (showWeather && weatherLocation) {
     display: none;
   }
 
-  .mobile-nav,
-  .mobile-menu-overlay {
-    view-transition-name: none;
-  }
-
+  /* Disable view transitions for mobile nav */
   ::view-transition-old(mobile-nav),
   ::view-transition-new(mobile-nav) {
     animation: none;

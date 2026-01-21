@@ -24,7 +24,7 @@
   </summary>
   <div
     role="menu"
-    class="absolute top-full right-0 mt-2 w-32 z-[60] opacity-0 invisible group-open:opacity-100 group-open:visible group-open:pointer-events-auto transition-all duration-200 origin-top-right"
+    class="theme-dropdown-panel absolute right-0 w-32 z-[60] opacity-0 invisible group-open:opacity-100 group-open:visible group-open:pointer-events-auto transition-all duration-200"
   >
     <div
       class="theme-dropdown-menu rounded-lg shadow-lg border border-[var(--color-border)] py-2 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 overflow-hidden font-mono"
@@ -48,6 +48,27 @@
     </div>
   </div>
 </details>
+
+<style>
+  /* Default: dropdown opens downward, aligned right (desktop header) */
+  .theme-dropdown-panel {
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    transform-origin: top right;
+  }
+
+  /* Mobile overlay: dropdown opens upward, aligned left */
+  :global(.mobile-menu-overlay) .theme-dropdown-panel {
+    top: auto;
+    bottom: 100%;
+    right: auto;
+    left: 0;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    transform-origin: bottom left;
+  }
+</style>
 
 <script>
   const activeClasses = [
@@ -98,7 +119,7 @@
     }
     updateUI(theme);
     document.dispatchEvent(
-      new CustomEvent("theme-changed", { detail: { theme } })
+      new CustomEvent("theme-changed", { detail: { theme } }),
     );
   }
 

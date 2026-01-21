@@ -33,7 +33,7 @@ const publishedDate = post.published_date
         day: "numeric",
         month: "long",
         year: "numeric",
-      }
+      },
     )
   : "";
 
@@ -52,11 +52,15 @@ const description =
   post.excerpt || content.replace(/<[^>]*>?/gm, "").substring(0, 160) + "...";
 ---
 
-<BaseLayout title={title} description={description} image={coverImage || undefined}>
+<BaseLayout
+  title={title}
+  description={description}
+  image={coverImage || undefined}
+>
   <article class="w-full">
     {/* Mobile Hero (Visible on Mobile only) */}
     <div
-      class="relative w-full h-[60vh] max-h-[350px] md:hidden flex flex-col justify-end p-6 text-white overflow-hidden mb-12"
+      class="relative w-full h-[60vh] max-h-[400px] md:hidden flex flex-col justify-end p-6 pt-20 text-white overflow-hidden mb-12"
     >
       {/* Background Image */}
       {

@@ -156,24 +156,19 @@ const services = servicesData.length > 0
 </section>
 
 <style>
-  /* Mobile/Tablet: Sticky hero so content scrolls over it */
-  @media (max-width: 1023px) {
-    .hero-wrapper {
-      position: sticky;
-      top: 0;
-      left: 0;
-      width: 100%;
-      z-index: 0;
-    }
-    
+  /* Hero wrapper - normal flow, no sticky/overlay */
+  .hero-wrapper {
+    position: relative;
+  }
+
+  .hero-content {
+    /* Account for fixed mobile header (64px) on mobile */
+    padding-top: 5rem;
+  }
+
+  @media (min-width: 1024px) {
     .hero-content {
-      /* Account for bottom nav bar (64px) + safe area + breathing room */
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6rem);
-    }
-    
-    .hero-bottom-section {
-      /* Add top margin to separate from heading on mobile */
-      margin-top: 2rem;
+      padding-top: 6rem;
     }
   }
   
