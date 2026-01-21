@@ -52,7 +52,7 @@ const description =
   post.excerpt || content.replace(/<[^>]*>?/gm, "").substring(0, 160) + "...";
 ---
 
-<BaseLayout title={`${title} | Ura Design`} description={description}>
+<BaseLayout title={title} description={description}>
   <article class="w-full">
     {/* Mobile Hero (Visible on Mobile only) */}
     <div
