@@ -6,12 +6,12 @@ A modern, multilingual website built with **Astro 5** (SSR) and **Directus CMS**
 
 | Component | Technology                |
 | --------- | ------------------------- |
-| Frontend  | Astro 5.0.5 (SSR mode)    |
-| Styling   | TailwindCSS v4            |
-| CMS       | Directus 11.13.3          |
+| Frontend  | Astro 5.16.11 (SSR mode)  |
+| Styling   | TailwindCSS 4.1.18        |
+| CMS       | Directus 11.14.1          |
 | Database  | PostgreSQL 18             |
 | Cache     | Redis 8.2.3               |
-| Language  | TypeScript 5.6.3          |
+| Language  | TypeScript 5.9.3          |
 | i18n      | English (en), German (de) |
 
 ## Prerequisites
