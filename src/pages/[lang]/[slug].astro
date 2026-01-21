@@ -222,8 +222,8 @@ if (type === 'page') {
 
 // Common Meta
 const pageTitle = type === 'service' 
-  ? `${currentService?.title} | Ura Design`
-  : `${pageContent?.seoTitle || pageContent?.title} | Ura Design`;
+  ? currentService?.title
+  : pageContent?.seoTitle || pageContent?.title;
 
 const pageDescription = type === 'service'
   ? currentService?.description || ""
