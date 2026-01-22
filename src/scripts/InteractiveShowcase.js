@@ -76,10 +76,9 @@ class InteractiveShowcase extends HTMLElement {
           min-height: 740px;
         }
 
-        @media (max-width: 767px) {
+        @media (max-width: 1200px) {
           .macos-content {
             height: auto;
-            min-height: 700px;
           }
           /* On mobile, controls always go to bottom center */
           .controls {
@@ -95,9 +94,12 @@ class InteractiveShowcase extends HTMLElement {
           .controls button span {
             display: none !important;
           }
+          .visual-wrapper {
+            padding-block: 7rem;
+          }
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 1200px) {
           .macos-content {
             flex-direction: row;
           }
@@ -113,7 +115,7 @@ class InteractiveShowcase extends HTMLElement {
           gap: 40px;
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 1200px) {
           .macos-sidebar {
             width: 40%;
             min-width: 300px;
@@ -191,7 +193,7 @@ class InteractiveShowcase extends HTMLElement {
           position: relative;
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 1200px) {
           .macos-main {
             width: 60%;
           }
