@@ -1029,16 +1029,11 @@ export async function getBlogPosts(options?: {
   });
 }
 
-export async function getBlogPostBySlug(slug: string, language?: string) {
-  const cacheKey = language ? `post:${slug}:${language}` : `post:${slug}`;
-  return cacheConfig(cacheKey, async () => {
-    const filter: Record<string, any> = { slug: { _eq: slug } };
-    if (language) {
-      filter.language = { _eq: language };
-    }
+export async function getBlogPostBySlug(slug: string) {
+  return cacheConfig(`post:${slug}`, async () => {
     const [post] = await fetchCollection<BlogPost>("posts", {
       limit: 1,
-      filter,
+      filter: { slug: { _eq: slug } },
       sort: ["-published_date"],
       fields: ["*", "author.*"],
     });
