@@ -74,6 +74,16 @@ services:
 
       # File Upload Settings
       FILES_MAX_UPLOAD_SIZE: "500MB"
+
+      # Email / SMTP
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@ura.design}
+      EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-smtp}
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-587}
+      EMAIL_SMTP_USER: ${EMAIL_SMTP_USER}
+      EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
+      EMAIL_SMTP_SECURE: ${EMAIL_SMTP_SECURE:-false}
+      EMAIL_SMTP_TLS_REJECT_UNAUTHORIZED: ${EMAIL_SMTP_TLS_REJECT_UNAUTHORIZED:-false}
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:8055/server/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 30s
