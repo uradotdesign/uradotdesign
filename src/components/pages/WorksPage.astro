@@ -344,6 +344,7 @@ const filters: NormalizedCategory[] = [
                   class="works-filter px-4 py-2 rounded-sm border border-[var(--color-border)] text-sm transition-colors cursor-pointer text-[var(--color-foreground)] hover:border-[var(--color-foreground)] data-[active=true]:bg-[var(--color-foreground)] data-[active=true]:text-[var(--color-background)]"
                   data-works-filter={filter.slug}
                   data-active={filter.slug === "all"}
+                  aria-pressed={filter.slug === "all" ? "true" : "false"}
                 >
                   {filter.label}
                 </button>
@@ -439,8 +440,9 @@ const filters: NormalizedCategory[] = [
 
     const setActive = (slug: string) => {
       buttons.forEach((button) => {
-        button.dataset.active =
-          button.dataset.worksFilter === slug ? "true" : "false";
+        const isActive = button.dataset.worksFilter === slug;
+        button.dataset.active = isActive ? "true" : "false";
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
       });
     };
 

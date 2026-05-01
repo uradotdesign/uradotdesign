@@ -23,20 +23,20 @@ export function getLocalizedField<T extends Record<string, any>>(
 
   // Try language-specific field first (e.g., title_en)
   const langField = `${fieldName}_${language}` as keyof T;
-  if (obj[langField]) {
+  if (obj[langField] != null && obj[langField] !== undefined) {
     return obj[langField] as string;
   }
 
   // Try English as fallback
   if (language !== "en") {
     const enField = `${fieldName}_en` as keyof T;
-    if (obj[enField]) {
+    if (obj[enField] != null && obj[enField] !== undefined) {
       return obj[enField] as string;
     }
   }
 
   // Try base field (for backwards compatibility)
-  if (obj[fieldName as keyof T]) {
+  if (obj[fieldName as keyof T] != null && obj[fieldName as keyof T] !== undefined) {
     return obj[fieldName as keyof T] as string;
   }
 

@@ -1,5 +1,5 @@
 ---
-import { getAboutPage, getAssetUrl, getServices, getServiceRelations } from "../../lib/directus";
+import { getAboutPage, getAssetUrl, getServices, getBatchServiceRelations } from "../../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
 import { t } from "../../lib/translations";
 
@@ -42,36 +42,27 @@ const services = await getServices({
   },
 });
 
-// Fetch subservices for each service
-const servicesWithSubservices = await Promise.all(
-  services.map(async (s) => {
-    const relations = await getServiceRelations(s.id);
-    const subservices = relations.subservices || [];
-    
-    // Filter subservices by language if needed, or return all but localized in mapping
-    // The helper returns all items from the related collection. 
-    // We need to pick the correct text field based on language.
-    
-    return {
-      ...s,
-      subservices: subservices
-    };
-  })
-);
+// Fetch all service relations in a single batch (4 queries total instead of 4*N)
+const relationsMap = await getBatchServiceRelations(services.map((s) => s.id));
+const servicesWithSubservices = services.map((s) => ({
+  ...s,
+  subservices: relationsMap.get(s.id)?.subservices || [],
+}));
 
 const localizedGroups = servicesWithSubservices.map((s) => ({
   id: s.id,
   title: getLocalizedField(s, "title", currentLang),
   icon: s.service_icon,
   iconBg: s.color_accent || "#E5E7EB",
-  points: s.subservices.map(sub => 
+  points: s.subservices.map((sub: { text_en?: string; text_de?: string }) => 
     currentLang === 'de' ? (sub.text_de || sub.text_en) : sub.text_en
   ).filter(Boolean),
 }));
 ---
 
-<section class="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+<section class="py-16 sm:py-24 px-4 sm:px-6 lg:px-8" aria-labelledby="expertise-heading">
   <div class="container mx-auto">
+    <h2 id="expertise-heading" class="sr-only">{sectionHeading}</h2>
     <!-- Section label with divider (Full Width) -->
     <div class="flex items-center gap-6 mb-10" aria-hidden="true">
       <span

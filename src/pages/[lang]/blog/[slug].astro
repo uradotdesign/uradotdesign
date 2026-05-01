@@ -5,11 +5,16 @@ import { getLocalizedField } from "../../../lib/i18n";
 
 const { lang, slug } = Astro.params;
 
+const supportedLanguages = ["en", "de"];
+if (!lang || !supportedLanguages.includes(lang)) {
+  return Astro.redirect("/404");
+}
+
 if (!slug) {
   return Astro.redirect("/404");
 }
 
-const post = await getBlogPostBySlug(slug);
+const post = await getBlogPostBySlug(slug, lang);
 
 if (!post) {
   return Astro.redirect("/404");

@@ -67,7 +67,7 @@ const services = servicesData.length > 0
 <section class="hero-wrapper relative min-h-[100dvh] lg:min-h-screen">
   <!-- Hero Background - Video or Image for Light Theme -->
   {isVideoLight ? (
-    <video id="hero-media-light" data-is-video="true" class="hero-video hero-video-light" autoplay muted loop playsinline aria-hidden="true" preload="auto">
+    <video id="hero-media-light" data-is-video="true" class="hero-video hero-video-light" autoplay muted loop playsinline aria-hidden="true" preload="metadata">
       <source src={mediaLight} type="video/mp4" />
     </video>
   ) : (
@@ -76,7 +76,7 @@ const services = servicesData.length > 0
   
   <!-- Hero Background - Video or Image for Dark Theme -->
   {isVideoDark ? (
-    <video id="hero-media-dark" data-is-video="true" class="hero-video hero-video-dark" autoplay muted loop playsinline aria-hidden="true" preload="auto">
+    <video id="hero-media-dark" data-is-video="true" class="hero-video hero-video-dark" autoplay muted loop playsinline aria-hidden="true" preload="metadata">
       <source src={mediaDark} type="video/mp4" />
     </video>
   ) : (
@@ -439,7 +439,12 @@ const services = servicesData.length > 0
   }
 
   // Use astro:page-load for View Transitions compatibility
-  document.addEventListener('astro:page-load', initializeHeroMedia);
+  if (!(window as any).__heroPageLoadAttached) {
+    (window as any).__heroPageLoadAttached = true;
+    document.addEventListener('astro:page-load', initializeHeroMedia);
+  } else {
+    initializeHeroMedia();
+  }
 
   // Also listen for theme changes to switch videos
   // Remove existing listener if present to avoid duplicates

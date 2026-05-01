@@ -26,8 +26,9 @@ const values: Value[] = companyValues.map((v) => ({
 }));
 ---
 
-<section class="py-16 px-4 sm:px-6 lg:px-8 relative">
+<section class="py-16 px-4 sm:px-6 lg:px-8 relative" aria-labelledby="values-heading">
   <div class="container mx-auto">
+    <h2 id="values-heading" class="sr-only">Our Values</h2>
     <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-16 lg:gap-24">
       <!-- Left Column: Intro Text -->
       <div class="hidden lg:block">
@@ -103,16 +104,18 @@ const values: Value[] = companyValues.map((v) => ({
 <script>
   function initAccordion() {
     const details = document.querySelectorAll(".values-accordion details");
-    
+
     details.forEach((detail) => {
+      if ((detail as any).__accordionInit) return;
+      (detail as any).__accordionInit = true;
+
       detail.addEventListener("toggle", () => {
         const d = detail as HTMLDetailsElement;
         if (d.open) {
           const content = d.querySelector(".accordion-content") as HTMLElement;
           if (content) {
-            // Reset animation
             content.classList.remove("animate-slide-down");
-            void content.offsetWidth; // Force reflow
+            void content.offsetWidth;
             content.classList.add("animate-slide-down");
           }
         }
@@ -120,11 +123,12 @@ const values: Value[] = companyValues.map((v) => ({
     });
   }
 
-  // Run on initial load
   initAccordion();
 
-  // Run on View Transitions navigation
-  document.addEventListener("astro:page-load", initAccordion);
+  if (!(window as any).__valuesAccordionAttached) {
+    (window as any).__valuesAccordionAttached = true;
+    document.addEventListener("astro:page-load", initAccordion);
+  }
 </script>
 
 <style>

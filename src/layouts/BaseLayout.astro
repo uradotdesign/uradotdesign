@@ -116,6 +116,7 @@ const screenReaderAnnouncements =
     <ClientRouter fallback="animate" />
 
     <!-- SEO Meta Tags -->
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />
     <title>{siteTitle}</title>
     <meta name="description" content={siteDescription} />
 

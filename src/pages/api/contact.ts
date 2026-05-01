@@ -1,18 +1,6 @@
 import type { APIRoute } from "astro";
 import { getRedisClient } from "../../lib/redis";
-
-// Use process.env for runtime values in SSR
-const DIRECTUS_URL =
-  process.env.DIRECTUS_URL ||
-  import.meta.env.DIRECTUS_URL ||
-  import.meta.env.PUBLIC_DIRECTUS_URL ||
-  "http://localhost:8055";
-const DIRECTUS_TOKEN =
-  process.env.DIRECTUS_TOKEN ||
-  process.env.DIRECTUS_API_TOKEN ||
-  import.meta.env.DIRECTUS_TOKEN ||
-  import.meta.env.DIRECTUS_API_TOKEN ||
-  "";
+import { directusUrl as DIRECTUS_URL, directusToken as DIRECTUS_TOKEN } from "../../lib/config";
 
 // Fallback in-memory rate limiting (per IP)
 const submissionTimestamps = new Map<string, number[]>();
@@ -221,7 +209,7 @@ export const POST: APIRoute = async ({ request }) => {
       ip_address: clientIP,
     };
 
-    console.log("📤 Submitting to Directus:", submissionData);
+    console.log("📤 Submitting contact form for:", submissionData.email);
 
     // Submit to Directus
     const directusResponse = await fetch(
@@ -261,8 +249,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Failed to submit form",
-          details: errorData,
+          error: "Failed to submit form. Please try again later.",
         }),
         {
           status: 500,

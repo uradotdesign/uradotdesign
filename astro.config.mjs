@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
 export default defineConfig({
+  site: "https://ura.design",
   output: "server",
   adapter: node({
     mode: "standalone",

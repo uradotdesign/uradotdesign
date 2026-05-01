@@ -11,14 +11,13 @@ const articles = await getBlogPosts({
   limit: 3,
   filter: { status: { _eq: "published" } },
   sort: ["-published_date"],
-  fields: ["id", "title", "slug", "published_date", "content"],
+  fields: ["id", "title", "slug", "published_date", "excerpt"],
 });
 
-function calculateReadingTime(text: string): number {
-  if (!text) return 0;
-  const wordsPerMinute = 200;
-  const words = text.trim().split(/\s+/).length;
-  return Math.ceil(words / wordsPerMinute);
+function estimateReadingTime(excerpt: string | undefined): number {
+  if (!excerpt) return 3;
+  const words = excerpt.trim().split(/\s+/).length;
+  return Math.max(2, Math.ceil((words * 5) / 200));
 }
 ---
 
@@ -63,7 +62,7 @@ function calculateReadingTime(text: string): number {
                 )}
               </time>
               <span>
-                {calculateReadingTime(post.content || "")} {minRead}
+                {estimateReadingTime(post.excerpt)} {minRead}
               </span>
             </div>
           </article>

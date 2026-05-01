@@ -3,13 +3,31 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Z-Index Scale:
+ * --z-base:      0   (default stacking)
+ * --z-dropdown: 50   (dropdowns, tooltips)
+ * --z-header:  100   (fixed header)
+ * --z-overlay: 150   (backdrop overlays)
+ * --z-modal:   200   (modals, dialogs)
+ * --z-skip:    250   (skip-to-content links)
+ */
+
 /* Prevent FOUC (Flash of Unstyled Content) and theme flash */
 html:not(.hydrated) {
   visibility: hidden;
+  animation: reveal 0s 2s forwards;
 }
 
 html.hydrated {
   visibility: visible;
+  animation: none;
+}
+
+@keyframes reveal {
+  to {
+    visibility: visible;
+  }
 }
 
 /* View Transitions */
@@ -213,7 +231,7 @@ body {
   font-family: var(--font-mono);
 }
 
-* {
+a, button, input, select, textarea, [class*="hover:"], [class*="transition"] {
   transition-property: background-color, border-color, color, fill, stroke;
   transition-duration: var(--transition-base);
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

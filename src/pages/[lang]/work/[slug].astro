@@ -10,6 +10,11 @@ import { getLocalizedField, type Language } from "../../../lib/i18n";
 const { lang: langParam, slug } = Astro.params;
 const lang = (langParam as Language) || "en";
 
+const supportedLanguages: Language[] = ["en", "de"];
+if (!supportedLanguages.includes(lang)) {
+  return Astro.redirect("/404");
+}
+
 if (!slug) {
   return Astro.redirect("/404");
 }
@@ -239,7 +244,7 @@ const worksLink = `/${lang}/works`;
                       : "grid-cols-1"
                 }`}
               >
-                {/* Column 1 */}
+                {/* Column 1 — custom_code fields are trusted admin-authored HTML/CSS/JS from Directus */}
                 {(section.content_1 || section.custom_code_1) && (
                   <div class="flex flex-col gap-8">
                     {section.content_1 && (

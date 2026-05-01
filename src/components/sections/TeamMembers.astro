@@ -485,9 +485,11 @@ const teamMembers = teamMembersData.length > 0
     }
   }
 
-  // Initialize
+  // Initialize (with cleanup to prevent listener stacking)
+  let teamCardFlipInstance: TeamCardFlip | null = null;
+
   function initTeamCards() {
-    new TeamCardFlip();
+    teamCardFlipInstance = new TeamCardFlip();
   }
 
   if (document.readyState === 'loading') {
@@ -496,6 +498,8 @@ const teamMembers = teamMembersData.length > 0
     initTeamCards();
   }
 
-  // Re-initialize on Astro page transitions
-  document.addEventListener('astro:page-load', initTeamCards);
+  if (!(window as any).__teamCardsListenerAttached) {
+    (window as any).__teamCardsListenerAttached = true;
+    document.addEventListener('astro:page-load', initTeamCards);
+  }
 </script>

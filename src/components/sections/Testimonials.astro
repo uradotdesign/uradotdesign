@@ -26,8 +26,9 @@ const testimonials = testimonialsData.length > 0
       aria-labelledby="testimonials-heading"
     >
       <div class="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
+        <h2 id="testimonials-heading" class="sr-only">Client Testimonials</h2>
         <!-- Testimonials Carousel -->
-        <div class="relative" role="region" aria-label="Client testimonials carousel">
+        <div class="relative" role="region" aria-labelledby="testimonials-heading">
           <div id="testimonials-carousel" class="relative overflow-hidden">
             {testimonials.map((testimonial, index) => (
               <div 
@@ -173,27 +174,23 @@ const testimonials = testimonialsData.length > 0
       });
     });
     
+    const carousel = document.getElementById('testimonials-carousel');
+
     const handleKeydown = (e: KeyboardEvent) => {
-      // Check if testimonials section exists in current DOM
-      if (!document.getElementById('testimonials-carousel')) {
-        document.removeEventListener('keydown', handleKeydown);
-        return;
-      }
+      if (!carousel) return;
+      if (!carousel.contains(document.activeElement) && document.activeElement !== carousel) return;
 
       if (e.key === 'ArrowLeft') {
+        e.preventDefault();
         const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
         showSlide(prevIndex);
       } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
         const nextIndex = (currentIndex + 1) % slides.length;
         showSlide(nextIndex);
       }
     };
 
-    // Prevent adding multiple global listeners
-    // We can remove the old one if it exists (but we don't have reference easily across runs without global var)
-    // or just rely on the check inside handleKeydown (but that doesn't prevent stacking)
-    
-    // Better: Assign to window property to track
     if ((window as any)._testimonialsKeydownHandler) {
       document.removeEventListener('keydown', (window as any)._testimonialsKeydownHandler);
     }
@@ -201,6 +198,10 @@ const testimonials = testimonialsData.length > 0
     document.addEventListener('keydown', handleKeydown);
   }
 
-  // Initialize on page load and after view transitions
-  document.addEventListener('astro:page-load', initTestimonials);
+  if (!(window as any).__testimonialsPageLoadAttached) {
+    (window as any).__testimonialsPageLoadAttached = true;
+    document.addEventListener('astro:page-load', initTestimonials);
+  } else {
+    initTestimonials();
+  }
 </script>

@@ -41,37 +41,44 @@ function namespacedKey(key: string, namespace?: string) {
   return namespace ? `${namespace}:${key}` : key;
 }
 
+const inflight = new Map<string, Promise<any>>();
+
 export async function remember<T>(
   key: string,
   fetchFn: () => Promise<T>,
   options: RememberOptions = {}
 ): Promise<T> {
-  const ttl = options.ttl ?? 900; // 15 minutes default
+  const ttl = options.ttl ?? 900;
   const finalKey = namespacedKey(key, options.namespace);
 
   try {
     const client = getRedisClient();
 
-    // Try to get from cache
     const cached = await client.get(finalKey);
     if (cached) {
-      // console.log(`📦 Cache HIT: ${finalKey}`);
       return JSON.parse(cached) as T;
     }
 
-    // console.log(`🔍 Cache MISS: ${finalKey}`);
-    // Fetch fresh data
-    const data = await fetchFn();
+    // Singleflight: coalesce concurrent misses for the same key
+    const existing = inflight.get(finalKey);
+    if (existing) return existing as Promise<T>;
 
-    // Store in cache
-    if (data !== null && data !== undefined) {
-      await client.setex(finalKey, ttl, JSON.stringify(data));
-    }
+    const promise = (async () => {
+      try {
+        const data = await fetchFn();
+        if (data !== null && data !== undefined) {
+          await client.setex(finalKey, ttl, JSON.stringify(data));
+        }
+        return data;
+      } finally {
+        inflight.delete(finalKey);
+      }
+    })();
 
-    return data;
+    inflight.set(finalKey, promise);
+    return await promise;
   } catch (error) {
     console.error("Redis error, fetching without cache:", error);
-    // Fallback to direct fetch if Redis fails
     return await fetchFn();
   }
 }
@@ -79,11 +86,27 @@ export async function remember<T>(
 export async function invalidateCache(pattern: string): Promise<void> {
   try {
     const client = getRedisClient();
-    const keys = await client.keys(pattern);
-    if (keys.length > 0) {
-      await client.del(...keys);
+    let cursor = "0";
+    let totalDeleted = 0;
+
+    do {
+      const [nextCursor, keys] = await client.scan(
+        cursor,
+        "MATCH",
+        pattern,
+        "COUNT",
+        100
+      );
+      cursor = nextCursor;
+      if (keys.length > 0) {
+        await client.del(...keys);
+        totalDeleted += keys.length;
+      }
+    } while (cursor !== "0");
+
+    if (totalDeleted > 0) {
       console.log(
-        `🗑️  Invalidated ${keys.length} cache keys matching: ${pattern}`
+        `🗑️  Invalidated ${totalDeleted} cache keys matching: ${pattern}`
       );
     }
   } catch (error) {

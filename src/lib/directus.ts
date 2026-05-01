@@ -3,9 +3,15 @@ import {
   rest,
   readItems,
   readItem,
-  readSingleton,
   createItem,
 } from "@directus/sdk";
+import {
+  directusUrl,
+  publicDirectusUrl,
+  directusToken,
+  cacheEnabled as CONFIG_CACHE_ENABLED,
+  cacheTTL as CONFIG_CACHE_TTL,
+} from "./config";
 
 // Define your Directus schema types
 export interface Article {
@@ -602,24 +608,6 @@ interface Schema {
   case_study_sections: CaseStudySection[];
 }
 
-// Get Directus URL from environment
-// Use internal URL for API calls during SSR (container-to-container)
-const directusUrl = import.meta.env.SSR
-  ? import.meta.env.DIRECTUS_URL ||
-    process.env.DIRECTUS_URL ||
-    "http://localhost:8055" // Default to localhost for bare metal
-  : import.meta.env.PUBLIC_DIRECTUS_URL || "http://localhost:8055"; // Browser Public
-
-// Public URL for assets (must be accessible from browser)
-const publicDirectusUrl =
-  process.env.PUBLIC_DIRECTUS_URL ||
-  import.meta.env.PUBLIC_DIRECTUS_URL ||
-  "http://localhost:8055";
-
-const CONFIG_CACHE_ENABLED = import.meta.env.DIRECTUS_CONFIG_CACHE !== "false";
-const CONFIG_CACHE_TTL = parseInt(
-  import.meta.env.DIRECTUS_CONFIG_CACHE_TTL || "3600"
-);
 
 type RememberFn = (
   key: string,
@@ -698,16 +686,6 @@ function createCacheKey(base: string, params?: Record<string, unknown>) {
   return `${base}:${serializeCacheValue(normalized)}`;
 }
 
-function coerceBoolean(value: unknown): boolean {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value !== 0;
-  if (typeof value === "string") {
-    const normalized = value.toLowerCase();
-    return normalized === "true" || normalized === "1" || normalized === "yes";
-  }
-  return false;
-}
-
 // Create Directus client with REST API (public access)
 // Permissions are configured in Directus Admin → Settings → Access Control → Public
 export const directus = createDirectus<Schema>(directusUrl).with(rest());
@@ -719,13 +697,15 @@ export function getAssetUrl(fileId: string | undefined): string | null {
   return `${publicDirectusUrl}/assets/${fileId}`;
 }
 
+type DirectusFilter = Record<string, unknown>;
+
 type CollectionFetchOptions = {
   fields?: string[];
-  filter?: Record<string, any>;
+  filter?: DirectusFilter;
   sort?: string[];
   limit?: number;
   statusField?: string | null;
-  statusValue?: any;
+  statusValue?: string | boolean | null;
 };
 
 async function fetchCollection<T>(
@@ -750,7 +730,7 @@ async function fetchCollection<T>(
     finalFilter[statusField] = { _eq: statusValue };
   }
 
-  const query: any = { fields, filter: finalFilter, sort };
+  const query: Record<string, unknown> = { fields, filter: finalFilter, sort };
   if (limit !== undefined) {
     query.limit = limit;
   }
@@ -799,13 +779,56 @@ async function fetchSingletonById<T>(
   }
 }
 
+async function fetchSingletonHTTP<T>(
+  collection: string,
+  fields: string = "*"
+): Promise<T | null> {
+  try {
+    const cacheBuster = `${Date.now()}_${Math.random()}`;
+    const url = `${directusUrl}/items/${collection}?fields=${fields}&_cache=${cacheBuster}`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+      // @ts-ignore - cache option exists in fetch
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error(`${collection} HTTP error: ${res.status} ${res.statusText}`);
+      return null;
+    }
+
+    const body = await res.json();
+
+    if (body?.data && typeof body.data === "object" && !Array.isArray(body.data)) {
+      return body.data as T;
+    }
+
+    if (Array.isArray(body?.data) && body.data.length > 0) {
+      return body.data[0] as T;
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`${collection} fetch error:`, error);
+    return null;
+  }
+}
+
 // Helper function to get file metadata (including MIME type)
 export async function getFileMetadata(
   fileId: string | undefined
 ): Promise<{ type: string; filename_download: string } | null> {
   if (!fileId) return null;
   try {
-    const response = await fetch(`${directusUrl}/files/${fileId}`);
+    const response = await fetch(`${directusUrl}/files/${fileId}`, {
+      headers: directusToken ? { Authorization: `Bearer ${directusToken}` } : {},
+    });
     if (!response.ok) return null;
     const data = await response.json();
     return data?.data
@@ -823,14 +846,22 @@ export async function getFileMetadata(
 // API functions for fetching data
 export async function getArticles(options?: {
   limit?: number;
-  filter?: any;
+  filter?: DirectusFilter;
   sort?: string[];
 }) {
-  return fetchCollection<Article>("articles", {
-    limit: options?.limit,
-    filter: options?.filter,
-    sort: options?.sort ?? ["-date_created"],
+  const cacheKey = createCacheKey("articles", {
+    limit: options?.limit ?? null,
+    filter: options?.filter ?? null,
+    sort: options?.sort ?? null,
   });
+
+  return cacheConfig(cacheKey, () =>
+    fetchCollection<Article>("articles", {
+      limit: options?.limit,
+      filter: options?.filter,
+      sort: options?.sort ?? ["-date_created"],
+    })
+  );
 }
 
 export async function getArticleBySlug(slug: string) {
@@ -884,73 +915,101 @@ export async function getHeroSection() {
 
 export async function getServices(options?: {
   limit?: number;
-  filter?: any;
+  filter?: DirectusFilter;
   fields?: string[];
 }): Promise<Service[]> {
-  return fetchCollection<Service>("services", {
-    limit: options?.limit,
-    filter: options?.filter,
-    sort: ["sort_order"],
-    fields: options?.fields,
+  const cacheKey = createCacheKey("services", {
+    limit: options?.limit ?? null,
+    filter: options?.filter ?? null,
+    fields: options?.fields ?? null,
   });
+
+  return cacheConfig(cacheKey, () =>
+    fetchCollection<Service>("services", {
+      limit: options?.limit,
+      filter: options?.filter,
+      sort: ["sort_order"],
+      fields: options?.fields,
+    })
+  );
+}
+
+export async function getBatchServiceRelations(serviceIds: number[]) {
+  if (serviceIds.length === 0) return new Map<number, any>();
+
+  const collections = [
+    { key: "checklist_items", collection: "service_checklist_items" },
+    { key: "steps", collection: "service_steps" },
+    { key: "activities_list", collection: "service_activities" },
+    { key: "subservices", collection: "service_subservices" },
+  ] as const;
+
+  const results = await Promise.allSettled(
+    collections.map(({ collection }) =>
+      directus.request(
+        readItems(collection as any, {
+          fields: ["*"],
+          filter: { service_id: { _in: serviceIds } },
+          sort: ["sort"],
+        } as any)
+      )
+    )
+  );
+
+  const map = new Map<number, Record<string, any[]>>();
+  serviceIds.forEach((id) => {
+    map.set(id, { checklist_items: [], steps: [], activities_list: [], subservices: [] });
+  });
+
+  results.forEach((result, i) => {
+    const { key } = collections[i];
+    if (result.status === "fulfilled") {
+      (result.value as any[]).forEach((item: any) => {
+        const entry = map.get(item.service_id);
+        if (entry) entry[key].push(item);
+      });
+    }
+  });
+
+  return map;
 }
 
 // Helper to fetch service relations separately
 export async function getServiceRelations(serviceId: number) {
-  const relations = {
-    checklist_items: [] as any[],
-    steps: [] as any[],
-    activities_list: [] as any[],
-    subservices: [] as any[],
+  const collections = [
+    { key: "checklist_items", collection: "service_checklist_items" },
+    { key: "steps", collection: "service_steps" },
+    { key: "activities_list", collection: "service_activities" },
+    { key: "subservices", collection: "service_subservices" },
+  ] as const;
+
+  const results = await Promise.allSettled(
+    collections.map(({ collection }) =>
+      directus.request(
+        readItems(collection as any, {
+          fields: ["*"],
+          filter: { service_id: { _eq: serviceId } },
+          sort: ["sort"],
+        } as any)
+      )
+    )
+  );
+
+  const relations: Record<string, any[]> = {
+    checklist_items: [],
+    steps: [],
+    activities_list: [],
+    subservices: [],
   };
 
-  try {
-    relations.checklist_items = await directus.request(
-      readItems("service_checklist_items", {
-        fields: ["*"],
-        filter: { service_id: { _eq: serviceId } },
-        sort: ["sort"],
-      })
-    );
-  } catch (err) {
-    // Collection might not exist or have no items
-  }
-
-  try {
-    relations.steps = await directus.request(
-      readItems("service_steps", {
-        fields: ["*"],
-        filter: { service_id: { _eq: serviceId } },
-        sort: ["sort"],
-      })
-    );
-  } catch (err) {
-    // Collection might not exist or have no items
-  }
-
-  try {
-    relations.activities_list = await directus.request(
-      readItems("service_activities", {
-        fields: ["*"],
-        filter: { service_id: { _eq: serviceId } },
-        sort: ["sort"],
-      })
-    );
-  } catch (err) {
-    // Collection might not exist or have no items
-  }
-
-  try {
-    relations.subservices = await directus.request(
-      readItems("service_subservices", {
-        fields: ["*"],
-        filter: { service_id: { _eq: serviceId } },
-        sort: ["sort"],
-      })
-    );
-  } catch (err) {
-    // Collection might not exist or have no items
-  }
+  results.forEach((result, i) => {
+    const { key } = collections[i];
+    if (result.status === "fulfilled") {
+      relations[key] = result.value as any[];
+    } else {
+      console.warn(`Service relation "${key}" for service ${serviceId}:`, result.reason?.message || "failed");
+    }
+  });
 
   return relations;
 }
@@ -958,7 +1017,7 @@ export async function getServiceRelations(serviceId: number) {
 // Blog Posts helpers
 export async function getBlogPosts(options?: {
   limit?: number;
-  filter?: any;
+  filter?: DirectusFilter;
   sort?: string[];
   fields?: string[];
 }) {
@@ -970,11 +1029,16 @@ export async function getBlogPosts(options?: {
   });
 }
 
-export async function getBlogPostBySlug(slug: string) {
-  return cacheConfig(`post:${slug}`, async () => {
+export async function getBlogPostBySlug(slug: string, language?: string) {
+  const cacheKey = language ? `post:${slug}:${language}` : `post:${slug}`;
+  return cacheConfig(cacheKey, async () => {
+    const filter: Record<string, any> = { slug: { _eq: slug } };
+    if (language) {
+      filter.language = { _eq: language };
+    }
     const [post] = await fetchCollection<BlogPost>("posts", {
       limit: 1,
-      filter: { slug: { _eq: slug } },
+      filter,
       sort: ["-published_date"],
       fields: ["*", "author.*"],
     });
@@ -985,7 +1049,7 @@ export async function getBlogPostBySlug(slug: string) {
 // Navigation Links helpers (optional collection)
 export async function getNavigationLinks(options?: {
   limit?: number;
-  filter?: any;
+  filter?: DirectusFilter;
 }) {
   const cacheKey = createCacheKey("navigation_links", {
     limit: options?.limit ?? null,
@@ -1003,7 +1067,7 @@ export async function getNavigationLinks(options?: {
 
 export async function getClients(options?: {
   limit?: number;
-  filter?: any;
+  filter?: DirectusFilter;
   fields?: string[];
 }) {
   const cacheKey = createCacheKey("clients", {
@@ -1030,7 +1094,7 @@ export async function getClientsSection(): Promise<ClientsSection | null> {
 
 export async function getProjects(options?: {
   limit?: number;
-  filter?: any;
+  filter?: DirectusFilter;
   featuredOnly?: boolean;
 }) {
   const filter = {
@@ -1068,7 +1132,7 @@ export async function getProjectBySlug(slug: string) {
 // Case Studies helpers
 export async function getCaseStudies(options?: {
   limit?: number;
-  filter?: any;
+  filter?: DirectusFilter;
   featuredOnly?: boolean;
   sort?: string[];
   fields?: string[];
@@ -1126,7 +1190,7 @@ export async function getCaseStudyCategories() {
 // Testimonials helpers
 export async function getTestimonials(options?: {
   limit?: number;
-  filter?: any;
+  filter?: DirectusFilter;
 }) {
   const cacheKey = createCacheKey("testimonials", {
     limit: options?.limit ?? null,
@@ -1153,50 +1217,7 @@ export async function getSocialLinks() {
 
 // Site Settings helpers - HTTP ONLY (no SDK to avoid caching issues)
 export async function getSiteSettings(): Promise<SiteSettings | null> {
-  return cacheConfig("site_settings", async () => {
-    try {
-      const cacheBuster = `${Date.now()}_${Math.random()}`;
-      const url = `${directusUrl}/items/site_settings?fields=*&_cache=${cacheBuster}`;
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-        // @ts-ignore - cache option exists in fetch
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        console.error(
-          `getSiteSettings HTTP error: ${res.status} ${res.statusText}`
-        );
-        return null;
-      }
-
-      const body = await res.json();
-
-      if (Array.isArray(body?.data) && body.data.length > 0) {
-        return body.data[0] as SiteSettings;
-      }
-
-      if (
-        body?.data &&
-        typeof body.data === "object" &&
-        !Array.isArray(body.data)
-      ) {
-        return body.data as SiteSettings;
-      }
-
-      console.warn("getSiteSettings: Unexpected response format", body);
-      return null;
-    } catch (error) {
-      console.error("getSiteSettings fetch error:", error);
-      return null;
-    }
-  });
+  return cacheConfig("site_settings", () => fetchSingletonHTTP<SiteSettings>("site_settings"));
 }
 
 // Translations helpers
@@ -1283,15 +1304,20 @@ export async function getTeamMembers(options?: {
     filter.featured = { _eq: true };
   }
 
-  const members = await fetchCollection<TeamMember>("team_members", {
-    limit: options?.limit,
-    filter,
-    sort: ["sort_order"],
-    fields: [...baseFields, "sort_order", "featured"],
-    statusField: null,
+  const cacheKey = createCacheKey("team_members", {
+    limit: options?.limit ?? null,
+    featuredOnly: options?.featuredOnly ?? null,
   });
 
-  return members;
+  return cacheConfig(cacheKey, () =>
+    fetchCollection<TeamMember>("team_members", {
+      limit: options?.limit,
+      filter,
+      sort: ["sort_order"],
+      fields: [...baseFields, "sort_order", "featured"],
+      statusField: null,
+    })
+  );
 }
 
 export async function getTeamMemberBySlug(slug: string) {
@@ -1351,58 +1377,13 @@ export async function getAccessibilitySettings() {
 
 // Footer Settings helpers - HTTP ONLY (same approach as getSiteSettings)
 export async function getFooterSettings(): Promise<FooterSettings | null> {
-  return cacheConfig("footer_settings", async () => {
-    try {
-      const cacheBuster = `${Date.now()}_${Math.random()}`;
-      const url = `${directusUrl}/items/footer_settings?fields=*&_cache=${cacheBuster}`;
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-        // @ts-ignore - cache option exists in fetch
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        console.error(
-          `getFooterSettings HTTP error: ${res.status} ${res.statusText}`
-        );
-        return null;
-      }
-
-      const body = await res.json();
-
-      // Handle array response (collection mode)
-      if (Array.isArray(body?.data) && body.data.length > 0) {
-        return body.data[0] as FooterSettings;
-      }
-
-      // Handle object response (singleton mode)
-      if (
-        body?.data &&
-        typeof body.data === "object" &&
-        !Array.isArray(body.data)
-      ) {
-        return body.data as FooterSettings;
-      }
-
-      console.warn("getFooterSettings: Unexpected response format", body);
-      return null;
-    } catch (error) {
-      console.error("getFooterSettings fetch error:", error);
-      return null;
-    }
-  });
+  return cacheConfig("footer_settings", () => fetchSingletonHTTP<FooterSettings>("footer_settings"));
 }
 
 // Certifications helpers
 export async function getCertifications(options?: {
   limit?: number;
-  filter?: any;
+  filter?: DirectusFilter;
 }) {
   const cacheKey = createCacheKey("certifications", {
     limit: options?.limit ?? null,
@@ -1420,51 +1401,7 @@ export async function getCertifications(options?: {
 
 // About Page helpers
 export async function getAboutPage(): Promise<AboutPage | null> {
-  return cacheConfig("about_page", async () => {
-    try {
-      const cacheBuster = `${Date.now()}_${Math.random()}`;
-      const url = `${directusUrl}/items/about_page?fields=*&_cache=${cacheBuster}`;
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-        // @ts-ignore
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        console.error(
-          `getAboutPage HTTP error: ${res.status} ${res.statusText}`
-        );
-        return null;
-      }
-
-      const body = await res.json();
-
-      // Handle singleton response (object)
-      if (
-        body?.data &&
-        typeof body.data === "object" &&
-        !Array.isArray(body.data)
-      ) {
-        return body.data as AboutPage;
-      }
-
-      // Fallback if array
-      if (Array.isArray(body?.data) && body.data.length > 0) {
-        return body.data[0] as AboutPage;
-      }
-
-      return null;
-    } catch (error) {
-      console.error("getAboutPage fetch error:", error);
-      return null;
-    }
-  });
+  return cacheConfig("about_page", () => fetchSingletonHTTP<AboutPage>("about_page"));
 }
 
 export async function getApproaches() {

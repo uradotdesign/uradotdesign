@@ -789,8 +789,11 @@ const clientMessages = {
     }
   }
 
-  // Initialize on page load and after View Transitions
-  document.addEventListener("astro:page-load", initContactModal);
+  // Initialize on page load and after View Transitions (with guard to prevent duplicate bindings)
+  if (!(window as any).__contactModalInitialized) {
+    (window as any).__contactModalInitialized = true;
+    document.addEventListener("astro:page-load", initContactModal);
+  }
 
   // Spotlight effect for modal submit button
   function initModalSpotlightButton() {

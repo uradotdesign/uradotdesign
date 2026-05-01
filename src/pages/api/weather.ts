@@ -32,7 +32,7 @@ async function fetchWeather(location: string): Promise<WeatherData> {
     };
   }
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&appid=${apiKey}&units=metric`;
 
   const response = await fetch(url);
 

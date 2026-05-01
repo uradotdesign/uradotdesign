@@ -9,7 +9,7 @@ const currentLang = "de";
 const articles = await getBlogPosts({
   filter: { status: { _eq: "published" } },
   sort: ["-published_date"],
-  fields: ["*", "author.*"],
+  fields: ["id", "title", "slug", "excerpt", "content", "cover_image", "published_date", "badge", "author.full_name", "author.photo"],
 });
 
 function calculateReadingTime(text: string): number {

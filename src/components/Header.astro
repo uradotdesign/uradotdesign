@@ -705,9 +705,29 @@ if (showWeather && weatherLocation) {
       }
     };
 
-    document.onkeydown = (e) => {
-      if (e.key === 'Escape' && isMenuOpen) toggleMenu();
-    };
+    document.addEventListener('keydown', (e) => {
+      if (!isMenuOpen) return;
+      if (e.key === 'Escape') {
+        toggleMenu();
+        menuToggle.focus();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusable = menuOverlay.querySelectorAll<HTMLElement>(
+          'a[href], button, input, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
 
     // Scroll Logic: Background appears on scroll, CTA swaps after hero
     let ticking = false;
@@ -755,45 +775,40 @@ if (showWeather && weatherLocation) {
     updateNavState();
   }
 
-  // Initialize on load
-  document.addEventListener('astro:page-load', () => {
+  function headerPageLoadHandler() {
+    scrollListenerAttached = false;
     initHeaderScroll();
-    
-    // Check if functions are defined before calling, though they are in scope
-    // We use a small timeout to ensure DOM and other scripts are ready
     setTimeout(() => {
       if (typeof updateTime === 'function') updateTime();
       if (typeof initMobileNav === 'function') initMobileNav();
     }, 0);
-  });
+  }
 
-  // Re-apply scroll state after page transitions (but don't re-attach listener)
-  document.addEventListener('astro:page-load', () => {
-    // Re-attach listener if missing (page navigation might have cleared it)
-    scrollListenerAttached = false;
-    
-    // Small delay to ensure DOM is ready
-    requestAnimationFrame(initHeaderScroll);
-  });
+  if (!(window as any).__headerPageLoadAttached) {
+    (window as any).__headerPageLoadAttached = true;
+    document.addEventListener('astro:page-load', headerPageLoadHandler);
+  } else {
+    headerPageLoadHandler();
+  }
 
-  // Before swap, preserve header state
-  document.addEventListener('astro:before-swap', () => {
-    const header = document.querySelector('header');
-    if (header) {
-      // Store current classes to preserve state
-      header.dataset.wasScrolled = header.classList.contains('scrolled') ? 'true' : 'false';
-    }
-  });
+  if (!(window as any).__headerSwapAttached) {
+    (window as any).__headerSwapAttached = true;
 
-  // After swap, restore header state immediately
-  document.addEventListener('astro:after-swap', () => {
-    const header = document.querySelector('header');
-    if (header && header.dataset.wasScrolled === 'true') {
-      header.classList.add('scrolled');
-    }
-    // Re-check scroll position
-    requestAnimationFrame(initHeaderScroll);
-  });
+    document.addEventListener('astro:before-swap', () => {
+      const header = document.querySelector('header');
+      if (header) {
+        header.dataset.wasScrolled = header.classList.contains('scrolled') ? 'true' : 'false';
+      }
+    });
+
+    document.addEventListener('astro:after-swap', () => {
+      const header = document.querySelector('header');
+      if (header && header.dataset.wasScrolled === 'true') {
+        header.classList.add('scrolled');
+      }
+      requestAnimationFrame(initHeaderScroll);
+    });
+  }
 </script>
 
 <style>  /* Prevent header from participating in view transitions animations */

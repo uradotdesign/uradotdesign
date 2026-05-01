@@ -7,6 +7,8 @@ const CACHE_DURATION = 300000; // 5 minutes
 
 // Flag to track if translations collection exists (skip fetching if it doesn't)
 let translationsCollectionExists: boolean | null = null;
+let collectionCheckTime = 0;
+const COLLECTION_RETRY_INTERVAL = 600000; // Retry checking every 10 minutes
 
 /**
  * Get translation by key
@@ -19,9 +21,12 @@ export async function t(
   language: string = "en",
   fallback?: string
 ): Promise<string> {
-  // If we know the collection doesn't exist, skip fetching and use fallback
+  // If we know the collection doesn't exist, skip fetching — but periodically retry
   if (translationsCollectionExists === false) {
-    return fallback || key;
+    if (Date.now() - collectionCheckTime < COLLECTION_RETRY_INTERVAL) {
+      return fallback || key;
+    }
+    translationsCollectionExists = null;
   }
 
   const cacheKey = language;
@@ -39,15 +44,20 @@ export async function t(
   // Fetch fresh translations
   try {
     const translations = await getTranslations(language);
-    translationsCollectionExists = true;
+    if (Object.keys(translations).length === 0 && translationsCollectionExists === null) {
+      translationsCollectionExists = false;
+      collectionCheckTime = Date.now();
+    } else {
+      translationsCollectionExists = true;
+    }
     translationsCache[cacheKey] = translations;
     lastFetchTime[cacheKey] = now;
-    
+
     return translations[key] || fallback || key;
   } catch (error: any) {
-    // If 403 Forbidden, the collection likely doesn't exist or has no public access
     if (error?.response?.status === 403 || error?.status === 403) {
       translationsCollectionExists = false;
+      collectionCheckTime = Date.now();
     }
     return fallback || key;
   }
@@ -62,15 +72,16 @@ export async function getNamespaceTranslations(
   namespace: string,
   language: string = "en"
 ): Promise<Record<string, any>> {
-  // If we know the collection doesn't exist, skip fetching
   if (translationsCollectionExists === false) {
-    return {};
+    if (Date.now() - collectionCheckTime < COLLECTION_RETRY_INTERVAL) {
+      return {};
+    }
+    translationsCollectionExists = null;
   }
 
   const cacheKey = `${language}:${namespace}`;
   const now = Date.now();
-  
-  // Check cache
+
   if (
     translationsCache[cacheKey] &&
     lastFetchTime[cacheKey] &&
@@ -78,19 +89,23 @@ export async function getNamespaceTranslations(
   ) {
     return translationsCache[cacheKey];
   }
-  
-  // Fetch fresh translations
+
   try {
     const translations = await getTranslationsByNamespace(language, namespace);
-    translationsCollectionExists = true;
+    if (Object.keys(translations).length === 0 && translationsCollectionExists === null) {
+      translationsCollectionExists = false;
+      collectionCheckTime = Date.now();
+    } else {
+      translationsCollectionExists = true;
+    }
     translationsCache[cacheKey] = translations;
     lastFetchTime[cacheKey] = now;
-    
+
     return translations;
   } catch (error: any) {
-    // If 403 Forbidden, the collection likely doesn't exist or has no public access
     if (error?.response?.status === 403 || error?.status === 403) {
       translationsCollectionExists = false;
+      collectionCheckTime = Date.now();
     }
     return {};
   }

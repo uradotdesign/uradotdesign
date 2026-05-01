@@ -14,21 +14,19 @@
     "schema:sync": "node scripts/sync-directus-schema-complete.mjs"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.6",
-    "@astrojs/node": "^9.5.2",
-    "@directus/sdk": "^21.2.1",
-    "astro": "^5.16.11",
-    "astro-i18next": "^1.0.0-beta.21",
-    "i18next": "^23.16.8",
-    "ioredis": "^5.9.2",
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/node": "^10.0.6",
+    "@directus/sdk": "^21.3.0",
+    "astro": "^6.2.1",
+    "ioredis": "^5.10.1",
     "lottie-web": "^5.13.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
-    "@tailwindcss/vite": "^4.1.18",
-    "@types/node": "^22.19.7",
-    "tailwindcss": "^4.1.18"
+    "@tailwindcss/vite": "^4.2.4",
+    "@types/node": "^24.0.0",
+    "tailwindcss": "^4.2.4"
   },
   "engines": {
     "node": ">=18.20.8"

@@ -101,8 +101,8 @@ const loopGroup3 = [...group3, ...group3, ...group3];
         </div>
       </div>
 
-      {/* Mobile Marquees (3 rows) */}
-      <div class="md:hidden flex flex-col gap-8 w-full max-w-[100vw]">
+      {/* Mobile Marquees (3 rows) — decorative animation, desktop grid is the accessible version */}
+      <div class="md:hidden flex flex-col gap-8 w-full max-w-[100vw]" aria-hidden="true">
         {/* Row 1 - Left */}
         <div class="flex w-max animate-scroll-left items-center">
           {loopGroup1.map((client) => (
@@ -194,5 +194,12 @@ const loopGroup3 = [...group3, ...group3, ...group3];
   .animate-scroll-right {
     animation: scroll-right 40s linear infinite;
     will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-scroll-left,
+    .animate-scroll-right {
+      animation-play-state: paused;
+    }
   }
 </style>

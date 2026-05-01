@@ -41,21 +41,14 @@ export const getCertifications = directus.getCertifications;
 export const getExpertiseGroups = directus.getExpertiseGroups;
 export const getSocialLinks = directus.getSocialLinks;
 
-// Articles & Pages
-export const getArticles = directus.getArticles;
-export const getArticleBySlug = directus.getArticleBySlug;
-export const getPages = directus.getPages;
+// Pages
 export const getPageBySlug = directus.getPageBySlug;
-export const getCategories = directus.getCategories;
 
 // By Slug functions
-export const getProjectBySlug = directus.getProjectBySlug;
 export const getCaseStudyBySlug = directus.getCaseStudyBySlug;
-export const getTeamMemberBySlug = directus.getTeamMemberBySlug;
 
 // Other helpers
 export const getClientsSection = directus.getClientsSection;
-export const getSettings = directus.getSettings;
 export const getTranslations = directus.getTranslations;
 export const getTranslationsByNamespace = directus.getTranslationsByNamespace;
 export const getFileMetadata = directus.getFileMetadata;
@@ -65,22 +58,9 @@ export const getFileMetadata = directus.getFileMetadata;
 // ============================================================================
 
 /**
- * Get localized field value with fallback
+ * Get localized field value with fallback — delegates to i18n.ts
  */
-export function getLocalizedField<T extends Record<string, any>>(
-  item: T | null | undefined,
-  fieldName: string,
-  lang: string
-): string | null {
-  if (!item) return null;
-
-  const localizedField = `${fieldName}_${lang}`;
-  return (
-    (item[localizedField as keyof T] as string) ||
-    (item[fieldName as keyof T] as string) ||
-    null
-  );
-}
+export { getLocalizedField } from "./i18n";
 
 /**
  * Convert value to boolean (handles various types)
@@ -99,7 +79,7 @@ export function toBoolean(value: any): boolean {
 /**
  * Get Directus asset URL
  */
-export function getAssetURL(fileId: string | null | undefined): string | null {
+export function getAssetUrl(fileId: string | null | undefined): string | null {
   return directus.getAssetUrl(fileId || undefined);
 }
 
@@ -110,11 +90,6 @@ export function getAsset(
   fileId: string | null | undefined,
   fallback?: string
 ): string {
-  const url = getAssetURL(fileId);
+  const url = getAssetUrl(fileId);
   return url || fallback || "";
 }
-
-/**
- * Alias for getAssetURL (for compatibility)
- */
-export const getAssetUrl = getAssetURL;
