@@ -34,7 +34,7 @@ services:
 
   # 2. Directus CMS
   directus:
-    image: directus/directus:11.14.1
+    image: directus/directus:11.17.2
     container_name: directus_cms
     restart: unless-stopped
     ports:
