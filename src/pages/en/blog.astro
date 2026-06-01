@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getBlogPosts, getAssetUrl } from "../../lib/directus";
+import ProgressiveImage from "../../components/ProgressiveImage.astro";
 
 export const prerender = false;
 
@@ -73,10 +74,11 @@ const remainingArticles = articles.slice(1);
             {/* Image */}
             <div class="relative aspect-[4/3] lg:aspect-auto overflow-hidden bg-gray-100 dark:bg-gray-900">
               {featuredArticle.cover_image ? (
-                <img
-                  src={getAssetUrl(featuredArticle.cover_image) || ""}
+                <ProgressiveImage
+                  src={getAssetUrl(featuredArticle.cover_image)}
+                  fill
                   alt=""
-                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  imgClass="transition-transform duration-700 group-hover:scale-105"
                   loading="eager"
                 />
               ) : (
@@ -190,10 +192,11 @@ const remainingArticles = articles.slice(1);
                   class="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-900 mb-6"
                 >
                   {article.cover_image ? (
-                    <img
-                      src={getAssetUrl(article.cover_image) || ""}
+                    <ProgressiveImage
+                      src={getAssetUrl(article.cover_image)}
+                      fill
                       alt=""
-                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      imgClass="transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
                   ) : (
