@@ -245,6 +245,7 @@ export interface Testimonial {
   author_company?: string;
   sort_order?: number;
   status?: "draft" | "published" | "archived";
+  translations?: Array<{ languages_code?: string; quote?: string; author_title?: string }>;
 }
 
 export interface SocialLink {
@@ -374,6 +375,7 @@ export interface CompanyValue {
   status?: "draft" | "published";
   date_created?: string;
   date_updated?: string;
+  translations?: Array<{ languages_code?: string; title?: string; subtitle?: string; description?: string }>;
 }
 
 export interface CaseStudyCategory {
@@ -440,6 +442,7 @@ export interface TeamMember {
   status?: "draft" | "published";
   date_created?: string;
   date_updated?: string;
+  translations?: Array<{ languages_code?: string; role?: string; bio?: string }>;
 }
 
 export interface ContactSubmission {
@@ -570,6 +573,7 @@ export interface AboutPage {
   expertise_heading_de?: string;
   expertise_intro_en?: string;
   expertise_intro_de?: string;
+  translations?: Array<{ languages_code?: string; hero_label?: string; hero_heading?: string; section_title?: string; section_text?: string; expertise_heading?: string; expertise_intro?: string; approach_section_title?: string; values_intro?: string }>;
 }
 
 export interface Approach {
@@ -1469,6 +1473,7 @@ export async function getTestimonials(options?: {
       limit: options?.limit,
       filter: options?.filter,
       sort: ["sort_order"],
+      fields: ["*", "translations.*"],
     })
   );
 }
@@ -1541,6 +1546,7 @@ export async function getCompanyValues() {
   return cacheConfig("company_values", () =>
     fetchCollection<CompanyValue>("company_values", {
       sort: ["sort_order"],
+      fields: ["*", "translations.*"],
     })
   );
 }
@@ -1581,7 +1587,7 @@ export async function getTeamMembers(options?: {
       limit: options?.limit,
       filter,
       sort: ["sort_order"],
-      fields: [...baseFields, "sort_order", "featured"],
+      fields: [...baseFields, "sort_order", "featured", "translations.*"],
       statusField: null,
     })
   );
@@ -1662,7 +1668,7 @@ export async function getCertifications(options?: {
 
 // About Page helpers
 export async function getAboutPage(): Promise<AboutPage | null> {
-  return cacheConfig("about_page", () => fetchSingletonHTTP<AboutPage>("about_page"));
+  return cacheConfig("about_page", () => fetchSingletonHTTP<AboutPage>("about_page", "*,translations.*"));
 }
 
 export async function getApproaches() {
@@ -1699,7 +1705,7 @@ export async function getContactTeamMembers(options?: {
 
   return cacheConfig(cacheKey, () =>
     fetchCollection<TeamMember>("team_members", {
-      fields: options?.fields ?? [...defaultFields, "sort_order"],
+      fields: options?.fields ?? [...defaultFields, "sort_order", "translations.*"],
       limit: options?.limit,
       filter: { show_in_contact: { _eq: true } },
       sort: ["sort_order"],
