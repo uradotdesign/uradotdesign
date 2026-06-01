@@ -84,6 +84,16 @@ export function getAssetUrl(fileId: string | null | undefined): string | null {
 }
 
 /**
+ * Get a low-quality placeholder (LQIP) URL for blur-up image loading.
+ */
+export function getAssetThumbUrl(
+  assetUrl: string | null | undefined,
+  opts?: { width?: number; quality?: number }
+): string | null {
+  return directus.getAssetThumbUrl(assetUrl, opts);
+}
+
+/**
  * Get asset URL with fallback
  */
 export function getAsset(

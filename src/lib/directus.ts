@@ -712,6 +712,22 @@ export function getAssetUrl(fileId: string | undefined): string | null {
   return `${publicDirectusUrl}/assets/${fileId}`;
 }
 
+/**
+ * Builds a tiny low-quality placeholder (LQIP) URL from an existing Directus
+ * asset URL by appending on-the-fly transform params. Used for blur-up loading.
+ * Returns null for empty input. If the Directus instance has transforms disabled,
+ * the request fails harmlessly and the blur tier degrades to a plain fade.
+ */
+export function getAssetThumbUrl(
+  assetUrl: string | null | undefined,
+  opts: { width?: number; quality?: number } = {}
+): string | null {
+  if (!assetUrl) return null;
+  const { width = 24, quality = 20 } = opts;
+  const sep = assetUrl.includes("?") ? "&" : "?";
+  return `${assetUrl}${sep}width=${width}&quality=${quality}&format=webp&fit=cover`;
+}
+
 type DirectusFilter = Record<string, unknown>;
 
 type CollectionFetchOptions = {
