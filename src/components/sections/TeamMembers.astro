@@ -260,7 +260,9 @@ const teamMembers = teamMembersData.length > 0
     background: var(--color-muted);
   }
 
-  .card-image img {
+  /* The photo <img> is rendered by a child component (ProgressiveImage), so
+     target it with :global so the grayscale + hover transition reach it. */
+  .card-image :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -268,8 +270,8 @@ const teamMembers = teamMembersData.length > 0
     transition: filter 0.4s ease, opacity 350ms ease;
   }
 
-  .team-card:hover .card-image img,
-  .team-card.active .card-image img {
+  .team-card:hover .card-image :global(img),
+  .team-card.active .card-image :global(img) {
     filter: grayscale(0%);
   }
 

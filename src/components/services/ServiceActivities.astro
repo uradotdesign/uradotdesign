@@ -300,12 +300,13 @@ const defaultLinkText = caseStudy?.linkText || "See how it worked";
 </script>
 
 <style>
-  /* Smooth image zoom effect for activity cards */
-  .group img {
+  /* Smooth image zoom effect for activity cards. The <img> is rendered by a
+     child component (ProgressiveImage); target it with :global to cross scope. */
+  .group :global(img) {
     transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .group:hover img {
+  .group:hover :global(img) {
     transform: scale(1.1);
   }
 
