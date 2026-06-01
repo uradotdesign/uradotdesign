@@ -20,6 +20,7 @@ const SITE = process.env.PREVIEW_SITE_URL || "https://ura.design";
 const TARGETS = {
   case_studies: `${SITE}/en/work/{{slug}}?preview=${SECRET}`,
   posts: `${SITE}/en/blog/{{slug}}?preview=${SECRET}`,
+  pages: `${SITE}/en/{{slug}}?preview=${SECRET}`,
 };
 
 async function main() {

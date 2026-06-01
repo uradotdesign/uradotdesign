@@ -33,10 +33,15 @@ const COLLECTIONS = [
   "about_page", "accessibility_settings", "approaches", "case_studies",
   "case_studies_categories", "case_study_categories", "case_study_section_images",
   "case_study_sections", "certifications", "clients", "clients_section",
-  "company_values", "contact_section", "footer_settings", "header_settings",
+  "company_values", "footer_settings", "header_settings",
   "hero_section", "navigation_links", "pages", "posts", "service_activities",
   "service_checklist_items", "service_steps", "service_subservices", "services",
   "site_settings", "social_links", "team_members", "testimonials", "translations",
+  // Page builder (F): blocks + junctions so edits bust the page cache instantly.
+  "pages_blocks", "block_hero", "block_richtext", "block_image",
+  "block_two_column", "block_gallery", "block_gallery_images", "block_cta",
+  "block_stats", "block_quote", "block_faq", "block_logos", "block_logos_items",
+  "block_embed",
 ];
 
 const triggerOptions = {
