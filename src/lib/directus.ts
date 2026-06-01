@@ -45,6 +45,7 @@ export interface Page {
   blocks?: PageBlock[];
   date_created?: string;
   date_updated?: string;
+  translations?: Array<{ languages_code?: string; title?: string; seo_title?: string; seo_description?: string }>;
 }
 
 /**
@@ -358,6 +359,7 @@ export interface CaseStudy {
   seo_description_en?: string;
   seo_description_de?: string;
   seo_image?: string;
+  translations?: Array<{ languages_code?: string; title?: string; excerpt?: string; cta_text?: string; description?: string; seo_title?: string; seo_description?: string }>;
 }
 
 export interface CompanyValue {
@@ -382,6 +384,7 @@ export interface CaseStudyCategory {
   sort_order?: number;
   date_created?: string;
   date_updated?: string;
+  translations?: Array<{ languages_code?: string; title?: string }>;
 }
 
 export interface CaseStudyCategoryLink {
@@ -1063,6 +1066,7 @@ const PAGE_BASE_FIELDS = [
   "seo_description_en",
   "seo_description_de",
   "seo_image",
+  "translations.*",
 ];
 
 // Deep M2A field selection: one `item:<collection>.*` per block type, plus the
@@ -1405,7 +1409,9 @@ export async function getCaseStudies(options?: {
       limit: options?.limit,
       filter,
       sort: options?.sort ?? ["sort_order"],
-      fields: options?.fields,
+      fields: options?.fields
+        ? Array.from(new Set([...options.fields, "translations.*"]))
+        : ["*", "translations.*"],
     })
   );
 }
@@ -1415,7 +1421,7 @@ export async function getCaseStudyBySlug(slug: string) {
     const [caseStudy] = await fetchCollection<CaseStudy>("case_studies", {
       limit: 1,
       filter: { slug: { _eq: slug } },
-      fields: ["*", "sections.*"],
+      fields: ["*", "sections.*", "translations.*"],
     });
 
     if (caseStudy && caseStudy.sections) {
@@ -1431,6 +1437,7 @@ export async function getCaseStudyCategories() {
     fetchCollection<CaseStudyCategory>("case_study_categories", {
       sort: ["sort_order", "title_en"],
       statusField: null,
+      fields: ["*", "translations.*"],
     })
   );
 }
