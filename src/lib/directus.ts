@@ -1093,6 +1093,18 @@ const PAGE_BLOCK_FIELDS = [
   "blocks.item:block_logos.logos.image",
   "blocks.item:block_logos.logos.sort",
   "blocks.item:block_embed.*",
+  "blocks.item:block_hero.translations.*",
+  "blocks.item:block_richtext.translations.*",
+  "blocks.item:block_image.translations.*",
+  "blocks.item:block_two_column.translations.*",
+  "blocks.item:block_gallery.translations.*",
+  "blocks.item:block_gallery.images.translations.*",
+  "blocks.item:block_cta.translations.*",
+  "blocks.item:block_stats.translations.*",
+  "blocks.item:block_quote.translations.*",
+  "blocks.item:block_faq.translations.*",
+  "blocks.item:block_logos.translations.*",
+  "blocks.item:block_embed.translations.*",
 ];
 
 export const PAGE_WITH_BLOCKS_FIELDS = [...PAGE_BASE_FIELDS, ...PAGE_BLOCK_FIELDS];
