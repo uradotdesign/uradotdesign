@@ -37,6 +37,7 @@ const COLLECTIONS = [
   "hero_section", "navigation_links", "pages", "posts", "service_activities",
   "service_checklist_items", "service_steps", "service_subservices", "services",
   "site_settings", "social_links", "team_members", "testimonials", "translations",
+  "languages",
   // Page builder (F): blocks + junctions so edits bust the page cache instantly.
   "pages_blocks", "block_hero", "block_richtext", "block_image",
   "block_two_column", "block_gallery", "block_gallery_images", "block_cta",
@@ -44,11 +45,13 @@ const COLLECTIONS = [
   "block_embed",
 ];
 
-const triggerOptions = {
-  type: "action",
-  scope: ["items.create", "items.update", "items.delete"],
-  collections: COLLECTIONS,
-};
+async function buildTriggerCollections() {
+  const all = (await authRequest("/collections?limit=-1&fields=collection"))?.data ?? [];
+  const translationCols = all
+    .map((c) => c.collection)
+    .filter((name) => /_translations$/.test(name));
+  return Array.from(new Set([...COLLECTIONS, ...translationCols]));
+}
 
 const requestOptions = {
   method: "POST",
@@ -70,6 +73,12 @@ async function findFlow() {
 async function main() {
   console.log(`\nSetting up "${FLOW_NAME}" -> ${process.env.DIRECTUS_URL}`);
   console.log(`Revalidate target: ${REVALIDATE_URL}\n`);
+
+  const triggerOptions = {
+    type: "action",
+    scope: ["items.create", "items.update", "items.delete"],
+    collections: await buildTriggerCollections(),
+  };
 
   let flow = await findFlow();
   let flowId = flow?.id;
