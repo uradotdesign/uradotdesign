@@ -111,6 +111,7 @@ export interface HeroSection {
   show_services_grid?: boolean;
   show_weather?: boolean;
   status?: "draft" | "published";
+  translations?: Array<{ languages_code?: string; tagline?: string }>;
 }
 
 // Service relational collections
@@ -225,6 +226,7 @@ export interface ClientsSection {
   id: number;
   section_heading_en?: string;
   section_heading_de?: string;
+  translations?: Array<{ languages_code?: string; section_heading?: string }>;
 }
 
 export interface Testimonial {
@@ -285,6 +287,7 @@ export interface SiteSettings {
   // Theme & Appearance
   primary_color?: string;
   default_theme?: string;
+  translations?: Array<{ languages_code?: string; site_tagline?: string; site_description?: string; newsletter_subtitle?: string }>;
 }
 
 export interface Translation {
@@ -462,6 +465,7 @@ export interface HeaderSettings {
   status?: "draft" | "published";
   date_created?: string;
   date_updated?: string;
+  translations?: Array<{ languages_code?: string; cta_text?: string }>;
 }
 
 export interface AccessibilitySettings {
@@ -478,6 +482,7 @@ export interface AccessibilitySettings {
   skip_link_text_de?: string;
   date_created?: string;
   date_updated?: string;
+  translations?: Array<{ languages_code?: string; site_language?: string; skip_link_text?: string }>;
 }
 
 export interface FooterSettings {
@@ -506,6 +511,7 @@ export interface FooterSettings {
   status?: "draft" | "published";
   date_created?: string;
   date_updated?: string;
+  translations?: Array<{ languages_code?: string; cta_text?: string; newsletter_title?: string; newsletter_button_text?: string; company_section_title?: string; socials_section_title?: string; contact_section_title?: string; copyright_text?: string }>;
 }
 
 export interface NavigationLink {
@@ -904,11 +910,12 @@ async function fetchFirstItem<T>(
 
 async function fetchSingletonById<T>(
   collection: string,
-  id: number = 1
+  id: number = 1,
+  fields?: string[]
 ): Promise<T | null> {
   try {
     const item = await directus.request(
-      readItem(collection as keyof Schema, id)
+      readItem(collection as keyof Schema, id, fields ? { fields } : {})
     );
     return item as T;
   } catch (error) {
@@ -1131,7 +1138,7 @@ export async function getPagePreviewBySlug(slug: string): Promise<Page | null> {
 
 export async function getHeroSection() {
   return cacheConfig("hero_section", () =>
-    fetchSingletonById<HeroSection>("hero_section", 1)
+    fetchSingletonById<HeroSection>("hero_section", 1, ["*", "translations.*"])
   );
 }
 
@@ -1358,7 +1365,7 @@ export async function getClients(options?: {
 
 export async function getClientsSection(): Promise<ClientsSection | null> {
   return cacheConfig("clients_section", () =>
-    fetchSingletonById<ClientsSection>("clients_section", 1)
+    fetchSingletonById<ClientsSection>("clients_section", 1, ["*", "translations.*"])
   );
 }
 
@@ -1450,7 +1457,7 @@ export async function getSocialLinks() {
 
 // Site Settings helpers - HTTP ONLY (no SDK to avoid caching issues)
 export async function getSiteSettings(): Promise<SiteSettings | null> {
-  return cacheConfig("site_settings", () => fetchSingletonHTTP<SiteSettings>("site_settings"));
+  return cacheConfig("site_settings", () => fetchSingletonHTTP<SiteSettings>("site_settings", "*,translations.*"));
 }
 
 // Translations helpers
@@ -1561,6 +1568,7 @@ export async function getHeaderSettings() {
       {
         statusField: null,
         sort: [],
+        fields: ["*", "translations.*"],
       }
     );
     if (sdkSettings) {
@@ -1569,7 +1577,7 @@ export async function getHeaderSettings() {
 
     try {
       const res = await fetchWithTimeout(
-        `${directusUrl}/items/header_settings?fields=*&limit=1`
+        `${directusUrl}/items/header_settings?fields=*,translations.*&limit=1`
       );
       if (res.ok) {
         const body = await res.json();
@@ -1596,13 +1604,14 @@ export async function getAccessibilitySettings() {
     fetchFirstItem<AccessibilitySettings>("accessibility_settings", {
       statusField: null,
       sort: [],
+      fields: ["*", "translations.*"],
     })
   );
 }
 
 // Footer Settings helpers - HTTP ONLY (same approach as getSiteSettings)
 export async function getFooterSettings(): Promise<FooterSettings | null> {
-  return cacheConfig("footer_settings", () => fetchSingletonHTTP<FooterSettings>("footer_settings"));
+  return cacheConfig("footer_settings", () => fetchSingletonHTTP<FooterSettings>("footer_settings", "*,translations.*"));
 }
 
 // Certifications helpers
