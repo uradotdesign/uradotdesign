@@ -222,7 +222,7 @@ module.exports = function (data) {
     ';font-size:12px;line-height:1.5;">Sent automatically from ' +
     '<a href="https://ura.design" style="color:' +
     BRAND +
-    ';text-decoration:none;font-weight:600;">ura.design</a></td></tr>" +
+    ';text-decoration:none;font-weight:600;">ura.design</a></td></tr>' +
     "</table></td></tr></table></body></html>";
 
   return { html: html, submitted_at_human: whenVal };
