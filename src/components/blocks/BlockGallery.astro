@@ -1,0 +1,58 @@
+---
+import { getAssetUrl } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import ProgressiveImage from '../ProgressiveImage.astro';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const heading = getLocalizedField(data, 'heading', lang);
+const images: any[] = Array.isArray(data.images) ? data.images : [];
+
+const colMap: Record<string, string> = {
+  '2': 'sm:grid-cols-2',
+  '3': 'sm:grid-cols-2 lg:grid-cols-3',
+  '4': 'sm:grid-cols-2 lg:grid-cols-4',
+};
+const colsClass = colMap[String(data.columns)] || colMap['3'];
+---
+
+{
+  images.length > 0 && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        {heading && (
+          <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] mb-10">
+            {heading}
+          </h2>
+        )}
+        <div class={`grid grid-cols-1 ${colsClass} gap-4 md:gap-6`}>
+          {images.map((img) => {
+            const src = getAssetUrl(img.image);
+            const caption = getLocalizedField(img, 'caption', lang);
+            return (
+              src && (
+                <figure class="overflow-hidden rounded-2xl">
+                  <ProgressiveImage
+                    src={src}
+                    alt={caption || ''}
+                    class="block w-full"
+                    imgClass="w-full h-full object-cover aspect-[4/3]"
+                  />
+                  {caption && (
+                    <figcaption class="mt-2 text-sm opacity-70 font-serif">
+                      {caption}
+                    </figcaption>
+                  )}
+                </figure>
+              )
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}

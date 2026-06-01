@@ -1,0 +1,47 @@
+---
+import type { PageBlock } from '../../lib/directus';
+import type { Language } from '../../lib/i18n';
+import BlockHero from './BlockHero.astro';
+import BlockRichText from './BlockRichText.astro';
+import BlockImage from './BlockImage.astro';
+import BlockTwoColumn from './BlockTwoColumn.astro';
+import BlockGallery from './BlockGallery.astro';
+import BlockCta from './BlockCta.astro';
+import BlockStats from './BlockStats.astro';
+import BlockQuote from './BlockQuote.astro';
+import BlockFaq from './BlockFaq.astro';
+import BlockLogos from './BlockLogos.astro';
+import BlockEmbed from './BlockEmbed.astro';
+
+interface Props {
+  blocks?: PageBlock[] | null;
+  lang: Language;
+}
+
+const { blocks = [], lang } = Astro.props;
+
+const COMPONENTS: Record<string, any> = {
+  block_hero: BlockHero,
+  block_richtext: BlockRichText,
+  block_image: BlockImage,
+  block_two_column: BlockTwoColumn,
+  block_gallery: BlockGallery,
+  block_cta: BlockCta,
+  block_stats: BlockStats,
+  block_quote: BlockQuote,
+  block_faq: BlockFaq,
+  block_logos: BlockLogos,
+  block_embed: BlockEmbed,
+};
+
+const visible = (blocks || []).filter(
+  (b) => b && COMPONENTS[b.collection] && b.item && typeof b.item === 'object'
+);
+---
+
+{
+  visible.map((b) => {
+    const Component = COMPONENTS[b.collection];
+    return <Component data={b.item} lang={lang} />;
+  })
+}

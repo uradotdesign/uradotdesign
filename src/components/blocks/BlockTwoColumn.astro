@@ -1,0 +1,87 @@
+---
+import { getAssetUrl, getAssetMeta } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import ThemeResponsiveImage from '../ThemeResponsiveImage.astro';
+import BlockButton from './BlockButton.astro';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const heading = getLocalizedField(data, 'heading', lang);
+const body = getLocalizedField(data, 'body', lang);
+const ctaLabel = getLocalizedField(data, 'cta_label', lang);
+
+const light = getAssetUrl(data.image_light);
+const dark = getAssetUrl(data.image_dark);
+const hasImage = Boolean(light || dark);
+const meta = await getAssetMeta(data.image_light || data.image_dark);
+const focal = meta ? `${meta.focalX}% ${meta.focalY}%` : undefined;
+
+const mediaLeft = data.media_side === 'left';
+---
+
+<section class="py-12 md:py-20">
+  <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+    <div
+      class={`grid items-center gap-10 lg:gap-16 ${hasImage ? 'md:grid-cols-2' : ''}`}
+    >
+      {
+        hasImage && (
+          <div class={mediaLeft ? 'md:order-1' : 'md:order-2'}>
+            <ThemeResponsiveImage
+              light={light}
+              dark={dark}
+              alt={meta?.alt || heading || ''}
+              objectPosition={focal}
+              class="block w-full overflow-hidden rounded-2xl"
+              imgClass="w-full h-auto"
+            />
+          </div>
+        )
+      }
+      <div class={mediaLeft ? 'md:order-2' : 'md:order-1'}>
+        {
+          heading && (
+            <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl leading-tight tracking-[-0.02em] mb-6">
+              {heading}
+            </h2>
+          )
+        }
+        {
+          body && (
+            <div
+              class="block-prose prose dark:prose-invert prose-lg max-w-none prose-p:font-serif"
+              set:html={body}
+            />
+          )
+        }
+        {
+          ctaLabel && (
+            <div class="mt-8">
+              <BlockButton
+                label={ctaLabel}
+                action={data.cta_action}
+                url={data.cta_url}
+              />
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .block-prose {
+    --tw-prose-body: var(--color-foreground);
+    --tw-prose-headings: var(--color-foreground);
+    --tw-prose-links: var(--color-foreground);
+  }
+  .block-prose :global(a) {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+</style>

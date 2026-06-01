@@ -9,11 +9,15 @@ import {
   getServices,
   getServiceRelations,
   getAssetUrl,
-  getPageBySlug,
+  getPageWithBlocks,
+  getPagePreviewBySlug,
+  isPreviewActive,
   type Page,
+  type PageBlock,
   type Service
 } from "../../lib/directus";
 import { getLocalizedField, type Language } from "../../lib/i18n";
+import PageBlocks from "../../components/blocks/PageBlocks.astro";
 
 export const prerender = false;
 
@@ -33,6 +37,9 @@ if (!supportedLanguages.includes(lang)) {
 let type: 'service' | 'page' | null = null;
 let data: Service | Page | null = null;
 
+// Live Preview: draft-aware, cache-bypassing fetch when ?preview=<secret>.
+const isPreview = isPreviewActive(Astro.url);
+
 // 1. Try to find a Service
 const services = await getServices({
   filter: {
@@ -48,9 +55,11 @@ if (services && services.length > 0) {
   type = 'service';
   data = services[0];
 } else {
-  // 2. Try to find a Page
-  const page = await getPageBySlug(slug);
-  if (page && page.status === 'published') {
+  // 2. Try to find a Page (with its block builder). Preview shows drafts.
+  const page = isPreview
+    ? await getPagePreviewBySlug(slug)
+    : await getPageWithBlocks(slug);
+  if (page && (isPreview || page.status === 'published')) {
     type = 'page';
     data = page;
   }
@@ -210,13 +219,23 @@ if (type === 'service') {
 
 // --- Page Logic ---
 let pageContent = null;
+let pageBlocks: PageBlock[] = [];
 if (type === 'page') {
   const page = data as Page;
+  pageBlocks = Array.isArray(page.blocks) ? page.blocks : [];
+  const localizedTitle = getLocalizedField(page, "title", lang) || page.title;
   pageContent = {
-    title: page.title,
+    title: localizedTitle,
     content: page.content || "",
-    seoTitle: page.seo_title || page.title,
-    seoDescription: page.seo_description || "",
+    seoTitle:
+      getLocalizedField(page, "seo_title", lang) ||
+      localizedTitle ||
+      page.seo_title ||
+      page.title,
+    seoDescription:
+      getLocalizedField(page, "seo_description", lang) ||
+      page.seo_description ||
+      "",
   };
 }
 
@@ -289,17 +308,27 @@ const pageImage = type === 'service'
   )}
 
   {type === 'page' && pageContent && (
-    <article class="w-full">
-      <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pt-32 pb-20 md:pt-48 md:pb-32">
-        <h1 class="font-display text-5xl sm:text-7xl lg:text-8xl mb-12 pb-8 border-b border-[var(--color-border)]">
-          {pageContent.title}
-        </h1>
-        <div
-          class="prose dark:prose-invert prose-lg max-w-2xl mx-auto prose-headings:font-display prose-headings:font-normal prose-p:font-serif prose-img:rounded-none prose-img:w-full"
-          set:html={pageContent.content}
-        />
-      </div>
-    </article>
+    pageBlocks.length > 0 ? (
+      <PageBlocks blocks={pageBlocks} lang={lang} />
+    ) : (
+      <article class="w-full">
+        <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pt-32 pb-20 md:pt-48 md:pb-32">
+          <h1 class="font-display text-5xl sm:text-7xl lg:text-8xl mb-12 pb-8 border-b border-[var(--color-border)]">
+            {pageContent.title}
+          </h1>
+          <div
+            class="prose dark:prose-invert prose-lg max-w-2xl mx-auto prose-headings:font-display prose-headings:font-normal prose-p:font-serif prose-img:rounded-none prose-img:w-full"
+            set:html={pageContent.content}
+          />
+        </div>
+      </article>
+    )
+  )}
+
+  {isPreview && type === 'page' && (
+    <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] bg-[#FD5825] text-white text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full shadow-lg pointer-events-none">
+      Preview · draft content
+    </div>
   )}
   
   <!-- Inject the custom element script for Before/After toggle -->

@@ -1,0 +1,57 @@
+---
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import BlockButton from './BlockButton.astro';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const heading = getLocalizedField(data, 'heading', lang);
+const subtext = getLocalizedField(data, 'subtext', lang);
+const buttonLabel = getLocalizedField(data, 'button_label', lang);
+
+const style = (data.style as string) || 'default';
+const panelClass =
+  style === 'dark'
+    ? 'bg-gray-900 text-white'
+    : style === 'accent'
+      ? 'bg-[var(--color-foreground)] text-[var(--color-background)]'
+      : 'border border-[var(--color-border)]';
+const buttonVariant =
+  style === 'default' ? 'solid' : 'invert';
+---
+
+{
+  (heading || buttonLabel) && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        <div
+          class={`rounded-3xl px-8 py-14 md:px-16 md:py-20 text-center ${panelClass}`}
+        >
+          {heading && (
+            <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] max-w-3xl mx-auto">
+              {heading}
+            </h2>
+          )}
+          {subtext && (
+            <p class="mt-5 text-lg md:text-xl font-serif opacity-90 max-w-2xl mx-auto">
+              {subtext}
+            </p>
+          )}
+          {buttonLabel && (
+            <div class="mt-8 flex justify-center">
+              <BlockButton
+                label={buttonLabel}
+                action={data.button_action}
+                url={data.button_url}
+                variant={buttonVariant}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}

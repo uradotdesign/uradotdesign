@@ -1,0 +1,57 @@
+---
+interface Props {
+  label?: string | null;
+  action?: string | null;
+  url?: string | null;
+  variant?: 'solid' | 'invert' | 'outline';
+  class?: string;
+}
+
+const {
+  label,
+  action = 'url',
+  url,
+  variant = 'solid',
+  class: className = '',
+} = Astro.props;
+
+const isModal = action === 'contact_modal';
+const href = isModal ? '#contact-modal' : url || '#';
+
+const base =
+  'inline-flex items-center gap-3 px-6 sm:px-8 py-3.5 rounded-full font-medium text-base tracking-wide transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-foreground)]';
+const variants = {
+  solid:
+    'bg-[var(--color-foreground)] text-[var(--color-background)] hover:opacity-90',
+  invert: 'bg-white text-black hover:opacity-90',
+  outline:
+    'border border-current text-current hover:bg-[var(--color-foreground)] hover:text-[var(--color-background)]',
+};
+const external = !isModal && /^https?:\/\//.test(href);
+---
+
+{
+  label && (
+    <a
+      href={href}
+      data-contact-modal={isModal ? 'true' : undefined}
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noopener noreferrer' : undefined}
+      class={`${base} ${variants[variant]} ${className}`}
+    >
+      {label}
+      <svg
+        class="w-4 h-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M5 12h14M12 5l7 7-7 7" />
+      </svg>
+    </a>
+  )
+}

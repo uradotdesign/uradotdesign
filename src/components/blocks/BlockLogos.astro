@@ -1,0 +1,42 @@
+---
+import { getAssetUrl } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import ProgressiveImage from '../ProgressiveImage.astro';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const heading = getLocalizedField(data, 'heading', lang);
+const logos: any[] = Array.isArray(data.logos) ? data.logos : [];
+const items = logos
+  .map((l) => getAssetUrl(l.image))
+  .filter((src): src is string => Boolean(src));
+---
+
+{
+  items.length > 0 && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        {heading && (
+          <p class="text-center font-mono uppercase tracking-[0.2em] text-xs sm:text-sm opacity-60 mb-10">
+            {heading}
+          </p>
+        )}
+        <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 md:gap-x-16">
+          {items.map((src) => (
+            <ProgressiveImage
+              src={src}
+              alt=""
+              class="h-8 md:h-10 w-auto opacity-60 transition-opacity duration-200 hover:opacity-100"
+              imgClass="h-8 md:h-10 w-auto object-contain"
+              optimize={false}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

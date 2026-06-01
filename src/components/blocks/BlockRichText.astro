@@ -1,0 +1,48 @@
+---
+import { getLocalizedField, type Language } from '../../lib/i18n';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const body = getLocalizedField(data, 'body', lang);
+
+const widthMap: Record<string, string> = {
+  narrow: 'max-w-2xl',
+  normal: 'max-w-3xl',
+  wide: 'max-w-5xl',
+};
+const widthClass = widthMap[data.width as string] || widthMap.normal;
+const center = data.align === 'center';
+---
+
+{
+  body && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        <div
+          class={`block-prose prose dark:prose-invert prose-lg ${widthClass} ${center ? 'mx-auto text-center' : ''} prose-headings:font-display prose-headings:font-normal prose-p:font-serif`}
+          set:html={body}
+        />
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .block-prose {
+    --tw-prose-body: var(--color-foreground);
+    --tw-prose-headings: var(--color-foreground);
+    --tw-prose-links: var(--color-foreground);
+  }
+  .block-prose :global(a) {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: opacity 0.2s;
+  }
+  .block-prose :global(a:hover) {
+    opacity: 0.7;
+  }
+</style>

@@ -1,0 +1,85 @@
+---
+import { getAssetUrl, getAssetMeta } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import ThemeResponsiveImage from '../ThemeResponsiveImage.astro';
+import BlockButton from './BlockButton.astro';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+
+const eyebrow = getLocalizedField(data, 'eyebrow', lang);
+const heading = getLocalizedField(data, 'heading', lang);
+const subheading = getLocalizedField(data, 'subheading', lang);
+const ctaLabel = getLocalizedField(data, 'cta_label', lang);
+
+const light = getAssetUrl(data.image_light);
+const dark = getAssetUrl(data.image_dark);
+const hasBg = Boolean(light || dark);
+const meta = await getAssetMeta(data.image_light || data.image_dark);
+const focal = meta ? `${meta.focalX}% ${meta.focalY}%` : undefined;
+
+const center = data.text_align === 'center';
+const overlay = data.overlay !== false;
+const onMedia = hasBg && overlay;
+---
+
+<section
+  class={`relative overflow-hidden ${hasBg ? 'min-h-[70vh] flex items-center py-24' : 'py-20 md:py-28'}`}
+>
+  {
+    hasBg && (
+      <div class="absolute inset-0 -z-10">
+        <ThemeResponsiveImage
+          light={light}
+          dark={dark}
+          alt={meta?.alt || heading || ''}
+          objectPosition={focal}
+          imgClass="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
+        />
+        {overlay && <div class="absolute inset-0 bg-black/45" aria-hidden="true" />}
+      </div>
+    )
+  }
+  <div
+    class={`relative mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16 w-full ${center ? 'text-center' : ''}`}
+  >
+    <div class={`${center ? 'mx-auto' : ''} max-w-3xl ${onMedia ? 'text-white' : ''}`}>
+      {
+        eyebrow && (
+          <p class="font-mono uppercase tracking-[0.2em] text-xs sm:text-sm mb-4 opacity-80">
+            {eyebrow}
+          </p>
+        )
+      }
+      {
+        heading && (
+          <h1 class="font-display text-4xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-[-0.02em]">
+            {heading}
+          </h1>
+        )
+      }
+      {
+        subheading && (
+          <p class="mt-6 text-lg md:text-xl font-serif opacity-90">{subheading}</p>
+        )
+      }
+      {
+        ctaLabel && (
+          <div class={`mt-8 ${center ? 'flex justify-center' : ''}`}>
+            <BlockButton
+              label={ctaLabel}
+              action={data.cta_action}
+              url={data.cta_url}
+              variant={onMedia ? 'invert' : 'solid'}
+            />
+          </div>
+        )
+      }
+    </div>
+  </div>
+</section>
