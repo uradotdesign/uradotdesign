@@ -109,8 +109,8 @@ async function relationExists(collection, field) {
       `/relations/${encodeURIComponent(collection)}/${encodeURIComponent(field)}`
     );
     return Boolean(data?.data);
-  } catch (e) {
-    if (e.status === 404 || e.body?.includes("FORBIDDEN") === false) return false;
+  } catch {
+    // A 403/404 from the relations endpoint means the relation does not exist yet.
     return false;
   }
 }
@@ -129,6 +129,19 @@ async function ensureRelation(payload) {
   }
 }
 
+// A "file" field is a uuid column PLUS an M2O relation to directus_files.
+// Without this relation the admin file picker opens but can never bind a
+// selection, so the field always appears empty. (The Directus UI creates this
+// relation automatically; the raw /fields API does not.)
+async function ensureFileRelation(collection, field) {
+  await ensureRelation({
+    collection,
+    field,
+    related_collection: "directus_files",
+    schema: { on_delete: "SET NULL" },
+  });
+}
+
 async function getPublicPolicyId() {
   const roles = await authRequest(
     "/roles?filter[name][_eq]=Public&fields=*,policies.directus_policies_id.*"
@@ -143,6 +156,19 @@ async function getPublicPolicyId() {
 }
 
 async function grantPublicRead(policyId, collection) {
+  try {
+    const existing = await authRequest(
+      `/permissions?filter[policy][_eq]=${encodeURIComponent(policyId)}` +
+        `&filter[collection][_eq]=${encodeURIComponent(collection)}&filter[action][_eq]=read`
+    );
+    const list = Array.isArray(existing?.data) ? existing.data : existing;
+    if (Array.isArray(list) && list.length > 0) {
+      console.log(`= Read permission exists: ${collection}`);
+      return;
+    }
+  } catch {
+    // Fall through and attempt to create the permission.
+  }
   try {
     await authRequest("/permissions", {
       method: "POST",
@@ -244,6 +270,14 @@ async function main() {
     "case_study_section_images",
     fileField("image_mobile_dark", "Optional mobile override (dark)")
   );
+
+  // 2b) directus_files relations (required for the file picker to work)
+  await ensureFileRelation("case_studies", "featured_image_mobile_light");
+  await ensureFileRelation("case_studies", "featured_image_mobile_dark");
+  await ensureFileRelation("case_study_section_images", "image_light");
+  await ensureFileRelation("case_study_section_images", "image_dark");
+  await ensureFileRelation("case_study_section_images", "image_mobile_light");
+  await ensureFileRelation("case_study_section_images", "image_mobile_dark");
 
   // 3) O2M alias on parent + relation
   await ensureField("case_study_sections", {
