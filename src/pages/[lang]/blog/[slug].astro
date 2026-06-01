@@ -5,6 +5,9 @@ import {
   getAssetUrl,
   getAssetThumbUrl,
   getAssetMeta,
+  isPreviewActive,
+  getPreviewItemBySlug,
+  type BlogPost,
 } from "../../../lib/directus";
 import { getLocalizedField } from "../../../lib/i18n";
 import ProgressiveImage from "../../../components/ProgressiveImage.astro";
@@ -20,7 +23,11 @@ if (!slug) {
   return Astro.redirect("/404");
 }
 
-const post = await getBlogPostBySlug(slug);
+// Live Preview: draft-aware, cache-bypassing fetch when ?preview=<secret>.
+const isPreview = isPreviewActive(Astro.url);
+const post = isPreview
+  ? await getPreviewItemBySlug<BlogPost>("posts", slug, ["*", "author.*"])
+  : await getBlogPostBySlug(slug);
 
 if (!post) {
   return Astro.redirect("/404");
@@ -81,6 +88,13 @@ const coverFocal = coverMeta
   description={metaDescription}
   image={seoImage || coverImage || undefined}
 >
+  {
+    isPreview && (
+      <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] bg-[#FD5825] text-white text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full shadow-lg pointer-events-none">
+        Preview · draft content
+      </div>
+    )
+  }
   <article class="w-full">
     {/* Mobile Hero (Visible on Mobile only) */}
     <div

@@ -5,6 +5,8 @@ import {
   directusToken,
   cacheEnabled as CONFIG_CACHE_ENABLED,
   cacheTTL as CONFIG_CACHE_TTL,
+  previewSecret,
+  previewToken,
 } from "./config";
 
 // Define your Directus schema types
@@ -1142,6 +1144,58 @@ export async function getBlogPostBySlug(slug: string) {
     });
     return post || null;
   });
+}
+
+/**
+ * True when the request carries a valid Live Preview secret. Preview is only
+ * active if both `previewSecret` and `previewToken` are configured server-side.
+ */
+export function isPreviewActive(url: URL): boolean {
+  return (
+    Boolean(previewSecret) &&
+    Boolean(previewToken) &&
+    url.searchParams.get("preview") === previewSecret
+  );
+}
+
+/**
+ * Fetches a single item by slug for Live Preview — drafts included. Uses the
+ * server-only `previewToken` (which can read unpublished items) and bypasses
+ * both the status filter and the Redis cache so editors see live changes.
+ * Returns null when preview isn't configured or the item doesn't exist.
+ */
+export async function getPreviewItemBySlug<T>(
+  collection: string,
+  slug: string,
+  fields: string[]
+): Promise<T | null> {
+  if (!previewToken || !slug) return null;
+  try {
+    const params = new URLSearchParams();
+    params.set("fields", fields.join(","));
+    params.set("filter[slug][_eq]", slug);
+    params.set("limit", "1");
+    const res = await fetchWithTimeout(
+      `${directusUrl}/items/${collection}?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${previewToken}`,
+          "Cache-Control": "no-cache",
+        },
+        cache: "no-store",
+      }
+    );
+    if (!res.ok) {
+      console.error(`Preview fetch ${collection}/${slug}: HTTP ${res.status}`);
+      return null;
+    }
+    const body = await res.json();
+    const item = Array.isArray(body?.data) ? body.data[0] : body?.data;
+    return (item as T) || null;
+  } catch (error) {
+    console.error(`Preview fetch error ${collection}/${slug}:`, error);
+    return null;
+  }
 }
 
 // Navigation Links helpers (optional collection)

@@ -4,6 +4,8 @@ import {
   getCaseStudies,
   getAssetUrl,
   getAssetMeta,
+  isPreviewActive,
+  getPreviewItemBySlug,
   type CaseStudy,
 } from "../../../lib/directus";
 import { getLocalizedField, type Language } from "../../../lib/i18n";
@@ -21,44 +23,62 @@ if (!slug) {
   return Astro.redirect("/404");
 }
 
-const caseStudies = await getCaseStudies({
-  fields: [
-    "slug",
-    "status",
-    "id",
-    "client_name",
-    "title_en",
-    "title_de",
-    "description_en",
-    "description_de",
-    "excerpt_en",
-    "excerpt_de",
-    "year",
-    "links",
-    "categories.category_id.title_en",
-    "categories.category_id.title_de",
-    "featured_image_light",
-    "featured_image_dark",
-    "featured_image_mobile_light",
-    "featured_image_mobile_dark",
-    "cover_image",
-    "logo",
-    "seo_title_en",
-    "seo_title_de",
-    "seo_description_en",
-    "seo_description_de",
-    "seo_image",
-    "sections.*", // Fetch all section fields
-    "sections.images.*",
-  ],
-  filter: {
-    slug: { _eq: slug },
-    status: { _eq: "published" },
-  },
-  limit: 1,
-});
+const CASE_STUDY_FIELDS = [
+  "slug",
+  "status",
+  "id",
+  "client_name",
+  "title_en",
+  "title_de",
+  "description_en",
+  "description_de",
+  "excerpt_en",
+  "excerpt_de",
+  "year",
+  "links",
+  "categories.category_id.title_en",
+  "categories.category_id.title_de",
+  "featured_image_light",
+  "featured_image_dark",
+  "featured_image_mobile_light",
+  "featured_image_mobile_dark",
+  "cover_image",
+  "logo",
+  "seo_title_en",
+  "seo_title_de",
+  "seo_description_en",
+  "seo_description_de",
+  "seo_image",
+  "sections.*", // Fetch all section fields
+  "sections.images.*",
+];
 
-const study = caseStudies[0];
+// Live Preview: draft-aware, cache-bypassing fetch when ?preview=<secret>.
+const isPreview = isPreviewActive(Astro.url);
+
+let study: CaseStudy | null;
+if (isPreview) {
+  study = await getPreviewItemBySlug<CaseStudy>(
+    "case_studies",
+    slug,
+    CASE_STUDY_FIELDS
+  );
+  if (study?.sections) {
+    study.sections.sort(
+      (a: any, b: any) => (a.sort || 0) - (b.sort || 0)
+    );
+  }
+} else {
+  const caseStudies = await getCaseStudies({
+    fields: CASE_STUDY_FIELDS,
+    filter: {
+      slug: { _eq: slug },
+      status: { _eq: "published" },
+    },
+    limit: 1,
+  });
+  study = caseStudies[0] ?? null;
+}
 
 // Redirect to 404 if study is not found
 if (!study) {
@@ -122,6 +142,13 @@ const worksLink = `/${lang}/works`;
   description={metaDescription}
   image={seoImage || coverImage || imageLight || undefined}
 >
+  {
+    isPreview && (
+      <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] bg-[#FD5825] text-white text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full shadow-lg pointer-events-none">
+        Preview · draft content
+      </div>
+    )
+  }
   <!-- Hero Section -->
   <section
     class="relative w-full min-h-screen flex flex-col justify-between px-6 sm:px-8 lg:px-12 xl:px-24 pt-20 pb-16 sm:py-32 text-white overflow-hidden"

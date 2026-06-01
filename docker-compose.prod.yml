@@ -28,6 +28,12 @@ services:
       # Flow on content changes). Endpoint is disabled when unset.
       - REVALIDATE_SECRET=${REVALIDATE_SECRET:-}
 
+      # Live Preview / draft mode. PREVIEW_SECRET gates ?preview=<secret> on
+      # detail pages; DIRECTUS_PREVIEW_TOKEN is a server-only, read-only Directus
+      # token that can read drafts. Preview is disabled when either is unset.
+      - PREVIEW_SECRET=${PREVIEW_SECRET:-}
+      - DIRECTUS_PREVIEW_TOKEN=${DIRECTUS_PREVIEW_TOKEN:-}
+
       # i18n
       - DEFAULT_LOCALE=${DEFAULT_LOCALE:-en}
       - AVAILABLE_LOCALES=${AVAILABLE_LOCALES:-en,de}
