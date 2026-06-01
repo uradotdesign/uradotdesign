@@ -121,6 +121,7 @@ export interface ServiceChecklistItem {
   text_en: string;
   text_de: string;
   sort?: number;
+  translations?: Array<{ languages_code?: string; text?: string }>;
 }
 
 export interface ServiceStep {
@@ -134,6 +135,7 @@ export interface ServiceStep {
   tags_en?: string;
   tags_de?: string;
   sort?: number;
+  translations?: Array<{ languages_code?: string; title?: string; description?: string; tags?: string }>;
 }
 
 export interface ServiceActivity {
@@ -145,6 +147,7 @@ export interface ServiceActivity {
   description_de: string;
   is_open_by_default?: boolean;
   sort?: number;
+  translations?: Array<{ languages_code?: string; title?: string; description?: string }>;
 }
 
 export interface ServiceSubservice {
@@ -153,6 +156,7 @@ export interface ServiceSubservice {
   text_en: string;
   text_de?: string;
   sort?: number;
+  translations?: Array<{ languages_code?: string; text?: string }>;
 }
 
 export interface Service {
@@ -208,6 +212,7 @@ export interface Service {
   seo_description_en?: string;
   seo_description_de?: string;
   seo_image?: string;
+  translations?: Array<{ languages_code?: string; title?: string; subtitle?: string; description?: string; long_description?: string; cta_text?: string; section_heading?: string; section_subheading?: string; seo_title?: string; seo_description?: string }>;
 }
 
 export interface Client {
@@ -573,6 +578,7 @@ export interface Approach {
   border_animation?: "friction" | "teamwork" | "strength";
   sort?: number;
   status?: "draft" | "published" | "archived";
+  translations?: Array<{ languages_code?: string; title?: string; description?: string }>;
 }
 
 export interface ExpertiseGroup {
@@ -1158,7 +1164,9 @@ export async function getServices(options?: {
       limit: options?.limit,
       filter: options?.filter,
       sort: ["sort_order"],
-      fields: options?.fields,
+      fields: options?.fields
+        ? Array.from(new Set([...options.fields, "translations.*"]))
+        : ["*", "translations.*"],
     })
   );
 }
@@ -1177,7 +1185,7 @@ export async function getBatchServiceRelations(serviceIds: number[]) {
     collections.map(({ collection }) =>
       directus.request(
         readItems(collection as any, {
-          fields: ["*"],
+          fields: ["*", "translations.*"],
           filter: { service_id: { _in: serviceIds } },
           sort: ["sort"],
         } as any)
@@ -1216,7 +1224,7 @@ export async function getServiceRelations(serviceId: number) {
     collections.map(({ collection }) =>
       directus.request(
         readItems(collection as any, {
-          fields: ["*"],
+          fields: ["*", "translations.*"],
           filter: { service_id: { _eq: serviceId } },
           sort: ["sort"],
         } as any)
@@ -1642,6 +1650,7 @@ export async function getApproaches() {
   return cacheConfig("approaches", () =>
     fetchCollection<Approach>("approaches", {
       sort: ["sort"],
+      fields: ["*", "translations.*"],
     })
   );
 }
