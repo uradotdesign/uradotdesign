@@ -3,6 +3,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import {
   getCaseStudies,
   getAssetUrl,
+  getAssetMeta,
   type CaseStudy,
 } from "../../../lib/directus";
 import { getLocalizedField, type Language } from "../../../lib/i18n";
@@ -90,6 +91,13 @@ const metaTitle = getLocalizedField(study, "seo_title", lang) || title;
 const metaDescription =
   getLocalizedField(study, "seo_description", lang) || description;
 
+// Hero alt text + focal point (from the file metadata of the shown image).
+const heroFileId = study.cover_image || study.featured_image_light;
+const heroMeta = await getAssetMeta(heroFileId);
+const heroFocal = heroMeta
+  ? `${heroMeta.focalX}% ${heroMeta.focalY}%`
+  : undefined;
+
 const categories =
   study.categories
     ?.map((catLink: any) => {
@@ -125,7 +133,8 @@ const worksLink = `/${lang}/works`;
         dark={heroImageDark}
         mobileLight={heroImageMobileLight}
         mobileDark={heroImageMobileDark}
-        alt=""
+        alt={heroMeta?.alt || ""}
+        objectPosition={heroFocal}
         imgClass="absolute inset-0 w-full h-full object-cover"
         loading="eager"
         placeholder="blur"

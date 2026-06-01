@@ -953,6 +953,54 @@ export async function getFileMetadata(
   }
 }
 
+export interface AssetMeta {
+  alt: string;
+  focalX: number;
+  focalY: number;
+}
+
+/**
+ * Cached file metadata for alt text + focal point. The public role exposes
+ * title/description/focal_point_x/focal_point_y on directus_files. Uses a 1h
+ * TTL (vs the 7d config default) so editor changes to alt/focal surface
+ * promptly — the revalidate Flow doesn't watch directus_files.
+ */
+export async function getAssetMeta(
+  fileId?: string | null
+): Promise<AssetMeta | null> {
+  if (!fileId) return null;
+  return cacheConfig(
+    `asset_meta:${fileId}`,
+    async () => {
+      try {
+        const res = await fetchWithTimeout(
+          `${directusUrl}/files/${fileId}?fields=title,description,focal_point_x,focal_point_y`,
+          {
+            headers: directusToken
+              ? { Authorization: `Bearer ${directusToken}` }
+              : {},
+          }
+        );
+        if (!res.ok) return null;
+        const data = (await res.json())?.data;
+        if (!data) return null;
+        const clamp = (n: unknown) => {
+          const v = typeof n === "number" ? n : Number(n);
+          return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 50;
+        };
+        return {
+          alt: String(data.title || data.description || "").trim(),
+          focalX: data.focal_point_x == null ? 50 : clamp(data.focal_point_x),
+          focalY: data.focal_point_y == null ? 50 : clamp(data.focal_point_y),
+        };
+      } catch {
+        return null;
+      }
+    },
+    3600
+  );
+}
+
 export async function getPageBySlug(slug: string) {
   const [page] = await fetchCollection<Page>("pages", {
     limit: 1,

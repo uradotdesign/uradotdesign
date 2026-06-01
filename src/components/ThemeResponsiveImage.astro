@@ -19,6 +19,7 @@ interface Props {
   quality?: number;
   placeholder?: 'blur' | 'fade' | 'none';
   fill?: boolean;
+  objectPosition?: string | null;
 }
 
 const {
@@ -38,6 +39,7 @@ const {
   quality,
   placeholder = 'blur',
   fill = false,
+  objectPosition = null,
 } = Astro.props;
 
 const MOBILE_MEDIA = '(max-width: 767px)';
@@ -83,6 +85,7 @@ const singleSources =
         sizes={sizes}
         widths={widths}
         quality={quality}
+        objectPosition={objectPosition}
         sources={singleSources}
       />
     ) : (
@@ -102,6 +105,7 @@ const singleSources =
           sizes={sizes}
           widths={widths}
           quality={quality}
+          objectPosition={objectPosition}
           sources={lightSources}
         />
         <ProgressiveImage
@@ -119,6 +123,7 @@ const singleSources =
           sizes={sizes}
           widths={widths}
           quality={quality}
+          objectPosition={objectPosition}
           sources={darkSources}
         />
       </>

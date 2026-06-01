@@ -4,6 +4,7 @@ import {
   getBlogPostBySlug,
   getAssetUrl,
   getAssetThumbUrl,
+  getAssetMeta,
 } from "../../../lib/directus";
 import { getLocalizedField } from "../../../lib/i18n";
 import ProgressiveImage from "../../../components/ProgressiveImage.astro";
@@ -66,6 +67,13 @@ const description =
 const seoImage = getAssetUrl(post.seo_image);
 const metaTitle = post.seo_title || title;
 const metaDescription = post.seo_description || description;
+
+// Cover alt text + focal point from the file metadata.
+const coverMeta = await getAssetMeta(post.cover_image);
+const coverAlt = coverMeta?.alt || title;
+const coverFocal = coverMeta
+  ? `${coverMeta.focalX}% ${coverMeta.focalY}%`
+  : undefined;
 ---
 
 <BaseLayout
@@ -87,7 +95,8 @@ const metaDescription = post.seo_description || description;
               lqip={coverImageLqip}
               placeholder="blur"
               fill
-              alt=""
+              alt={coverAlt}
+              objectPosition={coverFocal}
               loading="eager"
             />
             {/* Overlay */}
@@ -186,7 +195,8 @@ const metaDescription = post.seo_description || description;
                 lqip={coverImageLqip}
                 placeholder="blur"
                 fill
-                alt=""
+                alt={coverAlt}
+                objectPosition={coverFocal}
                 loading="eager"
               />
             </div>

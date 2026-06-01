@@ -28,6 +28,7 @@ interface Props {
   widths?: readonly number[];
   quality?: number;
   optimize?: boolean;
+  objectPosition?: string | null;
 }
 
 const {
@@ -47,6 +48,7 @@ const {
   widths = DEFAULT_IMAGE_WIDTHS,
   quality = 80,
   optimize = true,
+  objectPosition = null,
 } = Astro.props;
 
 // Serve capped, modern-format derivatives instead of raw originals. Directus
@@ -114,6 +116,7 @@ const wrapperStyle =
         width={width}
         height={height}
         sizes={resolvedSizes}
+        style={objectPosition ? `object-position:${objectPosition}` : undefined}
       />
     </picture>
   )
