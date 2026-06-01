@@ -164,14 +164,19 @@ async function main() {
   await authRequest("/utils/cache/clear", { method: "POST" }).catch(() => {});
 
   // 6. Backfill (idempotent: skip a (item, lang) pair that already has a row).
-  const items = unwrap(
-    await authRequest(
-      `/items/${encodeURIComponent(collection)}?limit=-1&fields=${[
-        pk.field,
-        ...baseFields.flatMap((b) => [`${b}_en`, `${b}_de`]),
-      ].join(",")}`
-    )
+  //    Singleton collections return a single object instead of an array, so
+  //    normalize both shapes into a list.
+  const itemsRaw = await authRequest(
+    `/items/${encodeURIComponent(collection)}?limit=-1&fields=${[
+      pk.field,
+      ...baseFields.flatMap((b) => [`${b}_en`, `${b}_de`]),
+    ].join(",")}`
   );
+  const items = Array.isArray(itemsRaw?.data)
+    ? itemsRaw.data
+    : itemsRaw?.data
+      ? [itemsRaw.data]
+      : [];
   let created = 0;
   for (const item of items) {
     const itemId = item[pk.field];
