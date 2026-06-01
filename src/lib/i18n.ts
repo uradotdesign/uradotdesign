@@ -16,26 +16,39 @@ export function getLocalizedField<T extends Record<string, any>>(
   fieldName: string,
   language: Language = "en"
 ): string | undefined {
-  // Return undefined if obj is null or undefined
   if (!obj) {
     return undefined;
   }
 
-  // Try language-specific field first (e.g., title_en)
+  // 1. Native translations: obj.translations is an array of rows, each keyed by
+  //    languages_code (the row's value for `fieldName` is the localized string).
+  const translations = (obj as Record<string, any>).translations;
+  if (Array.isArray(translations) && translations.length > 0) {
+    const pick = (code: Language): string | undefined => {
+      const row = translations.find(
+        (t) => t && (t as Record<string, any>).languages_code === code
+      );
+      const value = row ? (row as Record<string, any>)[fieldName] : undefined;
+      return value != null && value !== "" ? (value as string) : undefined;
+    };
+    const native = pick(language) ?? (language !== "en" ? pick("en") : undefined);
+    if (native !== undefined) {
+      return native;
+    }
+    // Translations present but this field is empty in all rows: fall through to legacy.
+  }
+
+  // 2. Legacy `_en`/`_de` suffix fields.
   const langField = `${fieldName}_${language}` as keyof T;
   if (obj[langField] != null && obj[langField] !== undefined) {
     return obj[langField] as string;
   }
-
-  // Try English as fallback
   if (language !== "en") {
     const enField = `${fieldName}_en` as keyof T;
     if (obj[enField] != null && obj[enField] !== undefined) {
       return obj[enField] as string;
     }
   }
-
-  // Try base field (for backwards compatibility)
   if (obj[fieldName as keyof T] != null && obj[fieldName as keyof T] !== undefined) {
     return obj[fieldName as keyof T] as string;
   }
