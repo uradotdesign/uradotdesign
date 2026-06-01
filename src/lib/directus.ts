@@ -395,18 +395,6 @@ export interface TeamMember {
   date_updated?: string;
 }
 
-export interface ContactSection {
-  id: number;
-  label_en?: string;
-  label_de?: string;
-  heading_en?: string;
-  heading_de?: string;
-  response_time_en?: string;
-  response_time_de?: string;
-  button_text_en?: string;
-  button_text_de?: string;
-}
-
 export interface ContactSubmission {
   id?: number;
   status?: "new" | "in_progress" | "replied" | "archived";
@@ -607,7 +595,6 @@ interface Schema {
   certifications: Certification[];
   about_page: AboutPage[];
   approaches: Approach[];
-  contact_section: ContactSection[];
   contact_submissions: ContactSubmission[];
   navigation_links: NavigationLink[];
   expertise_groups: ExpertiseGroup[];
@@ -1409,16 +1396,6 @@ export async function getApproaches() {
   return cacheConfig("approaches", () =>
     fetchCollection<Approach>("approaches", {
       sort: ["sort"],
-    })
-  );
-}
-
-// Contact Section helpers
-export async function getContactSection(): Promise<ContactSection | null> {
-  return cacheConfig("contact_section", () =>
-    fetchFirstItem<ContactSection>("contact_section", {
-      statusField: null,
-      sort: [],
     })
   );
 }

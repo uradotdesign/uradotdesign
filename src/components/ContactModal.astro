@@ -1,39 +1,26 @@
 ---
-import {
-  getContactSection,
-  getContactTeamMembers,
-  getAssetUrl,
-} from "../lib/directus";
+import { getContactTeamMembers, getAssetUrl } from "../lib/directus";
 import { t } from "../lib/translations";
 import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
 
 // Get current language
 const currentLang = getCurrentLanguage(Astro.url);
 
-// Fetch contact section data
-const contactData = await getContactSection();
 const teamMembers = await getContactTeamMembers({
   fields: ["id", "full_name", "role_en", "role_de", "photo", "email"],
 });
 
-// Get localized content with fallbacks
-const label =
-  getLocalizedField(contactData, "label", currentLang) ||
-  (currentLang === "de" ? "Kontakt" : "Got a project in mind?");
+// Localized section copy (localized strings, no CMS lookup needed).
+const label = currentLang === "de" ? "Kontakt" : "Got a project in mind?";
 
 const heading =
-  getLocalizedField(contactData, "heading", currentLang) ||
-  (currentLang === "de"
+  currentLang === "de"
     ? "Lassen Sie uns zusammen etwas Großartiges erschaffen."
-    : "Let's bring clarity to your project, together");
+    : "Let's bring clarity to your project, together";
 
-const responseTime =
-  getLocalizedField(contactData, "response_time", currentLang) ||
-  (currentLang === "de" ? "72 Stunden" : "72 hours");
+const responseTime = currentLang === "de" ? "72 Stunden" : "72 hours";
 
-const buttonText =
-  getLocalizedField(contactData, "button_text", currentLang) ||
-  (currentLang === "de" ? "Nachricht senden" : "Send request");
+const buttonText = currentLang === "de" ? "Nachricht senden" : "Send request";
 
 // Form labels (localized)
 const labels = {
