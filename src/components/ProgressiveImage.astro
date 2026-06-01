@@ -1,0 +1,84 @@
+---
+interface ImageSource {
+  media: string;
+  srcset: string;
+}
+
+interface Props {
+  src?: string | null;
+  lqip?: string | null;
+  placeholder?: 'blur' | 'fade' | 'none';
+  fill?: boolean;
+  alt?: string;
+  class?: string;
+  imgClass?: string;
+  loading?: 'lazy' | 'eager';
+  decoding?: 'async' | 'sync' | 'auto';
+  width?: number;
+  height?: number;
+  sizes?: string;
+  sources?: ImageSource[];
+}
+
+const {
+  src = null,
+  lqip = null,
+  placeholder = 'fade',
+  fill = false,
+  alt = '',
+  class: className = '',
+  imgClass = '',
+  loading = 'lazy',
+  decoding = 'async',
+  width,
+  height,
+  sizes,
+  sources = [],
+} = Astro.props;
+
+// A blur tier with no LQIP falls back to a fade.
+const tier = placeholder === 'blur' && !lqip ? 'fade' : placeholder;
+const isProgressive = tier !== 'none';
+
+const wrapperClass = [
+  isProgressive ? 'ura-prog' : null,
+  isProgressive && fill ? 'ura-prog--fill' : null,
+  tier === 'blur' ? 'ura-prog--blur' : null,
+  tier === 'fade' ? 'ura-prog--fade' : null,
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+
+const imgClassFull = [isProgressive ? 'ura-prog__img' : null, imgClass]
+  .filter(Boolean)
+  .join(' ');
+
+const wrapperStyle =
+  tier === 'blur' && lqip ? `--ura-lqip: url('${lqip}')` : undefined;
+---
+
+{
+  src && (
+    <picture
+      class={wrapperClass}
+      data-progressive={isProgressive || undefined}
+      style={wrapperStyle}
+    >
+      {sources.map((s) => (
+        <source media={s.media} srcset={s.srcset} />
+      ))}
+      <img
+        src={src}
+        alt={alt}
+        class={imgClassFull}
+        data-progressive-img={isProgressive || undefined}
+        loading={loading}
+        decoding={decoding}
+        width={width}
+        height={height}
+        sizes={sizes}
+      />
+    </picture>
+  )
+}
