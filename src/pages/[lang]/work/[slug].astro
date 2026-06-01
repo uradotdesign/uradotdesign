@@ -308,6 +308,17 @@ const worksLink = `/${lang}/works`;
       color: #ffffff !important;
     }
 
+    /* The "Let's talk" CTA hover turns its background solid white in light
+       theme, so the forced-white header text above leaves it white-on-white.
+       Force dark text on hover for contrast; in dark theme the hero stays dark
+       (translucent hover), so keep the CTA text white. */
+    :global(header:not(.scrolled) .header-cta-button:hover) {
+      color: #111827 !important;
+    }
+    :global(.dark header:not(.scrolled) .header-cta-button:hover) {
+      color: #ffffff !important;
+    }
+
     :global(header:not(.scrolled) .logo-path) {
       fill: #ffffff !important;
     }
