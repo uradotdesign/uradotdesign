@@ -220,19 +220,19 @@ if (type === 'page') {
   };
 }
 
-// Common Meta
-const pageTitle = type === 'service' 
-  ? currentService?.title
+// Common Meta (optional SEO overrides fall back to the page's own values)
+const pageTitle = type === 'service'
+  ? getLocalizedField(data, 'seo_title', lang) || currentService?.title
   : pageContent?.seoTitle || pageContent?.title;
 
 const pageDescription = type === 'service'
-  ? currentService?.description || ""
+  ? getLocalizedField(data, 'seo_description', lang) || currentService?.description || ""
   : pageContent?.seoDescription || "";
 
-// OG Image - use service hero background for services
-const pageImage = type === 'service' 
-  ? currentService?.backgroundLight || null
-  : null;
+// OG Image - prefer the explicit SEO/social image, then service hero background.
+const pageImage = type === 'service'
+  ? getAssetUrl((data as Service).seo_image) || currentService?.backgroundLight || null
+  : getAssetUrl((data as Page).seo_image) || null;
 
 ---
 

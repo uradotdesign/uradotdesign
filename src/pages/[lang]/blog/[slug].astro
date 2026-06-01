@@ -61,12 +61,17 @@ const coverImageLqip = getAssetThumbUrl(coverImage);
 // Strip HTML for meta description
 const description =
   post.excerpt || content.replace(/<[^>]*>?/gm, "").substring(0, 160) + "...";
+
+// Optional SEO overrides (fall back to the post's title/excerpt/cover image).
+const seoImage = getAssetUrl(post.seo_image);
+const metaTitle = post.seo_title || title;
+const metaDescription = post.seo_description || description;
 ---
 
 <BaseLayout
-  title={title}
-  description={description}
-  image={coverImage || undefined}
+  title={metaTitle}
+  description={metaDescription}
+  image={seoImage || coverImage || undefined}
 >
   <article class="w-full">
     {/* Mobile Hero (Visible on Mobile only) */}

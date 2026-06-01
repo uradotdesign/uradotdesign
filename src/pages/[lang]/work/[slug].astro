@@ -42,6 +42,11 @@ const caseStudies = await getCaseStudies({
     "featured_image_mobile_dark",
     "cover_image",
     "logo",
+    "seo_title_en",
+    "seo_title_de",
+    "seo_description_en",
+    "seo_description_de",
+    "seo_image",
     "sections.*", // Fetch all section fields
     "sections.images.*",
   ],
@@ -79,6 +84,12 @@ const heroImageDark = coverImage || imageDark;
 const heroImageMobileLight = getAssetUrl(study.featured_image_mobile_light);
 const heroImageMobileDark = getAssetUrl(study.featured_image_mobile_dark);
 
+// Optional SEO overrides (fall back to the page's own title/description/image).
+const seoImage = getAssetUrl(study.seo_image);
+const metaTitle = getLocalizedField(study, "seo_title", lang) || title;
+const metaDescription =
+  getLocalizedField(study, "seo_description", lang) || description;
+
 const categories =
   study.categories
     ?.map((catLink: any) => {
@@ -99,9 +110,9 @@ const worksLink = `/${lang}/works`;
 ---
 
 <BaseLayout
-  title={title}
-  description={description}
-  image={coverImage || imageLight || undefined}
+  title={metaTitle}
+  description={metaDescription}
+  image={seoImage || coverImage || imageLight || undefined}
 >
   <!-- Hero Section -->
   <section

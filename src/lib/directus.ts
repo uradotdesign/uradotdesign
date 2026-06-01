@@ -32,6 +32,7 @@ export interface Page {
   content?: string;
   seo_title?: string;
   seo_description?: string;
+  seo_image?: string;
   date_created?: string;
   date_updated?: string;
 }
@@ -177,6 +178,12 @@ export interface Service {
   show_in_expertise?: boolean;
   subservices?: ServiceSubservice[];
   relevant_case_study?: number | CaseStudy;
+  // SEO & Social (optional overrides)
+  seo_title_en?: string;
+  seo_title_de?: string;
+  seo_description_en?: string;
+  seo_description_de?: string;
+  seo_image?: string;
 }
 
 export interface Client {
@@ -314,6 +321,12 @@ export interface CaseStudy {
   year?: string;
   links?: { label: string; url: string }[];
   sections?: CaseStudySection[];
+  // SEO & Social (optional overrides)
+  seo_title_en?: string;
+  seo_title_de?: string;
+  seo_description_en?: string;
+  seo_description_de?: string;
+  seo_image?: string;
 }
 
 export interface CompanyValue {
@@ -561,6 +574,10 @@ export interface BlogPost {
   author?: TeamMember | string; // M2O to team_members
   cover_image?: string; // File ID
   content?: string;
+  // SEO & Social (optional overrides)
+  seo_title?: string;
+  seo_description?: string;
+  seo_image?: string;
   date_created?: string;
   date_updated?: string;
 }
