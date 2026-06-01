@@ -411,3 +411,90 @@ a[href^="#skip"]:focus {
     background-color: var(--color-background);
   }
 }
+
+/* ----------------------------------------------------------------------------
+ * Progressive image loading (blur-up + fade-in)
+ * The opacity:0 initial state is only applied when JS is present
+ * (html[data-progressive="js"]) so no-JS renders images normally (no FOUC).
+ * -------------------------------------------------------------------------- */
+.ura-prog {
+  position: relative;
+  display: block;
+}
+
+.ura-prog--fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.ura-prog::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: opacity 350ms ease;
+}
+
+.ura-prog--fade::before {
+  background-color: var(--color-muted, #ececec);
+}
+
+.ura-prog--blur::before {
+  background-image: var(--ura-lqip);
+  background-size: cover;
+  background-position: center;
+  filter: blur(16px);
+  transform: scale(1.05);
+}
+
+/* Fill image: deterministically cover the wrapper, above the placeholder. */
+.ura-prog--fill .ura-prog__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+/* Flow image: stays in normal flow, above the placeholder. */
+.ura-prog:not(.ura-prog--fill) > .ura-prog__img {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+@keyframes ura-prog-failsafe {
+  to {
+    opacity: 1;
+  }
+}
+
+html[data-progressive="js"] .ura-prog__img {
+  opacity: 0;
+  transition: opacity 350ms ease;
+  /* Failsafe: if the reveal controller never runs (module load failure),
+     never leave images permanently hidden. Long delay so it does not
+     pre-empt normal (even slow) image loads, which reveal via data-loaded. */
+  animation: ura-prog-failsafe 0.01s linear 10s forwards;
+}
+
+html[data-progressive="js"] .ura-prog__img[data-loaded] {
+  opacity: 1;
+  animation: none;
+}
+
+/* Drop the placeholder once the real image has loaded (progressive enhancement;
+ * where :has() is unsupported the opaque loaded image simply covers it). */
+.ura-prog:has(.ura-prog__img[data-loaded])::before {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ura-prog__img,
+  .ura-prog::before {
+    transition: none !important;
+  }
+}

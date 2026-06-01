@@ -182,6 +182,9 @@ const screenReaderAnnouncements =
         );
       }
 
+      // Mark progressive-image JS as available (drives the opacity:0 initial state)
+      document.documentElement.dataset.progressive = "js";
+
       // Mark as hydrated to show content
       document.documentElement.classList.add("hydrated");
     </script>
@@ -242,6 +245,21 @@ const screenReaderAnnouncements =
         document.dispatchEvent(new CustomEvent("ura:page-ready"));
       };
 
+      const revealProgressiveImages = () => {
+        const imgs = document.querySelectorAll<HTMLImageElement>(
+          'img[data-progressive-img]:not([data-loaded])'
+        );
+        imgs.forEach((img) => {
+          if (img.complete && img.naturalWidth > 0) {
+            img.setAttribute("data-loaded", "");
+            return;
+          }
+          const onDone = () => img.setAttribute("data-loaded", "");
+          img.addEventListener("load", onDone, { once: true });
+          img.addEventListener("error", onDone, { once: true });
+        });
+      };
+
       // Ensure listeners are attached only once
       if (!(window as any)._viewTransitionsInitialized) {
         document.addEventListener("astro:before-swap", (ev) => {
@@ -260,6 +278,7 @@ const screenReaderAnnouncements =
         });
 
         document.addEventListener("astro:page-load", runPageReady);
+        document.addEventListener("astro:page-load", revealProgressiveImages);
 
         // Announce page navigation for screen readers
         document.addEventListener("astro:page-load", () => {
