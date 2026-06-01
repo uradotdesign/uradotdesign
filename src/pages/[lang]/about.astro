@@ -8,22 +8,62 @@ import ContactForm from "../../components/sections/ContactForm.astro";
 import Expertise from "../../components/sections/Expertise.astro";
 import Testimonials from "../../components/sections/Testimonials.astro";
 import { getAboutPage, getApproaches, getAssetUrl } from "../../lib/directus";
+import type { Language } from "../../lib/i18n";
 import ThemeResponsiveImage from "../../components/ThemeResponsiveImage.astro";
 
-const currentLang = "en";
+export const prerender = false;
+
+const lang = (Astro.params.lang as Language) || "en";
+const supportedLanguages: Language[] = ["en", "de"];
+if (!supportedLanguages.includes(lang)) {
+  return Astro.redirect("/404");
+}
+
 const aboutData = await getAboutPage();
 const approachesData = await getApproaches();
 
-const heroLabel = aboutData?.hero_label_en || "WHO WE ARE";
-const heroHeading =
-  aboutData?.hero_heading_en ||
-  "At Ura we bring clarity to complex digital systems.";
-const sectionTitle =
-  aboutData?.section_title_en ||
-  "Thoughtful design comes from deep understanding.";
-const sectionText =
-  aboutData?.section_text_en ||
-  "Effective design is also responsible. Our roots are in open source communities and hacker spaces, where privacy, security, and user care are foundational, not just 'nice to haves'. We learned early that careless design decisions erodes trust, exposes vulnerabilities and puts people at risk.";
+// Static per-language copy (defaults used when the CMS field is empty).
+const copy = {
+  en: {
+    pageTitle: "About Us",
+    heroLabel: "WHO WE ARE",
+    heroHeading: "At Ura we bring clarity to complex digital systems.",
+    sectionTitle: "Thoughtful design comes from deep understanding.",
+    sectionText:
+      "Effective design is also responsible. Our roots are in open source communities and hacker spaces, where privacy, security, and user care are foundational, not just 'nice to haves'. We learned early that careless design decisions erodes trust, exposes vulnerabilities and puts people at risk.",
+    valuesIntro:
+      "Our roots are in open source communities and hacker spaces, where privacy, security, and user care are foundational, not just 'nice to haves'.",
+    approachTitle: "APPROACH",
+    valuesAlt: "Values",
+    highlight: "clarity",
+  },
+  de: {
+    pageTitle: "Über uns",
+    heroLabel: "WER WIR SIND",
+    heroHeading: "Bei Ura bringen wir Klarheit in komplexe digitale Systeme.",
+    sectionTitle: "Durchdachtes Design kommt aus tiefem Verständnis.",
+    sectionText:
+      'Effektives Design ist auch verantwortungsvoll. Unsere Wurzeln liegen in Open-Source-Communities und Hacker Spaces, wo Datenschutz, Sicherheit und Benutzerfürsorge grundlegend sind, nicht nur "schön zu haben". Wir haben früh gelernt, dass sorglose Designentscheidungen Vertrauen untergraben, Schwachstellen aufdecken und Menschen gefährden.',
+    valuesIntro:
+      "Unsere Wurzeln liegen in Open-Source-Communities und Hacker-Spaces, wo Privatsphäre, Sicherheit und Benutzerfürsorge grundlegend sind und nicht nur 'nice to haves'.",
+    approachTitle: "ANSATZ",
+    valuesAlt: "Werte",
+    highlight: "Klarheit",
+  },
+}[lang];
+
+// Localized CMS field accessor (no cross-language fallback, mirrors originals).
+const cms = (field: string): string | undefined =>
+  (aboutData as Record<string, any> | null)?.[`${field}_${lang}`];
+
+const heroLabel = cms("hero_label") || copy.heroLabel;
+const heroHeading = cms("hero_heading") || copy.heroHeading;
+const sectionTitle = cms("section_title") || copy.sectionTitle;
+const sectionText = cms("section_text") || copy.sectionText;
+const valuesIntro = cms("values_intro") || copy.valuesIntro;
+const approachTitle = cms("approach_section_title") || copy.approachTitle;
+
+const heroHeadingParts = heroHeading.split(new RegExp(copy.highlight, "i"));
 
 // Background media
 const mediaLightId = aboutData?.background_media_light;
@@ -45,7 +85,7 @@ const valuesImageDark = valuesImageDarkId
   : null;
 ---
 
-<BaseLayout title="About Us">
+<BaseLayout title={copy.pageTitle}>
   <!-- Hero Section -->
   <section
     class="about-hero relative flex flex-col px-4 sm:px-6 lg:px-8 pt-20 pb-16 md:pt-24 md:pb-16 overflow-hidden"
@@ -124,11 +164,11 @@ const valuesImageDark = valuesImageDarkId
             class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display leading-tight"
           >
             {
-              heroHeading.split(/clarity/i).map((part, i, arr) => (
+              heroHeadingParts.map((part, i, arr) => (
                 <>
                   {part}
                   {i < arr.length - 1 && (
-                    <span class="clarity-gradient italic">clarity</span>
+                    <span class="clarity-gradient italic">{copy.highlight}</span>
                   )}
                 </>
               ))
@@ -164,10 +204,7 @@ const valuesImageDark = valuesImageDarkId
   </section>
 
   <!-- Values Accordion -->
-  <ValuesAccordion
-    introText={aboutData?.values_intro_en ||
-      "Our roots are in open source communities and hacker spaces, where privacy, security, and user care are foundational, not just 'nice to haves'."}
-  />
+  <ValuesAccordion introText={valuesIntro} />
 
   <!-- Values Image Section -->
   {
@@ -179,7 +216,7 @@ const valuesImageDark = valuesImageDarkId
               light={valuesImageLight}
               dark={valuesImageDark}
               fill
-              alt="Values"
+              alt={copy.valuesAlt}
               imgClass="w-full h-full object-cover"
             />
           </div>
@@ -191,10 +228,10 @@ const valuesImageDark = valuesImageDarkId
   <!-- Team Members -->
   <!-- Approach Section -->
   <Approach
-    sectionTitle={aboutData?.approach_section_title_en || "APPROACH"}
+    sectionTitle={approachTitle}
     approaches={approachesData.map((app) => ({
-      title: app.title_en,
-      description: app.description_en || "",
+      title: lang === "de" ? app.title_de || app.title_en : app.title_en,
+      description: (lang === "de" ? app.description_de : app.description_en) || "",
       borderAnimation: app.border_animation,
     }))}
   />
