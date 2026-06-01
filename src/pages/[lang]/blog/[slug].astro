@@ -1,6 +1,10 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { getBlogPostBySlug, getAssetUrl, getAssetThumbUrl } from "../../../lib/directus";
+import {
+  getBlogPostBySlug,
+  getAssetUrl,
+  getAssetThumbUrl,
+} from "../../../lib/directus";
 import { getLocalizedField } from "../../../lib/i18n";
 import ProgressiveImage from "../../../components/ProgressiveImage.astro";
 
@@ -171,7 +175,7 @@ const description =
         {/* Desktop Cover Image (Hidden on Mobile) */}
         {
           coverImage && (
-            <div class="relative hidden md:block w-full aspect-[16/9] mb-16 overflow-hidden bg-gray-100 dark:bg-gray-800">
+            <div class="relative hidden md:block w-full aspect-[16/9] mb-16 overflow-hidden">
               <ProgressiveImage
                 src={coverImage}
                 lqip={coverImageLqip}
