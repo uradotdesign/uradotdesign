@@ -35,8 +35,29 @@ export interface Page {
   seo_title?: string;
   seo_description?: string;
   seo_image?: string;
+  // Localized wrappers (page builder); fall back to the single fields above.
+  title_en?: string;
+  title_de?: string;
+  seo_title_en?: string;
+  seo_title_de?: string;
+  seo_description_en?: string;
+  seo_description_de?: string;
+  blocks?: PageBlock[];
   date_created?: string;
   date_updated?: string;
+}
+
+/**
+ * One entry in a page's block builder (Directus M2A). `collection` names the
+ * block type (e.g. "block_hero") and `item` holds that block's data. The shape
+ * of `item` depends on the collection, so it is intentionally loose here and
+ * narrowed by each Block* component via getLocalizedField.
+ */
+export interface PageBlock {
+  id: number;
+  collection: string;
+  sort?: number;
+  item: Record<string, any> | string | null;
 }
 
 export interface Author {
@@ -1010,6 +1031,101 @@ export async function getPageBySlug(slug: string) {
     sort: [],
   });
   return page || null;
+}
+
+// Page-level fields fetched for the block builder (localized wrappers + legacy).
+const PAGE_BASE_FIELDS = [
+  "id",
+  "status",
+  "slug",
+  "title",
+  "title_en",
+  "title_de",
+  "content",
+  "seo_title",
+  "seo_title_en",
+  "seo_title_de",
+  "seo_description",
+  "seo_description_en",
+  "seo_description_de",
+  "seo_image",
+];
+
+// Deep M2A field selection: one `item:<collection>.*` per block type, plus the
+// O2M children (gallery images / logos) that hold files. Centralized so the
+// field list lives in exactly one place.
+const PAGE_BLOCK_FIELDS = [
+  "blocks.id",
+  "blocks.collection",
+  "blocks.sort",
+  "blocks.item:block_hero.*",
+  "blocks.item:block_richtext.*",
+  "blocks.item:block_image.*",
+  "blocks.item:block_two_column.*",
+  "blocks.item:block_gallery.*",
+  "blocks.item:block_gallery.images.image",
+  "blocks.item:block_gallery.images.caption_en",
+  "blocks.item:block_gallery.images.caption_de",
+  "blocks.item:block_gallery.images.sort",
+  "blocks.item:block_cta.*",
+  "blocks.item:block_stats.*",
+  "blocks.item:block_quote.*",
+  "blocks.item:block_faq.*",
+  "blocks.item:block_logos.*",
+  "blocks.item:block_logos.logos.image",
+  "blocks.item:block_logos.logos.sort",
+  "blocks.item:block_embed.*",
+];
+
+export const PAGE_WITH_BLOCKS_FIELDS = [...PAGE_BASE_FIELDS, ...PAGE_BLOCK_FIELDS];
+
+/** Sorts a page's blocks (and nested O2M children) by their `sort` field. */
+function sortPageBlocks(page: Page | null): Page | null {
+  if (page?.blocks?.length) {
+    page.blocks.sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    for (const b of page.blocks) {
+      const item = b.item;
+      if (item && typeof item === "object") {
+        for (const key of ["images", "logos"]) {
+          const list = (item as Record<string, any>)[key];
+          if (Array.isArray(list)) {
+            list.sort((x, y) => (x?.sort || 0) - (y?.sort || 0));
+          }
+        }
+      }
+    }
+  }
+  return page;
+}
+
+/**
+ * Fetches a published page by slug with its full block tree expanded (M2A).
+ * Cached like other config reads (instantly invalidated by the revalidate
+ * Flow). Returns null when the page doesn't exist.
+ */
+export async function getPageWithBlocks(slug: string): Promise<Page | null> {
+  return cacheConfig(`page_blocks:${slug}`, async () => {
+    const [page] = await fetchCollection<Page>("pages", {
+      limit: 1,
+      filter: { slug: { _eq: slug } },
+      sort: [],
+      fields: PAGE_WITH_BLOCKS_FIELDS,
+    });
+    return sortPageBlocks(page || null);
+  });
+}
+
+/**
+ * Draft-aware variant for Live Preview: fetches the page (any status) with the
+ * preview token, bypassing the cache, and expands the block tree.
+ */
+export async function getPagePreviewBySlug(slug: string): Promise<Page | null> {
+  const page = await getPreviewItemBySlug<Page>(
+    "pages",
+    slug,
+    PAGE_WITH_BLOCKS_FIELDS
+  );
+  return sortPageBlocks(page);
 }
 
 export async function getHeroSection() {
