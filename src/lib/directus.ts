@@ -751,6 +751,62 @@ export function getAssetThumbUrl(
   return `${assetUrl}${sep}width=${width}&quality=${quality}&format=webp&fit=cover`;
 }
 
+/**
+ * Default responsive width ladder (CSS px) used to generate srcset candidates.
+ * Covers small thumbnails through full-bleed retina heroes. Directus generates
+ * and caches each derivative on first request.
+ */
+export const DEFAULT_IMAGE_WIDTHS = [480, 800, 1200, 1600, 2400] as const;
+
+interface AssetTransformOptions {
+  width?: number;
+  quality?: number;
+  format?: "webp" | "avif" | "jpg" | "png";
+}
+
+/**
+ * Builds an optimized derivative URL from a Directus asset URL by appending
+ * on-the-fly transform params (width cap, quality, modern format). Originals are
+ * never modified; this only changes what the browser downloads. Vector (SVG)
+ * assets are returned unchanged by Directus, so passing one is harmless.
+ */
+export function getOptimizedAssetUrl(
+  assetUrl: string | null | undefined,
+  opts: AssetTransformOptions = {}
+): string | null {
+  if (!assetUrl) return null;
+  const { width, quality = 80, format = "webp" } = opts;
+  const sep = assetUrl.includes("?") ? "&" : "?";
+  const params = [
+    width ? `width=${width}` : null,
+    `quality=${quality}`,
+    `format=${format}`,
+    "fit=inside",
+  ]
+    .filter(Boolean)
+    .join("&");
+  return `${assetUrl}${sep}${params}`;
+}
+
+/**
+ * Builds a responsive `srcset` string (width descriptors) from a single asset
+ * URL, so the browser can pick the smallest sufficient derivative. Returns null
+ * for empty input.
+ */
+export function buildAssetSrcSet(
+  assetUrl: string | null | undefined,
+  widths: readonly number[] = DEFAULT_IMAGE_WIDTHS,
+  opts: { quality?: number; format?: AssetTransformOptions["format"] } = {}
+): string | null {
+  if (!assetUrl) return null;
+  return widths
+    .map(
+      (w) =>
+        `${getOptimizedAssetUrl(assetUrl, { width: w, ...opts })} ${w}w`
+    )
+    .join(", ");
+}
+
 type DirectusFilter = Record<string, unknown>;
 
 type CollectionFetchOptions = {

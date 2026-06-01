@@ -1,5 +1,10 @@
 ---
-import { getAssetThumbUrl } from '../lib/directus';
+import {
+  getAssetThumbUrl,
+  getOptimizedAssetUrl,
+  buildAssetSrcSet,
+  DEFAULT_IMAGE_WIDTHS,
+} from '../lib/directus';
 
 interface ImageSource {
   media: string;
@@ -20,6 +25,9 @@ interface Props {
   height?: number;
   sizes?: string;
   sources?: ImageSource[];
+  widths?: readonly number[];
+  quality?: number;
+  optimize?: boolean;
 }
 
 const {
@@ -36,7 +44,26 @@ const {
   height,
   sizes,
   sources = [],
+  widths = DEFAULT_IMAGE_WIDTHS,
+  quality = 80,
+  optimize = true,
 } = Astro.props;
+
+// Serve capped, modern-format derivatives instead of raw originals. Directus
+// generates + caches each width on demand. SVGs are returned unchanged.
+const useOptimized = optimize && Boolean(src);
+const fallbackWidth = Math.min(1600, Math.max(...widths));
+const displaySrc = useOptimized
+  ? getOptimizedAssetUrl(src, { width: fallbackWidth, quality })
+  : src;
+const srcset = useOptimized ? buildAssetSrcSet(src, widths, { quality }) : null;
+const resolvedSizes = sizes ?? (useOptimized ? '100vw' : undefined);
+const resolvedSources = useOptimized
+  ? sources.map((s) => ({
+      media: s.media,
+      srcset: buildAssetSrcSet(s.srcset, widths, { quality }) ?? s.srcset,
+    }))
+  : sources;
 
 // Auto-derive the LQIP from the source when one isn't supplied, so every
 // image gets blur-up by default. A blur tier with no resolvable LQIP (e.g.
@@ -73,11 +100,12 @@ const wrapperStyle =
       data-progressive={isProgressive || undefined}
       style={wrapperStyle}
     >
-      {sources.map((s) => (
-        <source media={s.media} srcset={s.srcset} />
+      {resolvedSources.map((s) => (
+        <source media={s.media} srcset={s.srcset} sizes={resolvedSizes} />
       ))}
       <img
-        src={src}
+        src={displaySrc}
+        srcset={srcset || undefined}
         alt={alt}
         class={imgClassFull}
         data-progressive-img={isProgressive || undefined}
@@ -85,7 +113,7 @@ const wrapperStyle =
         decoding={decoding}
         width={width}
         height={height}
-        sizes={sizes}
+        sizes={resolvedSizes}
       />
     </picture>
   )
