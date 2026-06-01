@@ -515,6 +515,7 @@ export interface NavigationLink {
   label_de?: string;
   url?: string;
   open_in_new_tab?: boolean | number | string;
+  translations?: Array<{ languages_code?: string; label?: string }>;
   enabled?: boolean | number | string;
   sort_order?: number;
   is_cta?: boolean | number | string;
@@ -1329,6 +1330,7 @@ export async function getNavigationLinks(options?: {
       limit: options?.limit,
       filter: options?.filter,
       statusField: null,
+      fields: ["*", "translations.*"],
     })
   );
 }
