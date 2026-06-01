@@ -24,5 +24,9 @@ export const directusToken =
 export const cacheEnabled =
   import.meta.env.DIRECTUS_CONFIG_CACHE !== "false";
 
+// Content is invalidated instantly by the Directus "Revalidate Astro cache"
+// Flow (POST /api/revalidate on every items.create/update/delete), so the TTL
+// is only a self-healing safety net for the rare case the Flow misses an event.
+// Default to 7 days; override with DIRECTUS_CONFIG_CACHE_TTL (seconds).
 export const cacheTTL =
-  parseInt(import.meta.env.DIRECTUS_CONFIG_CACHE_TTL || "3600") || 3600;
+  parseInt(import.meta.env.DIRECTUS_CONFIG_CACHE_TTL || "604800") || 604800;
