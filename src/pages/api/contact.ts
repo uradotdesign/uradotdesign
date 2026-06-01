@@ -1,141 +1,125 @@
 import type { APIRoute } from "astro";
+import { z } from "zod";
 import { getRedisClient } from "../../lib/redis";
-import { directusUrl as DIRECTUS_URL, directusToken as DIRECTUS_TOKEN } from "../../lib/config";
+import { getClientIp } from "../../lib/http";
+import {
+  directusUrl as DIRECTUS_URL,
+  directusToken as DIRECTUS_TOKEN,
+} from "../../lib/config";
 
-// Fallback in-memory rate limiting (per IP)
+// Fallback in-memory rate limiting (per IP), used only when Redis is unavailable.
 const submissionTimestamps = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in ms
 const RATE_LIMIT_WINDOW_SECONDS = 3600; // 1 hour in seconds
 const MAX_SUBMISSIONS_PER_WINDOW = 3; // Max 3 submissions per hour per IP
+const DIRECTUS_TIMEOUT_MS = 8000;
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Bounds every field and strips unknown keys, so a client can never set
+// server-controlled columns (status, ip_address) via the request body.
+const ContactSchema = z.object({
+  first_name: z.string().trim().min(1).max(100),
+  last_name: z.string().trim().min(1).max(100),
+  email: z.string().trim().max(254).regex(EMAIL_REGEX),
+  message: z.string().trim().min(1).max(5000),
+  phone: z.string().trim().max(50).optional(),
+  contact_preference: z.string().trim().max(50).optional(),
+  language: z.string().trim().max(10).optional(),
+  user_agent: z.string().max(1000).optional(),
+  // Anti-spam fields
+  website: z.string().max(200).optional(), // honeypot
+  timestamp: z.number().optional(),
+});
+
+const jsonResponse = (
+  body: unknown,
+  status: number,
+  extraHeaders: Record<string, string> = {}
+) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...extraHeaders },
+  });
+
+// Returned for genuine success and for silently-dropped spam (to fool bots).
+const successResponse = () =>
+  jsonResponse(
+    { success: true, message: "Your message has been sent successfully!" },
+    200
+  );
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    // Parse request body
-    const body = await request.json();
-
-    // Validate required fields
-    if (!body.first_name || !body.last_name || !body.email || !body.message) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Missing required fields",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return jsonResponse(
+        { success: false, error: "Invalid request body." },
+        400
       );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(body.email)) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Invalid email format",
-        }),
+    const parsed = ContactSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return jsonResponse(
         {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+          success: false,
+          error: "Please check the form fields and try again.",
+        },
+        400
       );
     }
+    const data = parsed.data;
 
-    // SPAM PROTECTION 1: Honeypot field check
-    // If the "website" field is filled, it's likely a bot
-    if (body.website && body.website.trim() !== "") {
+    // SPAM PROTECTION 1: Honeypot field check.
+    if (data.website && data.website.trim() !== "") {
       console.log("🚫 Spam blocked: Honeypot field filled");
-      // Return success to fool bots
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Your message has been sent successfully!",
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return successResponse();
     }
 
-    // SPAM PROTECTION 2: Timestamp check (form filled too quickly)
-    if (body.timestamp) {
-      const timeTaken = Date.now() - body.timestamp;
-      const MIN_TIME = 3000; // Must take at least 3 seconds to fill form
+    // SPAM PROTECTION 2: Timestamp check (form filled too quickly).
+    if (data.timestamp) {
+      const timeTaken = Date.now() - data.timestamp;
+      const MIN_TIME = 3000; // Must take at least 3 seconds to fill the form.
       if (timeTaken < MIN_TIME) {
         console.log(
           `🚫 Spam blocked: Form submitted too quickly (${timeTaken}ms)`
         );
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Your message has been sent successfully!",
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        return successResponse();
       }
     }
 
-    // Get client IP (for spam detection)
-    const clientIP =
-      request.headers.get("x-forwarded-for")?.split(",")[0] ||
-      request.headers.get("x-real-ip") ||
-      "unknown";
+    const clientIP = getClientIp(request);
 
-    // SPAM PROTECTION 3: Rate limiting
+    // SPAM PROTECTION 3: Rate limiting (Redis, with in-memory fallback).
     let rateLimited = false;
-
     try {
-      // Try Redis first
       const redis = getRedisClient();
       const key = `rate_limit:contact:${clientIP}`;
-
-      // Increment count
       const currentCount = await redis.incr(key);
-
-      // Set expiry on first request
       if (currentCount === 1) {
         await redis.expire(key, RATE_LIMIT_WINDOW_SECONDS);
       }
-
       if (currentCount > MAX_SUBMISSIONS_PER_WINDOW) {
         rateLimited = true;
       }
     } catch (redisError) {
-      // Fallback to in-memory if Redis fails
       console.warn(
         "Redis rate limit check failed, falling back to memory:",
         redisError
       );
-
       const now = Date.now();
       const ipSubmissions = submissionTimestamps.get(clientIP) || [];
-
-      // Remove old submissions outside the window
       const recentSubmissions = ipSubmissions.filter(
         (timestamp) => now - timestamp < RATE_LIMIT_WINDOW
       );
-
       if (recentSubmissions.length >= MAX_SUBMISSIONS_PER_WINDOW) {
         rateLimited = true;
       } else {
-        // Add current submission timestamp
         recentSubmissions.push(now);
         submissionTimestamps.set(clientIP, recentSubmissions);
-
-        // Clean up old entries periodically
         if (submissionTimestamps.size > 100) {
           for (const [ip, timestamps] of submissionTimestamps.entries()) {
             const validTimestamps = timestamps.filter(
@@ -153,65 +137,46 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (rateLimited) {
       console.log(`🚫 Rate limit exceeded for IP: ${clientIP}`);
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           success: false,
           error: "Too many submissions. Please try again later.",
-        }),
-        {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            "Retry-After": "3600", // 1 hour
-          },
-        }
+        },
+        429,
+        { "Retry-After": "3600" }
       );
     }
 
-    // SPAM PROTECTION 4: Content validation
+    // SPAM PROTECTION 4: Content validation.
     const suspiciousPatterns = [
       /\b(viagra|cialis|casino|lottery|prize|winner)\b/i,
       /http[s]?:\/\/.*http[s]?:\/\//i, // Multiple URLs
       /<script|<iframe|javascript:/i, // XSS attempts
     ];
-
-    const contentToCheck = `${body.message} ${body.first_name} ${body.last_name}`;
+    const contentToCheck = `${data.message} ${data.first_name} ${data.last_name}`;
     for (const pattern of suspiciousPatterns) {
       if (pattern.test(contentToCheck)) {
-        console.log(`🚫 Spam blocked: Suspicious content detected`);
-        // Return success to fool spammers
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Your message has been sent successfully!",
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        console.log("🚫 Spam blocked: Suspicious content detected");
+        return successResponse();
       }
     }
 
-    // Prepare submission data
+    // Build the submission with server-controlled fields (never from the body).
     const submissionData = {
       status: "new",
-      first_name: body.first_name,
-      last_name: body.last_name,
-      email: body.email,
-      phone: body.phone || null,
-      contact_preference: body.contact_preference || "email",
-      message: body.message,
-      language: body.language || "en",
-      user_agent: body.user_agent || null,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      email: data.email,
+      phone: data.phone || null,
+      contact_preference: data.contact_preference || "email",
+      message: data.message,
+      language: data.language || "en",
+      user_agent: data.user_agent || null,
       ip_address: clientIP,
     };
 
     console.log("📤 Submitting contact form for:", submissionData.email);
 
-    // Submit to Directus
     const directusResponse = await fetch(
       `${DIRECTUS_URL}/items/contact_submissions`,
       {
@@ -223,6 +188,7 @@ export const POST: APIRoute = async ({ request }) => {
             : {}),
         },
         body: JSON.stringify(submissionData),
+        signal: AbortSignal.timeout(DIRECTUS_TIMEOUT_MS),
       }
     );
 
@@ -233,8 +199,8 @@ export const POST: APIRoute = async ({ request }) => {
     );
 
     if (!directusResponse.ok) {
-      // Try to get error details, but handle empty responses
-      let errorData;
+      // Log the upstream detail server-side; return a generic message.
+      let errorData: unknown;
       const contentType = directusResponse.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         errorData = await directusResponse.json().catch(() => ({}));
@@ -246,47 +212,23 @@ export const POST: APIRoute = async ({ request }) => {
       }
       console.error("Directus submission error:", errorData);
 
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           success: false,
           error: "Failed to submit form. Please try again later.",
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        },
+        500
       );
     }
 
-    // Success - don't try to read the response as public role can't read back submissions
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Your message has been sent successfully!",
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // Public role can't read submissions back, so don't parse the response.
+    return successResponse();
   } catch (error) {
+    // Log full detail server-side; never leak internals (parse/DNS/timeout) out.
     console.error("Contact API error:", error);
-
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : "Internal server error",
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
+    return jsonResponse(
+      { success: false, error: "Something went wrong. Please try again later." },
+      500
     );
   }
 };

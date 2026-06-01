@@ -10,7 +10,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-directus}
       POSTGRES_DB: ${POSTGRES_DB:-directus}
     ports:
-      - "5432:5432"
+      # Bind to localhost only — never expose the database on all interfaces.
+      - "127.0.0.1:5432:5432"
     networks:
       - directus
     healthcheck:
@@ -24,7 +25,8 @@ services:
     container_name: ura_redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      # Bind to localhost only — never expose Redis on all interfaces.
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -41,7 +43,8 @@ services:
     container_name: directus_cms
     restart: unless-stopped
     ports:
-      - "8055:8055"
+      # Bind to localhost only; use a tunnel or reverse proxy for remote access.
+      - "127.0.0.1:8055:8055"
     volumes:
       - directus_uploads:/directus/uploads
       - directus_extensions:/directus/extensions
@@ -55,7 +58,8 @@ services:
       SECRET: ${SECRET}
 
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@ura.design}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      # No insecure default — must be provided via .env (even in dev).
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in your .env}
 
       DB_CLIENT: "pg"
       DB_HOST: "postgres"

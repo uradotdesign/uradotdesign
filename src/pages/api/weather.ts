@@ -1,5 +1,19 @@
 import type { APIRoute } from "astro";
+import { z } from "zod";
 import { remember } from "../../lib/redis";
+import { getClientIp, rateLimit } from "../../lib/http";
+
+const WEATHER_FETCH_TIMEOUT_MS = 5000;
+const WEATHER_RATE_LIMIT = 30; // requests
+const WEATHER_RATE_WINDOW_SECONDS = 60; // per minute, per IP
+
+// City names only: letters (incl. accents), spaces, and ,.'- separators.
+const LocationSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[\p{L}\p{M}\s.,'-]+$/u);
 
 interface WeatherData {
   location: string;
@@ -34,7 +48,9 @@ async function fetchWeather(location: string): Promise<WeatherData> {
 
   const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&appid=${apiKey}&units=metric`;
 
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(WEATHER_FETCH_TIMEOUT_MS),
+  });
 
   if (!response.ok) {
     // If unauthorized, use mock data and warn
@@ -81,26 +97,42 @@ export async function getWeather(location: string) {
   });
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   try {
-    // Get location from query parameter
-    const location = url.searchParams.get("location");
-
-    if (!location) {
+    // Per-IP rate limit to bound upstream API cost and Redis key growth.
+    const ip = getClientIp(request);
+    const { limited } = await rateLimit(
+      `rate_limit:weather:${ip}`,
+      WEATHER_RATE_LIMIT,
+      WEATHER_RATE_WINDOW_SECONDS
+    );
+    if (limited) {
       return new Response(
-        JSON.stringify({
-          error: "Location parameter is required",
-        }),
+        JSON.stringify({ error: "Too many requests. Please slow down." }),
         {
-          status: 400,
+          status: 429,
           headers: {
             "Content-Type": "application/json",
+            "Retry-After": String(WEATHER_RATE_WINDOW_SECONDS),
           },
         }
       );
     }
 
-    const weather = await getWeather(location);
+    // Validate the location: bounds length and restricts to city-name characters
+    // so an attacker can't iterate unbounded distinct values.
+    const parsed = LocationSchema.safeParse(url.searchParams.get("location"));
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: "A valid location parameter is required" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const weather = await getWeather(parsed.data);
 
     return new Response(JSON.stringify(weather), {
       status: 200,
@@ -110,13 +142,11 @@ export const GET: APIRoute = async ({ url }) => {
       },
     });
   } catch (error) {
+    // Log detail server-side; return a generic message.
     console.error("Weather API error:", error);
 
     return new Response(
-      JSON.stringify({
-        error: "Failed to fetch weather data",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }),
+      JSON.stringify({ error: "Failed to fetch weather data" }),
       {
         status: 500,
         headers: {

@@ -5,12 +5,15 @@ let redis: Redis | null = null;
 // Use process.env for server-side environment variables in SSR
 const REDIS_HOST = process.env.REDIS_HOST || "localhost";
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379");
+// Optional: set when Redis is started with `--requirepass`.
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
 
 export function getRedisClient(): Redis {
   if (!redis) {
     redis = new Redis({
       host: REDIS_HOST,
       port: REDIS_PORT,
+      password: REDIS_PASSWORD,
       retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
         return delay;
