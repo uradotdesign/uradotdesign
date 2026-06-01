@@ -24,11 +24,13 @@ const ContactSchema = z.object({
   email: z.string().trim().max(254).regex(EMAIL_REGEX),
   message: z.string().trim().min(1).max(5000),
   phone: z.string().trim().max(50).optional(),
+  company: z.string().trim().max(200).optional(),
+  website: z.string().trim().max(200).optional(),
   contact_preference: z.string().trim().max(50).optional(),
   language: z.string().trim().max(10).optional(),
   user_agent: z.string().max(1000).optional(),
   // Anti-spam fields
-  website: z.string().max(200).optional(), // honeypot
+  url: z.string().max(200).optional(), // honeypot (hidden field; must stay empty)
   timestamp: z.number().optional(),
 });
 
@@ -73,8 +75,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
     const data = parsed.data;
 
-    // SPAM PROTECTION 1: Honeypot field check.
-    if (data.website && data.website.trim() !== "") {
+    // SPAM PROTECTION 1: Honeypot field check (hidden "url" field).
+    if (data.url && data.url.trim() !== "") {
       console.log("🚫 Spam blocked: Honeypot field filled");
       return successResponse();
     }
@@ -168,11 +170,15 @@ export const POST: APIRoute = async ({ request }) => {
       last_name: data.last_name,
       email: data.email,
       phone: data.phone || null,
+      company: data.company || null,
+      website: data.website || null,
       contact_preference: data.contact_preference || "email",
       message: data.message,
       language: data.language || "en",
       user_agent: data.user_agent || null,
       ip_address: clientIP,
+      // Server-authoritative submission time (also surfaced in the email Flow).
+      submitted_at: new Date().toISOString(),
     };
 
     console.log("📤 Submitting contact form for:", submissionData.email);

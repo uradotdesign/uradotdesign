@@ -76,6 +76,16 @@ const labels = {
   ),
   emailOption: await t("contact.email_option", currentLang, "E-Mail"),
   signalOption: await t("contact.signal_option", currentLang, "Signal"),
+  company: await t(
+    "contact.company",
+    currentLang,
+    currentLang === "de" ? "Unternehmen" : "Company",
+  ),
+  website: await t(
+    "contact.website",
+    currentLang,
+    currentLang === "de" ? "Webseite" : "Website",
+  ),
   messagePlaceholder: await t(
     "contact.message_placeholder",
     currentLang,
@@ -342,11 +352,45 @@ const clientMessages = {
             </div>
           </div>
 
+          <!-- Company & Website (Optional) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                for="modal-company"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
+                {labels.company}
+              </label>
+              <input
+                type="text"
+                id="modal-company"
+                name="company"
+                class="modal-input w-full px-4 py-3 rounded-lg border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder={labels.company}
+              />
+            </div>
+            <div>
+              <label
+                for="modal-website-field"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
+                {labels.website}
+              </label>
+              <input
+                type="url"
+                id="modal-website-field"
+                name="website"
+                class="modal-input w-full px-4 py-3 rounded-lg border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="https://"
+              />
+            </div>
+          </div>
+
           <!-- Honeypot field -->
           <input
             type="text"
-            id="modal-website"
-            name="website"
+            id="modal-url"
+            name="url"
             tabindex="-1"
             autocomplete="off"
             class="sr-only"
@@ -744,9 +788,11 @@ const clientMessages = {
           last_name: formData.get("last_name") as string,
           email: formData.get("email") as string,
           phone: (formData.get("phone") as string) || undefined,
+          company: (formData.get("company") as string) || undefined,
+          website: (formData.get("website") as string) || undefined,
           contact_preference: contactPreferences[0] || "email",
           message: formData.get("message") as string,
-          website: formData.get("website") as string,
+          url: formData.get("url") as string, // Honeypot field
           language,
           user_agent: navigator.userAgent,
           timestamp: formInteractionStart,

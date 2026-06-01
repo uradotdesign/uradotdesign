@@ -86,6 +86,16 @@ const labels = {
     currentLang,
     currentLang === "de" ? "(optional)" : "(optional)",
   ),
+  company: await t(
+    "contact.company",
+    currentLang,
+    currentLang === "de" ? "Unternehmen" : "Company",
+  ),
+  website: await t(
+    "contact.website",
+    currentLang,
+    currentLang === "de" ? "Webseite" : "Website",
+  ),
   messagePlaceholder: await t(
     "contact.message_placeholder",
     currentLang,
@@ -276,8 +286,8 @@ const clientMessages = {
           <!-- Honeypot field (hidden from users, bots will fill it) -->
           <input
             type="text"
-            id="website"
-            name="website"
+            id="url"
+            name="url"
             tabindex="-1"
             autocomplete="off"
             class="sr-only"
@@ -296,6 +306,34 @@ const clientMessages = {
               class="w-full px-5 py-4 rounded-md border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-md transition-all text-base"
               placeholder="+49 123 456789"
             />
+          </div>
+
+          <!-- Company & Website (Optional) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="company" class="block text-base font-normal mb-2">
+                {labels.company}
+              </label>
+              <input
+                type="text"
+                id="company"
+                name="company"
+                class="w-full px-5 py-4 rounded-md border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-md transition-all text-base"
+                placeholder={labels.company}
+              />
+            </div>
+            <div>
+              <label for="website" class="block text-base font-normal mb-2">
+                {labels.website}
+              </label>
+              <input
+                type="url"
+                id="website"
+                name="website"
+                class="w-full px-5 py-4 rounded-md border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-md transition-all text-base"
+                placeholder="https://"
+              />
+            </div>
           </div>
 
           <!-- Contact Preference -->
@@ -539,9 +577,11 @@ const clientMessages = {
         last_name: formData.get("last_name") as string,
         email: formData.get("email") as string,
         phone: (formData.get("phone") as string) || undefined,
+        company: (formData.get("company") as string) || undefined,
+        website: (formData.get("website") as string) || undefined,
         contact_preference: contactPreferences[0] || "email", // Take first preference
         message: formData.get("message") as string,
-        website: formData.get("website") as string, // Honeypot field
+        url: formData.get("url") as string, // Honeypot field
         language,
         user_agent: navigator.userAgent,
         timestamp: formInteractionStart, // When user first interacted with form
@@ -882,6 +922,7 @@ const clientMessages = {
   :global(#contact-form) input[type="text"],
   :global(#contact-form) input[type="email"],
   :global(#contact-form) input[type="tel"],
+  :global(#contact-form) input[type="url"],
   :global(#contact-form) textarea,
   :global(#contact-form) input[type="checkbox"] {
     border-color: #d0d5dd;
@@ -891,6 +932,7 @@ const clientMessages = {
   :global(.dark) :global(#contact-form) input[type="text"],
   :global(.dark) :global(#contact-form) input[type="email"],
   :global(.dark) :global(#contact-form) input[type="tel"],
+  :global(.dark) :global(#contact-form) input[type="url"],
   :global(.dark) :global(#contact-form) textarea,
   :global(.dark) :global(#contact-form) input[type="checkbox"] {
     border-color: #4b5563; /* gray-600 */
