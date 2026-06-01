@@ -1,4 +1,7 @@
 ---
+import { getAssetThumbUrl } from '../lib/directus';
+import ProgressiveImage from './ProgressiveImage.astro';
+
 interface Props {
   light?: string | null;
   dark?: string | null;
@@ -12,6 +15,8 @@ interface Props {
   width?: number;
   height?: number;
   sizes?: string;
+  placeholder?: 'blur' | 'fade' | 'none';
+  fill?: boolean;
 }
 
 const {
@@ -27,6 +32,8 @@ const {
   width,
   height,
   sizes,
+  placeholder = 'fade',
+  fill = false,
 } = Astro.props;
 
 const MOBILE_MEDIA = '(max-width: 767px)';
@@ -38,54 +45,72 @@ const darkSrc = dark || light;
 // If both themes resolve to the same source, render a single (non-toggled) picture.
 const singleTheme = Boolean(lightSrc) && lightSrc === darkSrc;
 const hasImage = Boolean(lightSrc);
+
+const lqipFor = (src: string | null) =>
+  placeholder === 'blur' ? getAssetThumbUrl(src) : null;
+
+const lightSources = mobileLight
+  ? [{ media: MOBILE_MEDIA, srcset: mobileLight }]
+  : [];
+const darkSources = mobileDark
+  ? [{ media: MOBILE_MEDIA, srcset: mobileDark }]
+  : [];
+const singleSources =
+  mobileLight || mobileDark
+    ? [{ media: MOBILE_MEDIA, srcset: (mobileLight || mobileDark) as string }]
+    : [];
 ---
 
 {
   hasImage &&
     (singleTheme ? (
-      <picture class={className}>
-        {(mobileLight || mobileDark) && (
-          <source media={MOBILE_MEDIA} srcset={mobileLight || mobileDark} />
-        )}
-        <img
+      <ProgressiveImage
+        src={lightSrc}
+        lqip={lqipFor(lightSrc)}
+        placeholder={placeholder}
+        fill={fill}
+        alt={alt}
+        class={className}
+        imgClass={imgClass}
+        loading={loading}
+        decoding={decoding}
+        width={width}
+        height={height}
+        sizes={sizes}
+        sources={singleSources}
+      />
+    ) : (
+      <>
+        <ProgressiveImage
           src={lightSrc}
+          lqip={lqipFor(lightSrc)}
+          placeholder={placeholder}
+          fill={fill}
           alt={alt}
-          class={imgClass}
+          class={`${className} dark:hidden`.trim()}
+          imgClass={imgClass}
           loading={loading}
           decoding={decoding}
           width={width}
           height={height}
           sizes={sizes}
+          sources={lightSources}
         />
-      </picture>
-    ) : (
-      <>
-        <picture class={`${className} dark:hidden`.trim()}>
-          {mobileLight && <source media={MOBILE_MEDIA} srcset={mobileLight} />}
-          <img
-            src={lightSrc}
-            alt={alt}
-            class={imgClass}
-            loading={loading}
-            decoding={decoding}
-            width={width}
-            height={height}
-            sizes={sizes}
-          />
-        </picture>
-        <picture class={`${className} hidden dark:block`.trim()}>
-          {mobileDark && <source media={MOBILE_MEDIA} srcset={mobileDark} />}
-          <img
-            src={darkSrc}
-            alt={alt}
-            class={imgClass}
-            loading={loading}
-            decoding={decoding}
-            width={width}
-            height={height}
-            sizes={sizes}
-          />
-        </picture>
+        <ProgressiveImage
+          src={darkSrc}
+          lqip={lqipFor(darkSrc)}
+          placeholder={placeholder}
+          fill={fill}
+          alt={alt}
+          class={`${className} hidden dark:block`.trim()}
+          imgClass={imgClass}
+          loading={loading}
+          decoding={decoding}
+          width={width}
+          height={height}
+          sizes={sizes}
+          sources={darkSources}
+        />
       </>
     ))
 }
