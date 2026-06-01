@@ -1,10 +1,4 @@
-import {
-  createDirectus,
-  rest,
-  readItems,
-  readItem,
-  createItem,
-} from "@directus/sdk";
+import { createDirectus, rest, readItems, readItem } from "@directus/sdk";
 import {
   directusUrl,
   publicDirectusUrl,
@@ -701,15 +695,44 @@ function createCacheKey(base: string, params?: Record<string, unknown>) {
   return `${base}:${serializeCacheValue(normalized)}`;
 }
 
+// Network timeout for all Directus requests (SDK + raw fetch) so a hung CMS
+// can't stall SSR indefinitely. Callers may still pass their own AbortSignal.
+const DIRECTUS_FETCH_TIMEOUT_MS = 8000;
+
+const fetchWithTimeout: typeof fetch = (input, init = {}) =>
+  fetch(input, {
+    ...init,
+    signal: init?.signal ?? AbortSignal.timeout(DIRECTUS_FETCH_TIMEOUT_MS),
+  });
+
 // Create Directus client with REST API (public access)
 // Permissions are configured in Directus Admin → Settings → Access Control → Public
-export const directus = createDirectus<Schema>(directusUrl).with(rest());
+export const directus = createDirectus<Schema>(directusUrl, {
+  globals: { fetch: fetchWithTimeout },
+}).with(rest());
 
 // Helper function to get asset URL
 // Always use public URL for assets since they're loaded by the browser
-export function getAssetUrl(fileId: string | undefined): string | null {
+export function getAssetUrl(
+  fileId: string | null | undefined
+): string | null {
   if (!fileId) return null;
   return `${publicDirectusUrl}/assets/${fileId}`;
+}
+
+/**
+ * Coerces a CMS value (which may arrive as a boolean, number, or string such
+ * as "true"/"1"/"yes") into a real boolean.
+ */
+export function toBoolean(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const lower = value.toLowerCase();
+    return lower === "true" || lower === "1" || lower === "yes";
+  }
+  return false;
 }
 
 /**
@@ -815,17 +838,13 @@ async function fetchSingletonHTTP<T>(
   fields: string = "*"
 ): Promise<T | null> {
   try {
-    const cacheBuster = `${Date.now()}_${Math.random()}`;
-    const url = `${directusUrl}/items/${collection}?fields=${fields}&_cache=${cacheBuster}`;
+    // Freshness is handled by the Redis config cache (cacheConfig); no need for
+    // a cache-buster query param here.
+    const url = `${directusUrl}/items/${collection}?fields=${fields}`;
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: "GET",
-      headers: {
-        "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-        Pragma: "no-cache",
-        Expires: "0",
-      },
-      // @ts-ignore - cache option exists in fetch
+      headers: { "Cache-Control": "no-cache" },
       cache: "no-store",
     });
 
@@ -857,7 +876,7 @@ export async function getFileMetadata(
 ): Promise<{ type: string; filename_download: string } | null> {
   if (!fileId) return null;
   try {
-    const response = await fetch(`${directusUrl}/files/${fileId}`, {
+    const response = await fetchWithTimeout(`${directusUrl}/files/${fileId}`, {
       headers: directusToken ? { Authorization: `Bearer ${directusToken}` } : {},
     });
     if (!response.ok) return null;
@@ -874,42 +893,6 @@ export async function getFileMetadata(
   }
 }
 
-// API functions for fetching data
-export async function getArticles(options?: {
-  limit?: number;
-  filter?: DirectusFilter;
-  sort?: string[];
-}) {
-  const cacheKey = createCacheKey("articles", {
-    limit: options?.limit ?? null,
-    filter: options?.filter ?? null,
-    sort: options?.sort ?? null,
-  });
-
-  return cacheConfig(cacheKey, () =>
-    fetchCollection<Article>("articles", {
-      limit: options?.limit,
-      filter: options?.filter,
-      sort: options?.sort ?? ["-date_created"],
-    })
-  );
-}
-
-export async function getArticleBySlug(slug: string) {
-  const [article] = await fetchCollection<Article>("articles", {
-    limit: 1,
-    filter: { slug: { _eq: slug } },
-    sort: [],
-  });
-  return article || null;
-}
-
-export async function getPages() {
-  return fetchCollection<Page>("pages", {
-    sort: ["title"],
-  });
-}
-
 export async function getPageBySlug(slug: string) {
   const [page] = await fetchCollection<Page>("pages", {
     limit: 1,
@@ -917,25 +900,6 @@ export async function getPageBySlug(slug: string) {
     sort: [],
   });
   return page || null;
-}
-
-export async function getCategories() {
-  return fetchCollection<Category>("categories", {
-    statusField: null,
-    sort: ["name"],
-  });
-}
-
-export async function getSettings() {
-  return cacheConfig("settings", async () => {
-    try {
-      const settings = await directus.request(readItem("settings", 1));
-      return settings;
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-      return null;
-    }
-  });
 }
 
 export async function getHeroSection() {
@@ -1116,43 +1080,6 @@ export async function getClientsSection(): Promise<ClientsSection | null> {
   return cacheConfig("clients_section", () =>
     fetchSingletonById<ClientsSection>("clients_section", 1)
   );
-}
-
-export async function getProjects(options?: {
-  limit?: number;
-  filter?: DirectusFilter;
-  featuredOnly?: boolean;
-}) {
-  const filter = {
-    ...(options?.filter || {}),
-  };
-
-  if (options?.featuredOnly) {
-    filter.featured = { _eq: true };
-  }
-
-  const cacheKey = createCacheKey("projects", {
-    limit: options?.limit ?? null,
-    filter,
-  });
-
-  return cacheConfig(cacheKey, () =>
-    fetchCollection<Project>("projects", {
-      limit: options?.limit,
-      filter,
-      sort: ["sort_order"],
-    })
-  );
-}
-
-export async function getProjectBySlug(slug: string) {
-  return cacheConfig(`project:${slug}`, async () => {
-    const [project] = await fetchCollection<Project>("projects", {
-      limit: 1,
-      filter: { slug: { _eq: slug } },
-    });
-    return project || null;
-  });
 }
 
 // Case Studies helpers
@@ -1346,14 +1273,6 @@ export async function getTeamMembers(options?: {
   );
 }
 
-export async function getTeamMemberBySlug(slug: string) {
-  const [member] = await fetchCollection<TeamMember>("team_members", {
-    limit: 1,
-    filter: { slug: { _eq: slug } },
-  });
-  return member || null;
-}
-
 // Header Settings helpers
 export async function getHeaderSettings() {
   return cacheConfig("header_settings", async () => {
@@ -1369,7 +1288,7 @@ export async function getHeaderSettings() {
     }
 
     try {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `${directusUrl}/items/header_settings?fields=*&limit=1`
       );
       if (res.ok) {
@@ -1438,37 +1357,6 @@ export async function getApproaches() {
   );
 }
 
-// Expertise helpers
-export async function getExpertiseGroups(options?: {
-  page?: "about" | "home" | "services" | "work";
-}) {
-  const filter: Record<string, any> = {};
-
-  if (options?.page) {
-    const pageMap: Record<string, string> = {
-      about: "show_on_about",
-      home: "show_on_home",
-      services: "show_on_services",
-      work: "show_on_work",
-    };
-    const field = pageMap[options.page];
-    if (field) {
-      filter[field] = { _eq: true };
-    }
-  }
-
-  const cacheKey = createCacheKey("expertise_groups", {
-    filter,
-  });
-
-  return cacheConfig(cacheKey, () =>
-    fetchCollection<ExpertiseGroup>("expertise_groups", {
-      filter,
-      sort: ["sort_order"],
-    })
-  );
-}
-
 // Contact Section helpers
 export async function getContactSection(): Promise<ContactSection | null> {
   return cacheConfig("contact_section", () =>
@@ -1511,22 +1399,4 @@ export async function getContactTeamMembers(options?: {
       statusField: null,
     })
   );
-}
-
-export async function createContactSubmission(
-  data: Omit<ContactSubmission, "id" | "date_created" | "date_updated">
-) {
-  try {
-    // @ts-ignore - Directus SDK type inference issue
-    const submission = await directus.request(
-      createItem("contact_submissions", data)
-    );
-    return { success: true, data: submission };
-  } catch (error) {
-    console.error("Error creating contact submission:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
 }

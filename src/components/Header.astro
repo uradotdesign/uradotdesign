@@ -1,17 +1,16 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 import LanguageSwitcher from './LanguageSwitcher.astro';
-import { getCurrentLanguage } from '../lib/i18n';
+import { getCurrentLanguage, getLocalizedField } from '../lib/i18n';
 import { getWeather } from '../pages/api/weather';
 import { t } from '../lib/translations';
-import { 
-  getSiteSettings, 
-  getHeaderSettings, 
+import {
+  getSiteSettings,
+  getHeaderSettings,
   getNavigationLinks,
   getServices,
-  toBoolean, 
-  getLocalizedField 
-} from '../lib/cms';
+  toBoolean,
+} from '../lib/directus';
 
 export interface Props {
   overlay?: boolean;

@@ -16,170 +16,26 @@
  * (or DIRECTUS_EMAIL + DIRECTUS_PASSWORD instead of the token)
  */
 
-const BASE_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
-const ADMIN_TOKEN = process.env.DIRECTUS_ADMIN_TOKEN;
-const EMAIL = process.env.DIRECTUS_EMAIL;
-const PASSWORD = process.env.DIRECTUS_PASSWORD;
+import { createDirectusAdmin } from "./lib/directus-admin.mjs";
 
-if (!ADMIN_TOKEN && (!EMAIL || !PASSWORD)) {
-  console.error(
-    "Error: set DIRECTUS_ADMIN_TOKEN, or DIRECTUS_EMAIL + DIRECTUS_PASSWORD."
-  );
+let admin;
+try {
+  admin = createDirectusAdmin();
+} catch (e) {
+  console.error(`Error: ${e.message}`);
   process.exit(1);
 }
 
-const j = JSON.stringify;
-
-async function request(path, options = {}) {
-  const url = `${BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
-  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-  const res = await fetch(url, { ...options, headers });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    const err = new Error(`HTTP ${res.status} ${res.statusText} -> ${url} -> ${body}`);
-    err.status = res.status;
-    err.body = body;
-    throw err;
-  }
-  const ct = res.headers.get("content-type") || "";
-  return ct.includes("application/json") ? res.json() : res.text();
-}
-
-let cachedToken = null;
-async function getToken() {
-  if (ADMIN_TOKEN) return ADMIN_TOKEN;
-  if (cachedToken) return cachedToken;
-  const data = await request("/auth/login", {
-    method: "POST",
-    body: j({ email: EMAIL, password: PASSWORD }),
-  });
-  cachedToken = data?.data?.access_token || data?.access_token;
-  return cachedToken;
-}
-
-async function authRequest(path, options = {}) {
-  const token = await getToken();
-  return request(path, {
-    ...options,
-    headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` },
-  });
-}
-
-const isExists = (e) =>
-  e.body &&
-  (e.body.includes("RECORD_NOT_UNIQUE") || e.body.includes("already exists"));
-
-async function ensureCollection(name, meta = {}) {
-  try {
-    await authRequest(`/collections`, {
-      method: "POST",
-      body: j({ collection: name, meta, schema: { name } }),
-    });
-    console.log(`+ Created collection: ${name}`);
-  } catch (e) {
-    if (isExists(e)) console.log(`= Collection exists: ${name}`);
-    else throw e;
-  }
-}
-
-async function ensureField(collection, fieldConfig) {
-  try {
-    await authRequest(`/fields/${encodeURIComponent(collection)}`, {
-      method: "POST",
-      body: j(fieldConfig),
-    });
-    console.log(`+ Created field: ${collection}.${fieldConfig.field}`);
-  } catch (e) {
-    if (isExists(e)) console.log(`= Field exists: ${collection}.${fieldConfig.field}`);
-    else throw e;
-  }
-}
-
-async function getPrimaryKey(collection) {
-  const data = await authRequest(`/fields/${encodeURIComponent(collection)}`);
-  const fields = Array.isArray(data?.data) ? data.data : data;
-  const pk = fields.find((f) => f?.schema?.is_primary_key);
-  if (!pk) throw new Error(`No primary key found for ${collection}`);
-  return { field: pk.field, type: pk.type };
-}
-
-async function relationExists(collection, field) {
-  try {
-    const data = await authRequest(
-      `/relations/${encodeURIComponent(collection)}/${encodeURIComponent(field)}`
-    );
-    return Boolean(data?.data);
-  } catch {
-    // A 403/404 from the relations endpoint means the relation does not exist yet.
-    return false;
-  }
-}
-
-async function ensureRelation(payload) {
-  if (await relationExists(payload.collection, payload.field)) {
-    console.log(`= Relation exists: ${payload.collection}.${payload.field}`);
-    return;
-  }
-  try {
-    await authRequest(`/relations`, { method: "POST", body: j(payload) });
-    console.log(`+ Created relation: ${payload.collection}.${payload.field}`);
-  } catch (e) {
-    if (isExists(e)) console.log(`= Relation exists: ${payload.collection}.${payload.field}`);
-    else throw e;
-  }
-}
-
-// A "file" field is a uuid column PLUS an M2O relation to directus_files.
-// Without this relation the admin file picker opens but can never bind a
-// selection, so the field always appears empty. (The Directus UI creates this
-// relation automatically; the raw /fields API does not.)
-async function ensureFileRelation(collection, field) {
-  await ensureRelation({
-    collection,
-    field,
-    related_collection: "directus_files",
-    schema: { on_delete: "SET NULL" },
-  });
-}
-
-async function getPublicPolicyId() {
-  const roles = await authRequest(
-    "/roles?filter[name][_eq]=Public&fields=*,policies.directus_policies_id.*"
-  );
-  const role = Array.isArray(roles?.data) ? roles.data[0] : roles[0];
-  const policyId =
-    role?.policies?.map((p) => p?.directus_policies_id).filter(Boolean)?.[0]?.id || null;
-  if (policyId) return policyId;
-  const policies = await authRequest("/policies");
-  const list = Array.isArray(policies?.data) ? policies.data : policies;
-  return list?.find((p) => p.name?.toLowerCase().includes("public"))?.id || null;
-}
-
-async function grantPublicRead(policyId, collection) {
-  try {
-    const existing = await authRequest(
-      `/permissions?filter[policy][_eq]=${encodeURIComponent(policyId)}` +
-        `&filter[collection][_eq]=${encodeURIComponent(collection)}&filter[action][_eq]=read`
-    );
-    const list = Array.isArray(existing?.data) ? existing.data : existing;
-    if (Array.isArray(list) && list.length > 0) {
-      console.log(`= Read permission exists: ${collection}`);
-      return;
-    }
-  } catch {
-    // Fall through and attempt to create the permission.
-  }
-  try {
-    await authRequest("/permissions", {
-      method: "POST",
-      body: j({ policy: policyId, collection, action: "read", fields: "*", permissions: {} }),
-    });
-    console.log(`+ Granted public read: ${collection}`);
-  } catch (e) {
-    if (isExists(e)) console.log(`= Read permission exists: ${collection}`);
-    else console.warn(`! Could not grant read to ${collection}: ${e.message}`);
-  }
-}
+const BASE_URL = admin.baseUrl;
+const {
+  ensureCollection,
+  ensureField,
+  getPrimaryKey,
+  ensureRelation,
+  ensureFileRelation,
+  getPublicPolicyId,
+  grantPublicRead,
+} = admin;
 
 const fileField = (field, note) => ({
   field,

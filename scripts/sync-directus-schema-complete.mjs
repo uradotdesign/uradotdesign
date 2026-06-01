@@ -13,231 +13,32 @@
  *   node scripts/sync-directus-schema-complete.mjs
  */
 
-const BASE_URL = process.env.DIRECTUS_URL || "http://localhost:8055";
-const ADMIN_TOKEN = process.env.DIRECTUS_ADMIN_TOKEN;
-const EMAIL = process.env.DIRECTUS_EMAIL;
-const PASSWORD = process.env.DIRECTUS_PASSWORD;
+import { createDirectusAdmin } from "./lib/directus-admin.mjs";
 
-if (!ADMIN_TOKEN && (!EMAIL || !PASSWORD)) {
+let admin;
+try {
+  admin = createDirectusAdmin();
+} catch (e) {
   console.error("Error: Missing credentials.");
-  console.error(
-    "Please set DIRECTUS_EMAIL and DIRECTUS_PASSWORD, or DIRECTUS_ADMIN_TOKEN environment variables."
-  );
+  console.error(e.message);
   process.exit(1);
 }
 
-const j = JSON.stringify;
+const BASE_URL = admin.baseUrl;
+const {
+  authRequest,
+  ensureCollection,
+  ensureField,
+  ensureSingleton,
+  markAsSingleton,
+  getPublicPolicyId,
+  grantPublicRead,
+  grantPublicCreate,
+} = admin;
 
-// ============================================================================
-// HTTP Helpers
-// ============================================================================
-
-async function request(path, options = {}) {
-  const url = `${BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
-  const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers || {}),
-  };
-  const res = await fetch(url, { ...options, headers });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    const err = new Error(
-      `HTTP ${res.status} ${res.statusText} → ${url} → ${body}`
-    );
-    err.status = res.status;
-    err.body = body;
-    throw err;
-  }
-  const ct = res.headers.get("content-type") || "";
-  if (ct.includes("application/json")) return res.json();
-  return res.text();
-}
-
-async function getToken() {
-  if (ADMIN_TOKEN) return ADMIN_TOKEN;
-  if (!EMAIL || !PASSWORD) {
-    throw new Error(
-      "Provide DIRECTUS_ADMIN_TOKEN or DIRECTUS_EMAIL + DIRECTUS_PASSWORD"
-    );
-  }
-  const data = await request("/auth/login", {
-    method: "POST",
-    body: j({ email: EMAIL, password: PASSWORD }),
-  });
-  return data?.data?.access_token || data?.access_token;
-}
-
-async function authRequest(path, options = {}) {
-  const token = await getToken();
-  return request(path, {
-    ...options,
-    headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` },
-  });
-}
-
-// ============================================================================
-// Collection & Field Helpers
-// ============================================================================
-
-async function ensureCollection(name, meta = {}) {
-  try {
-    await authRequest(`/collections`, {
-      method: "POST",
-      body: j({ collection: name, meta, schema: { name } }),
-    });
-    console.log(`+ Created collection: ${name}`);
-  } catch (e) {
-    if (
-      e.body &&
-      (e.body.includes("RECORD_NOT_UNIQUE") ||
-        e.body.includes("already exists"))
-    ) {
-      console.log(`✓ Collection exists: ${name}`);
-    } else {
-      throw e;
-    }
-  }
-}
-
-async function ensureField(collection, fieldConfig) {
-  const { field } = fieldConfig;
-  try {
-    await authRequest(`/fields/${encodeURIComponent(collection)}`, {
-      method: "POST",
-      body: j(fieldConfig),
-    });
-    console.log(`+ Created field: ${collection}.${field}`);
-  } catch (e) {
-    if (
-      e.body &&
-      (e.body.includes("RECORD_NOT_UNIQUE") ||
-        e.body.includes("already exists"))
-    ) {
-      console.log(`✓ Field exists: ${collection}.${field}`);
-    } else {
-      throw e;
-    }
-  }
-}
-
-async function ensureSingleton(collection, defaults = {}) {
-  try {
-    // Try to read existing record(s)
-    const data = await authRequest(
-      `/items/${encodeURIComponent(collection)}?limit=1`
-    );
-    const items = Array.isArray(data?.data) ? data.data : data;
-
-    if (items && items.length > 0) {
-      console.log(`✓ Singleton record exists: ${collection}`);
-      return;
-    }
-  } catch (e) {
-    // Empty or error means we need to create
-    if (e.status !== 404 && !e.body?.includes("ROUTE_NOT_FOUND")) {
-      console.warn(`⚠️  Error checking ${collection}:`, e.message);
-    }
-  }
-
-  // Create singleton record
-  try {
-    await authRequest(`/items/${encodeURIComponent(collection)}`, {
-      method: "POST",
-      body: j({ status: "published", ...defaults }),
-    });
-    console.log(`+ Created singleton record for: ${collection}`);
-  } catch (e) {
-    if (
-      e.body?.includes("RECORD_NOT_UNIQUE") ||
-      e.body?.includes("already exists")
-    ) {
-      console.log(`✓ Singleton record exists: ${collection}`);
-    } else {
-      console.warn(
-        `⚠️  Could not create singleton for ${collection}:`,
-        e.message
-      );
-    }
-  }
-}
-
-async function markAsSingleton(collection) {
-  try {
-    await authRequest(`/collections/${encodeURIComponent(collection)}`, {
-      method: "PATCH",
-      body: j({ meta: { singleton: true } }),
-    });
-    console.log(`✓ Marked ${collection} as singleton`);
-  } catch (e) {
-    console.warn(`⚠️  Could not mark ${collection} as singleton:`, e.message);
-  }
-}
-
-// ============================================================================
-// Permissions Helpers
-// ============================================================================
-
-async function getPublicPolicyId() {
-  const roles = await authRequest(
-    "/roles?filter[name][_eq]=Public&fields=*,policies.directus_policies_id.*"
-  );
-  const role = Array.isArray(roles?.data) ? roles.data[0] : roles[0];
-  const policyId =
-    role?.policies?.map((p) => p?.directus_policies_id).filter(Boolean)?.[0]
-      ?.id || null;
-  if (!policyId) {
-    const policies = await authRequest("/policies");
-    const publicPolicy = (
-      Array.isArray(policies?.data) ? policies.data : policies
-    )?.find((p) => p.name?.toLowerCase().includes("public"));
-    return publicPolicy?.id || null;
-  }
-  return policyId;
-}
-
-async function grantPublicRead(policyId, collection) {
-  try {
-    await authRequest("/permissions", {
-      method: "POST",
-      body: j({
-        policy: policyId,
-        collection,
-        action: "read",
-        fields: "*",
-        permissions: {},
-      }),
-    });
-    console.log(`+ Granted read to ${collection}`);
-  } catch (e) {
-    if (e.body && e.body.includes("RECORD_NOT_UNIQUE")) {
-      console.log(`✓ Read permission exists for ${collection}`);
-    } else {
-      console.warn(`⚠️  Could not grant read to ${collection}:`, e.message);
-    }
-  }
-}
-
-async function grantPublicCreate(policyId, collection) {
-  try {
-    await authRequest("/permissions", {
-      method: "POST",
-      body: j({
-        policy: policyId,
-        collection,
-        action: "create",
-        fields: "*",
-        permissions: {},
-      }),
-    });
-    console.log(`+ Granted create to ${collection}`);
-  } catch (e) {
-    if (e.body && e.body.includes("RECORD_NOT_UNIQUE")) {
-      console.log(`✓ Create permission exists for ${collection}`);
-    } else {
-      console.warn(`⚠️  Could not grant create to ${collection}:`, e.message);
-    }
-  }
-}
+// Row filter applied to public read on collections that have a draft/published
+// workflow, so unpublished rows are never exposed through the public API.
+const PUBLISHED_ONLY = { status: { _eq: "published" } };
 
 // ============================================================================
 // Collection Setup Functions
@@ -3128,6 +2929,92 @@ async function setupServiceActivities() {
   for (const f of fields) await ensureField("service_activities", f);
 }
 
+// Columns the public (unauthenticated) role may set when creating a submission.
+// Scoped so a caller can't write arbitrary columns; matches the contact API.
+const CONTACT_SUBMISSION_FIELDS = [
+  "status",
+  "first_name",
+  "last_name",
+  "email",
+  "phone",
+  "contact_preference",
+  "message",
+  "language",
+  "user_agent",
+  "ip_address",
+];
+
+async function setupContactSubmissions() {
+  await ensureCollection("contact_submissions", {
+    icon: "mail",
+    note: "Contact form submissions (created by the public contact API)",
+  });
+
+  const fields = [
+    {
+      field: "id",
+      type: "uuid",
+      meta: { hidden: true, readonly: true, interface: "input" },
+      schema: { is_primary_key: true },
+    },
+    {
+      field: "status",
+      type: "string",
+      meta: {
+        interface: "select-dropdown",
+        options: {
+          choices: [
+            { text: "New", value: "new" },
+            { text: "Read", value: "read" },
+            { text: "Archived", value: "archived" },
+          ],
+        },
+        width: "half",
+      },
+      schema: { default_value: "new" },
+    },
+    { field: "first_name", type: "string", meta: { interface: "input", width: "half" } },
+    { field: "last_name", type: "string", meta: { interface: "input", width: "half" } },
+    { field: "email", type: "string", meta: { interface: "input", width: "half" } },
+    { field: "phone", type: "string", meta: { interface: "input", width: "half" } },
+    {
+      field: "contact_preference",
+      type: "string",
+      meta: { interface: "input", width: "half" },
+      schema: { default_value: "email" },
+    },
+    {
+      field: "language",
+      type: "string",
+      meta: { interface: "input", width: "half" },
+      schema: { default_value: "en" },
+    },
+    { field: "message", type: "text", meta: { interface: "input-multiline" } },
+    {
+      field: "user_agent",
+      type: "text",
+      meta: { interface: "input-multiline", readonly: true },
+    },
+    {
+      field: "ip_address",
+      type: "string",
+      meta: { interface: "input", readonly: true, width: "half" },
+    },
+    {
+      field: "date_created",
+      type: "timestamp",
+      meta: {
+        interface: "datetime",
+        special: ["date-created"],
+        readonly: true,
+        width: "half",
+      },
+    },
+  ];
+
+  for (const f of fields) await ensureField("contact_submissions", f);
+}
+
 // ============================================================================
 // Main Execution
 // ============================================================================
@@ -3158,27 +3045,33 @@ async function main() {
   await setupServiceSteps();
   await setupServiceActivities();
 
+  // Contact form target collection (write-only for the public role)
+  await setupContactSubmissions();
+
   // Public permissions
   console.log("\n--- Setting up public permissions ---");
   const policyId = await getPublicPolicyId();
 
   if (policyId) {
-    // Singletons - public read
+    // Singletons - public read (no status workflow)
     await grantPublicRead(policyId, "site_settings");
     await grantPublicRead(policyId, "accessibility_settings");
     await grantPublicRead(policyId, "footer_settings");
     await grantPublicRead(policyId, "hero_section");
 
-    // Content collections - public read
-    await grantPublicRead(policyId, "services");
-    await grantPublicRead(policyId, "clients");
+    // Content collections WITH a draft/published status: only expose published.
+    const publishedOpts = { permissions: PUBLISHED_ONLY };
+    await grantPublicRead(policyId, "services", publishedOpts);
+    await grantPublicRead(policyId, "clients", publishedOpts);
+    await grantPublicRead(policyId, "projects", publishedOpts);
+    await grantPublicRead(policyId, "case_studies", publishedOpts);
+    await grantPublicRead(policyId, "testimonials", publishedOpts);
+    await grantPublicRead(policyId, "social_links", publishedOpts);
+    await grantPublicRead(policyId, "company_values", publishedOpts);
+    await grantPublicRead(policyId, "certifications", publishedOpts);
+
+    // Content collections WITHOUT a status field - public read
     await grantPublicRead(policyId, "clients_section");
-    await grantPublicRead(policyId, "projects");
-    await grantPublicRead(policyId, "case_studies");
-    await grantPublicRead(policyId, "testimonials");
-    await grantPublicRead(policyId, "social_links");
-    await grantPublicRead(policyId, "company_values");
-    await grantPublicRead(policyId, "certifications");
     await grantPublicRead(policyId, "navigation_links");
 
     // Service relational collections - public read
@@ -3186,8 +3079,28 @@ async function main() {
     await grantPublicRead(policyId, "service_steps");
     await grantPublicRead(policyId, "service_activities");
 
-    // System collections - public read (for file metadata)
-    await grantPublicRead(policyId, "directus_files");
+    // System collection - scope to the fields needed to serve/render assets,
+    // instead of exposing all file metadata.
+    await grantPublicRead(policyId, "directus_files", {
+      fields: [
+        "id",
+        "storage",
+        "filename_disk",
+        "filename_download",
+        "title",
+        "type",
+        "width",
+        "height",
+        "duration",
+        "filesize",
+        "description",
+      ],
+    });
+
+    // Contact submissions: allow create (scoped fields), never public read.
+    await grantPublicCreate(policyId, "contact_submissions", {
+      fields: CONTACT_SUBMISSION_FIELDS,
+    });
   } else {
     console.warn("⚠️  Could not find public policy ID - skipping permissions");
   }
