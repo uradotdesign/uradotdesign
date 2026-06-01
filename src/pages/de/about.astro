@@ -8,6 +8,7 @@ import ContactForm from "../../components/sections/ContactForm.astro";
 import Expertise from "../../components/sections/Expertise.astro";
 import Testimonials from "../../components/sections/Testimonials.astro";
 import { getAboutPage, getApproaches, getAssetUrl } from "../../lib/directus";
+import ThemeResponsiveImage from "../../components/ThemeResponsiveImage.astro";
 
 const currentLang = "de";
 const aboutData = await getAboutPage();
@@ -166,20 +167,13 @@ const valuesImageDark = valuesImageDarkId
       <section class="py-0 px-4 sm:px-6 lg:px-8">
         <div class="container mx-auto">
           <div class="w-full aspect-[16/9] relative overflow-hidden rounded-lg">
-            {valuesImageLight && (
-              <img
-                src={valuesImageLight}
-                alt="Werte"
-                class={`w-full h-full object-cover ${valuesImageDark ? "dark:hidden" : ""}`}
-              />
-            )}
-            {valuesImageDark && (
-              <img
-                src={valuesImageDark}
-                alt="Werte"
-                class={`w-full h-full object-cover hidden ${valuesImageLight ? "dark:block" : "block"}`}
-              />
-            )}
+            <ThemeResponsiveImage
+              light={valuesImageLight}
+              dark={valuesImageDark}
+              fill
+              alt="Werte"
+              imgClass="w-full h-full object-cover"
+            />
           </div>
         </div>
       </section>

@@ -1,4 +1,6 @@
 ---
+import ThemeResponsiveImage from "../ThemeResponsiveImage.astro";
+
 export interface Props {
   title: string;
   subtitle: string;
@@ -46,26 +48,13 @@ const headingId = "service-case-study-heading";
           {
             image && (
               <div class="absolute inset-0 z-0 overflow-hidden">
-                {typeof image === "string" ? (
-                  <img
-                    src={image}
-                    alt={title}
-                    class="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
-                  />
-                ) : (
-                  <>
-                    <img
-                      src={image.light}
-                      alt={title}
-                      class="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 dark:hidden"
-                    />
-                    <img
-                      src={image.dark}
-                      alt={title}
-                      class="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 hidden dark:block"
-                    />
-                  </>
-                )}
+                <ThemeResponsiveImage
+                  light={typeof image === "string" ? image : image.light}
+                  dark={typeof image === "string" ? image : image.dark}
+                  fill
+                  alt={title}
+                  imgClass="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
+                />
                 <!-- Gradient Overlay for better text visibility -->
                 <div class="service-case-gradient absolute inset-0"></div>
               </div>
@@ -120,7 +109,9 @@ const headingId = "service-case-study-heading";
 <style>
   /* Smooth image zoom effect */
   .group img {
-    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.35s ease;
   }
 
   .group:hover img {

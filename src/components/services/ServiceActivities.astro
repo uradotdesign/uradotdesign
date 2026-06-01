@@ -1,4 +1,6 @@
 ---
+import ThemeResponsiveImage from "../ThemeResponsiveImage.astro";
+
 export interface Activity {
   title: string;
   description: string;
@@ -121,26 +123,21 @@ const defaultLinkText = caseStudy?.linkText || "See how it worked";
               {
                 caseStudy.image && (
                   <div class="absolute inset-0 z-0">
-                    {typeof caseStudy.image === "string" ? (
-                      <img
-                        src={caseStudy.image}
-                        alt={caseStudy.title}
-                        class="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
-                      />
-                    ) : (
-                      <>
-                        <img
-                          src={caseStudy.image.light}
-                          alt={caseStudy.title}
-                          class="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 dark:hidden"
-                        />
-                        <img
-                          src={caseStudy.image.dark}
-                          alt={caseStudy.title}
-                          class="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 hidden dark:block"
-                        />
-                      </>
-                    )}
+                    <ThemeResponsiveImage
+                      light={
+                        typeof caseStudy.image === "string"
+                          ? caseStudy.image
+                          : caseStudy.image.light
+                      }
+                      dark={
+                        typeof caseStudy.image === "string"
+                          ? caseStudy.image
+                          : caseStudy.image.dark
+                      }
+                      fill
+                      alt={caseStudy.title}
+                      imgClass="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
+                    />
                   </div>
                 )
               }

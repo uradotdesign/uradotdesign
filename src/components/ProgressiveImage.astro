@@ -1,4 +1,6 @@
 ---
+import { getAssetThumbUrl } from '../lib/directus';
+
 interface ImageSource {
   media: string;
   srcset: string;
@@ -23,7 +25,7 @@ interface Props {
 const {
   src = null,
   lqip = null,
-  placeholder = 'fade',
+  placeholder = 'blur',
   fill = false,
   alt = '',
   class: className = '',
@@ -36,8 +38,12 @@ const {
   sources = [],
 } = Astro.props;
 
-// A blur tier with no LQIP falls back to a fade.
-const tier = placeholder === 'blur' && !lqip ? 'fade' : placeholder;
+// Auto-derive the LQIP from the source when one isn't supplied, so every
+// image gets blur-up by default. A blur tier with no resolvable LQIP (e.g.
+// no src) degrades to a plain fade.
+const resolvedLqip =
+  lqip ?? (placeholder === 'blur' ? getAssetThumbUrl(src) : null);
+const tier = placeholder === 'blur' && !resolvedLqip ? 'fade' : placeholder;
 const isProgressive = tier !== 'none';
 
 const wrapperClass = [
@@ -55,7 +61,9 @@ const imgClassFull = [isProgressive ? 'ura-prog__img' : null, imgClass]
   .join(' ');
 
 const wrapperStyle =
-  tier === 'blur' && lqip ? `--ura-lqip: url('${lqip}')` : undefined;
+  tier === 'blur' && resolvedLqip
+    ? `--ura-lqip: url('${resolvedLqip}')`
+    : undefined;
 ---
 
 {

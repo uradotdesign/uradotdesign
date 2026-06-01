@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getBlogPosts, getAssetUrl } from "../../lib/directus";
+import { getBlogPosts, getAssetUrl, getAssetThumbUrl } from "../../lib/directus";
 import ProgressiveImage from "../../components/ProgressiveImage.astro";
 
 export const prerender = false;
@@ -76,6 +76,8 @@ const remainingArticles = articles.slice(1);
               {featuredArticle.cover_image ? (
                 <ProgressiveImage
                   src={getAssetUrl(featuredArticle.cover_image)}
+                  lqip={getAssetThumbUrl(getAssetUrl(featuredArticle.cover_image))}
+                  placeholder="blur"
                   fill
                   alt=""
                   imgClass="transition-transform duration-700 group-hover:scale-105"
@@ -194,6 +196,8 @@ const remainingArticles = articles.slice(1);
                   {article.cover_image ? (
                     <ProgressiveImage
                       src={getAssetUrl(article.cover_image)}
+                      lqip={getAssetThumbUrl(getAssetUrl(article.cover_image))}
+                      placeholder="blur"
                       fill
                       alt=""
                       imgClass="transition-transform duration-500 group-hover:scale-105"

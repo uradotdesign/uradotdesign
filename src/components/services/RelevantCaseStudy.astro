@@ -2,6 +2,7 @@
 import { getAssetUrl } from "../../lib/directus";
 import { getLocalizedField } from "../../lib/i18n";
 import type { CaseStudy } from "../../lib/directus";
+import ThemeResponsiveImage from "../ThemeResponsiveImage.astro";
 
 interface Props {
   caseStudy: CaseStudy;
@@ -57,32 +58,21 @@ const url =
       <!-- Background Image -->
       {
         backgroundImage ? (
-          typeof backgroundImage === "string" ? (
-            <img
-              src={backgroundImage}
-              alt=""
-              class="absolute inset-0 w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
-            <>
-              <img
-                src={backgroundImage.light}
-                alt=""
-                class="case-study-bg case-study-bg-light absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-              <img
-                src={backgroundImage.dark}
-                alt=""
-                class="case-study-bg case-study-bg-dark absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-            </>
-          )
+          <ThemeResponsiveImage
+            light={
+              typeof backgroundImage === "string"
+                ? backgroundImage
+                : backgroundImage.light
+            }
+            dark={
+              typeof backgroundImage === "string"
+                ? backgroundImage
+                : backgroundImage.dark
+            }
+            fill
+            alt=""
+            imgClass="w-full h-full object-cover"
+          />
         ) : (
           <div class="absolute inset-0 bg-gray-100 dark:bg-gray-800" />
         )
@@ -165,7 +155,9 @@ const url =
 
   /* Smooth image zoom effect */
   .case-study-card img {
-    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition:
+      transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.35s ease !important;
     transform: scale(1);
   }
 
