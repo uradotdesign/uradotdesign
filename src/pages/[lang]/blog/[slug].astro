@@ -1,7 +1,8 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { getBlogPostBySlug, getAssetUrl } from "../../../lib/directus";
+import { getBlogPostBySlug, getAssetUrl, getAssetThumbUrl } from "../../../lib/directus";
 import { getLocalizedField } from "../../../lib/i18n";
+import ProgressiveImage from "../../../components/ProgressiveImage.astro";
 
 const { lang, slug } = Astro.params;
 
@@ -51,6 +52,7 @@ if (typeof post.author === "object" && post.author !== null) {
 }
 
 const coverImage = getAssetUrl(post.cover_image);
+const coverImageLqip = getAssetThumbUrl(coverImage);
 
 // Strip HTML for meta description
 const description =
@@ -71,14 +73,16 @@ const description =
       {
         coverImage && (
           <div class="absolute inset-0 z-0">
-            <img
+            <ProgressiveImage
               src={coverImage}
+              lqip={coverImageLqip}
+              placeholder="blur"
+              fill
               alt=""
-              class="w-full h-full object-cover"
               loading="eager"
             />
             {/* Overlay */}
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-[1]" />
           </div>
         )
       }
@@ -167,11 +171,13 @@ const description =
         {/* Desktop Cover Image (Hidden on Mobile) */}
         {
           coverImage && (
-            <div class="hidden md:block w-full aspect-[16/9] mb-16 overflow-hidden bg-gray-100 dark:bg-gray-800">
-              <img
+            <div class="relative hidden md:block w-full aspect-[16/9] mb-16 overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <ProgressiveImage
                 src={coverImage}
+                lqip={coverImageLqip}
+                placeholder="blur"
+                fill
                 alt=""
-                class="w-full h-full object-cover"
                 loading="eager"
               />
             </div>
