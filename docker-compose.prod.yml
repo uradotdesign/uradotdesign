@@ -24,6 +24,10 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
 
+      # Shared secret for the /api/revalidate cache hook (called by a Directus
+      # Flow on content changes). Endpoint is disabled when unset.
+      - REVALIDATE_SECRET=${REVALIDATE_SECRET:-}
+
       # i18n
       - DEFAULT_LOCALE=${DEFAULT_LOCALE:-en}
       - AVAILABLE_LOCALES=${AVAILABLE_LOCALES:-en,de}
