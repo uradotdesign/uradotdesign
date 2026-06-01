@@ -153,16 +153,18 @@ const url =
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   }
 
-  /* Smooth image zoom effect */
-  .case-study-card img {
+  /* Smooth image zoom effect. The image is rendered by a child component
+     (ProgressiveImage), so its <img> never gets this component's scope
+     attribute; target it with :global so the transition + hover zoom apply. */
+  .case-study-card :global(img) {
     transition:
       transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.35s ease !important;
+      opacity 0.35s ease;
     transform: scale(1);
   }
 
-  .case-study-card:hover img {
-    transform: scale(1.1) !important;
+  .case-study-card:hover :global(img) {
+    transform: scale(1.1);
   }
 
   .case-study-bg-light {

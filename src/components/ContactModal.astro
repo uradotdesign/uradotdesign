@@ -812,8 +812,7 @@ const clientMessages = {
           if (response.ok && result.success) {
             statusDiv.textContent = msg.success;
             statusDiv.className =
-              "block p-4 rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200";
-            statusDiv.classList.remove("hidden");
+              "block p-4 rounded-lg mb-4 bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200";
 
             form.reset();
 
@@ -825,8 +824,7 @@ const clientMessages = {
           console.error("Contact form error:", error);
           statusDiv.textContent = msg.error;
           statusDiv.className =
-            "block p-4 rounded-lg bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
-          statusDiv.classList.remove("hidden");
+            "block p-4 rounded-lg mb-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
         } finally {
           submitButton.disabled = false;
           buttonText.textContent = originalText;
