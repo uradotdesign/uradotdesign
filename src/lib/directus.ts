@@ -306,6 +306,8 @@ export interface CaseStudy {
   featured_image?: string;
   featured_image_light?: string;
   featured_image_dark?: string;
+  featured_image_mobile_light?: string;
+  featured_image_mobile_dark?: string;
   cover_image?: string;
   case_study_url?: string;
   // M2M relationship to categories
@@ -363,6 +365,19 @@ export interface CaseStudySection {
   custom_code_2?: string;
   custom_code_3?: string;
   case_study_id: number;
+  images?: CaseStudySectionImage[];
+}
+
+export interface CaseStudySectionImage {
+  id: number;
+  section_id?: number;
+  column?: number;
+  sort?: number;
+  alt?: string;
+  image_light?: string;
+  image_dark?: string;
+  image_mobile_light?: string;
+  image_mobile_dark?: string;
 }
 
 export interface TeamMember {

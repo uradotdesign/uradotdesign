@@ -3,6 +3,7 @@ import { Image } from "astro:assets";
 import { getCaseStudies, getAssetUrl } from '../../lib/directus';
 import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
 import { t } from '../../lib/translations';
+import ThemeResponsiveImage from '../ThemeResponsiveImage.astro';
 
 // Get current language
 const currentLang = getCurrentLanguage(Astro.url);
@@ -26,6 +27,8 @@ const caseStudiesData = await getCaseStudies({
     "case_study_url",
     "featured_image_light",
     "featured_image_dark",
+    "featured_image_mobile_light",
+    "featured_image_mobile_dark",
     "categories.category_id.id",
     "categories.category_id.slug",
     "categories.category_id.title_en",
@@ -35,18 +38,12 @@ const caseStudiesData = await getCaseStudies({
 
 const caseStudies = caseStudiesData.length > 0
   ? caseStudiesData.map(cs => {
-      // Determine which image to use
-      let backgroundImage = null;
-      if (cs.featured_image_light && cs.featured_image_dark) {
-        // If both theme images exist, we'll handle this in CSS
-        backgroundImage = {
-          light: getAssetUrl(cs.featured_image_light),
-          dark: getAssetUrl(cs.featured_image_dark)
-        };
-      } else if (cs.featured_image_light || cs.featured_image_dark) {
-        const fallback = cs.featured_image_light || cs.featured_image_dark;
-        backgroundImage = fallback ? getAssetUrl(fallback) : null;
-      }
+      const backgroundImage = {
+        light: getAssetUrl(cs.featured_image_light),
+        dark: getAssetUrl(cs.featured_image_dark),
+        mobileLight: getAssetUrl(cs.featured_image_mobile_light),
+        mobileDark: getAssetUrl(cs.featured_image_mobile_dark),
+      };
 
       const categories = Array.isArray(cs.categories)
         ? cs.categories
@@ -88,39 +85,17 @@ const caseStudies = caseStudiesData.length > 0
           aria-label={`${caseStudy.title} - ${caseStudy.clientName}`}
         >
           <!-- Background Image -->
-          {caseStudy.backgroundImage ? (
-            typeof caseStudy.backgroundImage === 'string' ? (
-              <img
-                src={caseStudy.backgroundImage}
-                alt=""
-                class="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-                width="600"
-                height="800"
-              />
-            ) : (
-              <>
-                <img
-                  src={caseStudy.backgroundImage.light}
-                  alt=""
-                  class="case-study-bg case-study-bg-light absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                  width="600"
-                  height="800"
-                />
-                <img
-                  src={caseStudy.backgroundImage.dark}
-                  alt=""
-                  class="case-study-bg case-study-bg-dark absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                  width="600"
-                  height="800"
-                />
-              </>
-            )
+          {(caseStudy.backgroundImage.light || caseStudy.backgroundImage.dark) ? (
+            <ThemeResponsiveImage
+              light={caseStudy.backgroundImage.light}
+              dark={caseStudy.backgroundImage.dark}
+              mobileLight={caseStudy.backgroundImage.mobileLight}
+              mobileDark={caseStudy.backgroundImage.mobileDark}
+              alt=""
+              imgClass="absolute inset-0 w-full h-full object-cover"
+              width={600}
+              height={800}
+            />
           ) : (
             <div class="absolute inset-0 bg-gray-100 dark:bg-gray-800"></div>
           )}
@@ -211,22 +186,6 @@ const caseStudies = caseStudiesData.length > 0
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
-  .case-study-bg-light {
-    display: block;
-  }
-
-  .case-study-bg-dark {
-    display: none;
-  }
-
-  :global(.dark) .case-study-bg-light {
-    display: none;
-  }
-
-  :global(.dark) .case-study-bg-dark {
-    display: block;
-  }
-
   /* Card Gradient Overlay - stronger gradient for better logo/text visibility */
   .card-gradient-overlay {
     background: linear-gradient(

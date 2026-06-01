@@ -6,6 +6,7 @@ import {
   type CaseStudy,
 } from "../../../lib/directus";
 import { getLocalizedField, type Language } from "../../../lib/i18n";
+import ThemeResponsiveImage from "../../../components/ThemeResponsiveImage.astro";
 
 const { lang: langParam, slug } = Astro.params;
 const lang = (langParam as Language) || "en";
@@ -37,9 +38,12 @@ const caseStudies = await getCaseStudies({
     "categories.category_id.title_de",
     "featured_image_light",
     "featured_image_dark",
+    "featured_image_mobile_light",
+    "featured_image_mobile_dark",
     "cover_image",
     "logo",
     "sections.*", // Fetch all section fields
+    "sections.images.*",
   ],
   filter: {
     slug: { _eq: slug },
@@ -69,9 +73,11 @@ const imageDark = getAssetUrl(study.featured_image_dark);
 const coverImage = getAssetUrl(study.cover_image);
 const logo = getAssetUrl(study.logo);
 
-// Use cover image if available, fallback to featured images
+// Cover image keeps existing precedence as the single-image fallback.
 const heroImageLight = coverImage || imageLight;
 const heroImageDark = coverImage || imageDark;
+const heroImageMobileLight = getAssetUrl(study.featured_image_mobile_light);
+const heroImageMobileDark = getAssetUrl(study.featured_image_mobile_dark);
 
 const categories =
   study.categories
@@ -81,6 +87,11 @@ const categories =
       return localizedTitle;
     })
     .filter((cat: string | undefined): cat is string => Boolean(cat)) || [];
+
+const sectionImagesByColumn = (section: any, column: number) =>
+  (Array.isArray(section?.images) ? section.images : [])
+    .filter((img: any) => Number(img?.column) === column)
+    .sort((a: any, b: any) => (a?.sort ?? 0) - (b?.sort ?? 0));
 
 // Breadcrumb text
 const backText = lang === "de" ? "Zurück zu Arbeiten" : "Back to Works";
@@ -98,24 +109,15 @@ const worksLink = `/${lang}/works`;
   >
     {/* Background Images */}
     <div class="absolute inset-0 -z-10">
-      {
-        heroImageLight && (
-          <img
-            src={heroImageLight}
-            alt=""
-            class="absolute inset-0 w-full h-full object-cover dark:hidden"
-          />
-        )
-      }
-      {
-        heroImageDark && (
-          <img
-            src={heroImageDark}
-            alt=""
-            class="absolute inset-0 w-full h-full object-cover hidden dark:block"
-          />
-        )
-      }
+      <ThemeResponsiveImage
+        light={heroImageLight}
+        dark={heroImageDark}
+        mobileLight={heroImageMobileLight}
+        mobileDark={heroImageMobileDark}
+        alt=""
+        imgClass="absolute inset-0 w-full h-full object-cover"
+        loading="eager"
+      />
       {
         /* Overlay Gradients - minimal overlay for text legibility, no heavy white/black gradient */
       }
@@ -224,74 +226,62 @@ const worksLink = `/${lang}/works`;
   {/* Dynamic Sections */}
   {
     study.sections && study.sections.length > 0
-      ? study.sections.map((section: any) => (
-          <section class="py-8 lg:py-20 px-6 sm:px-8 lg:px-12 xl:px-24 w-full mx-auto">
-            <div class="flex flex-col lg:flex-row gap-6 lg:gap-24">
-              {/* Left: Section Title */}
-              <div class="lg:w-1/6 lg:sticky lg:top-32 h-fit">
-                <h2 class="text-lg font-mono opacity-80 font-medium">
-                  {section.title}
-                </h2>
+      ? study.sections.map((section: any) => {
+          const colImages = [1, 2, 3].map((c) => sectionImagesByColumn(section, c));
+          return (
+            <section class="py-8 lg:py-20 px-6 sm:px-8 lg:px-12 xl:px-24 w-full mx-auto">
+              <div class="flex flex-col lg:flex-row gap-6 lg:gap-24">
+                {/* Left: Section Title */}
+                <div class="lg:w-1/6 lg:sticky lg:top-32 h-fit">
+                  <h2 class="text-lg font-mono opacity-80 font-medium">
+                    {section.title}
+                  </h2>
+                </div>
+
+                {/* Right: Content Grid */}
+                <div
+                  class={`lg:w-5/6 grid sm:gap-32 gap-4 ${
+                    section.layout === "3-cols"
+                      ? "lg:grid-cols-3"
+                      : section.layout === "2-cols"
+                        ? "lg:grid-cols-2"
+                        : "grid-cols-1"
+                  }`}
+                >
+                  {[1, 2, 3].map((col) => {
+                    const content = section[`content_${col}`];
+                    const customCode = section[`custom_code_${col}`];
+                    const images = colImages[col - 1];
+                    if (!content && !customCode && images.length === 0) return null;
+                    return (
+                      <div class="flex flex-col gap-8">
+                        {content && (
+                          <div
+                            class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display prose-img:my-0 w-full"
+                            set:html={content}
+                          />
+                        )}
+                        {images.map((img: any) => (
+                          <ThemeResponsiveImage
+                            light={getAssetUrl(img.image_light)}
+                            dark={getAssetUrl(img.image_dark)}
+                            mobileLight={getAssetUrl(img.image_mobile_light)}
+                            mobileDark={getAssetUrl(img.image_mobile_dark)}
+                            alt={img.alt || ""}
+                            class="block w-full"
+                            imgClass="w-full h-auto rounded-lg"
+                          />
+                        ))}
+                        {/* custom_code is trusted admin-authored HTML/CSS/JS from Directus */}
+                        {customCode && <div class="w-full" set:html={customCode} />}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-
-              {/* Right: Content Grid */}
-              <div
-                class={`lg:w-5/6 grid sm:gap-32 gap-4 ${
-                  section.layout === "3-cols"
-                    ? "lg:grid-cols-3"
-                    : section.layout === "2-cols"
-                      ? "lg:grid-cols-2"
-                      : "grid-cols-1"
-                }`}
-              >
-                {/* Column 1 — custom_code fields are trusted admin-authored HTML/CSS/JS from Directus */}
-                {(section.content_1 || section.custom_code_1) && (
-                  <div class="flex flex-col gap-8">
-                    {section.content_1 && (
-                      <div
-                        class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display prose-img:my-0 w-full"
-                        set:html={section.content_1}
-                      />
-                    )}
-                    {section.custom_code_1 && (
-                      <div class="w-full" set:html={section.custom_code_1} />
-                    )}
-                  </div>
-                )}
-
-                {/* Column 2 */}
-                {(section.content_2 || section.custom_code_2) && (
-                  <div class="flex flex-col gap-8">
-                    {section.content_2 && (
-                      <div
-                        class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display prose-img:my-0 w-full"
-                        set:html={section.content_2}
-                      />
-                    )}
-                    {section.custom_code_2 && (
-                      <div class="w-full" set:html={section.custom_code_2} />
-                    )}
-                  </div>
-                )}
-
-                {/* Column 3 */}
-                {(section.content_3 || section.custom_code_3) && (
-                  <div class="flex flex-col gap-8">
-                    {section.content_3 && (
-                      <div
-                        class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display prose-img:my-0 w-full"
-                        set:html={section.content_3}
-                      />
-                    )}
-                    {section.custom_code_3 && (
-                      <div class="w-full" set:html={section.custom_code_3} />
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-        ))
+            </section>
+          );
+        })
       : null
   }
 

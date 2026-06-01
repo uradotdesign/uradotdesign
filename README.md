@@ -1,17 +1,18 @@
 # Ura Design Website
 
-A modern, multilingual website built with **Astro 5** (SSR) and **Directus CMS**, featuring Redis caching, PostgreSQL database, and Docker deployment.
+A modern, multilingual website built with **Astro 6** (SSR) and **Directus CMS**, featuring Redis caching, PostgreSQL database, and Docker deployment.
 
 ## Tech Stack
 
 | Component | Technology                |
 | --------- | ------------------------- |
-| Frontend  | Astro 5.16.11 (SSR mode)  |
-| Styling   | TailwindCSS 4.1.18        |
-| CMS       | Directus 11.14.1          |
-| Database  | PostgreSQL 18             |
-| Cache     | Redis 8.2.3               |
-| Language  | TypeScript 5.9.3          |
+| Frontend  | Astro 6.4.2 (SSR mode)    |
+| Styling   | TailwindCSS 4.3.0         |
+| CMS       | Directus 11.17.4          |
+| Database  | PostgreSQL 18 (alpine)    |
+| Cache     | Redis 8.2.3 (alpine)      |
+| Language  | TypeScript 6.0.3          |
+| SDK       | @directus/sdk 21.3.0      |
 | i18n      | English (en), German (de) |
 
 ## Prerequisites
@@ -281,9 +282,10 @@ Login with the `ADMIN_EMAIL` and `ADMIN_PASSWORD` credentials.
 | `service_activities`      | Accordion activities per service (O2M → services) |
 | `service_checklist_items` | Checklist items per service (O2M → services)      |
 | `service_subservices`     | Sub-services list per service (O2M → services)    |
-| `case_studies`            | Portfolio case studies                            |
-| `case_study_sections`     | Content sections within case studies (O2M)        |
-| `case_study_categories`   | Categories for case studies                       |
+| `case_studies`              | Portfolio case studies (light/dark + responsive hero images)     |
+| `case_study_sections`       | Content sections within case studies (O2M)                       |
+| `case_study_section_images` | Theme + responsive image blocks within sections (O2M → sections) |
+| `case_study_categories`     | Categories for case studies                                      |
 | `posts`                   | Blog posts                                        |
 | `pages`                   | Single-column pages                               |
 

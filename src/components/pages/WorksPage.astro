@@ -9,6 +9,7 @@ import {
 
 import ClientsCarousel from "../sections/ClientsCarousel.astro";
 import ContactForm from "../sections/ContactForm.astro";
+import ThemeResponsiveImage from "../ThemeResponsiveImage.astro";
 
 type SupportedLang = "en" | "de";
 
@@ -33,6 +34,8 @@ interface NormalizedCaseStudy {
   categories: NormalizedCategory[];
   imageLight: string | null;
   imageDark: string | null;
+  imageMobileLight: string | null;
+  imageMobileDark: string | null;
   logo: string | null;
 }
 
@@ -95,6 +98,8 @@ const [caseStudiesData, categoryRecords] = await Promise.all([
       "featured_image.id",
       "featured_image_light.id",
       "featured_image_dark.id",
+      "featured_image_mobile_light",
+      "featured_image_mobile_dark",
       "categories.category_id.id",
       "categories.category_id.slug",
       "categories.category_id.title_en",
@@ -176,6 +181,10 @@ function normalizeCaseStudy(entry: any): NormalizedCaseStudy {
   // Handle image IDs - they can be strings or objects with .id
   const imageLightId = entry.featured_image_light?.id || entry.featured_image_light || entry.featured_image?.id || entry.featured_image;
   const imageDarkId = entry.featured_image_dark?.id || entry.featured_image_dark || entry.featured_image?.id || entry.featured_image;
+  const imageMobileLightId =
+    entry.featured_image_mobile_light?.id || entry.featured_image_mobile_light;
+  const imageMobileDarkId =
+    entry.featured_image_mobile_dark?.id || entry.featured_image_mobile_dark;
 
   return {
     id: entry.id,
@@ -190,6 +199,8 @@ function normalizeCaseStudy(entry: any): NormalizedCaseStudy {
     categories: buildCategoryList(entry),
     imageLight: imageLightId ? getAssetUrl(imageLightId) : null,
     imageDark: imageDarkId ? getAssetUrl(imageDarkId) : null,
+    imageMobileLight: imageMobileLightId ? getAssetUrl(imageMobileLightId) : null,
+    imageMobileDark: imageMobileDarkId ? getAssetUrl(imageMobileDarkId) : null,
     logo: entry.logo ? getAssetUrl(entry.logo) : null
   };
 }
@@ -228,25 +239,15 @@ const filters: NormalizedCategory[] = [
             style={`--card-index: ${index}`}
           >
             {/* Background Image */}
-            {project.imageLight ? (
-              <>
-                <img
-                  src={project.imageLight}
-                  alt=""
-                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 dark:hidden"
-                  loading="lazy"
-                  decoding="async"
-                  aria-hidden="true"
-                />
-                <img
-                  src={project.imageDark || project.imageLight}
-                  alt=""
-                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 hidden dark:block"
-                  loading="lazy"
-                  decoding="async"
-                  aria-hidden="true"
-                />
-              </>
+            {project.imageLight || project.imageDark ? (
+              <ThemeResponsiveImage
+                light={project.imageLight}
+                dark={project.imageDark}
+                mobileLight={project.imageMobileLight}
+                mobileDark={project.imageMobileDark}
+                alt=""
+                imgClass="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
+              />
             ) : (
               <div
                 class="absolute inset-0 bg-gradient-to-br from-[#e8f4f8] via-[#b8dde8] to-[#88c6d8] dark:from-[#0a0e1a] dark:via-[#15202e] dark:to-[#1a3040]"

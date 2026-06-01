@@ -1,0 +1,91 @@
+---
+interface Props {
+  light?: string | null;
+  dark?: string | null;
+  mobileLight?: string | null;
+  mobileDark?: string | null;
+  alt?: string;
+  class?: string;
+  imgClass?: string;
+  loading?: 'lazy' | 'eager';
+  decoding?: 'async' | 'sync' | 'auto';
+  width?: number;
+  height?: number;
+  sizes?: string;
+}
+
+const {
+  light = null,
+  dark = null,
+  mobileLight = null,
+  mobileDark = null,
+  alt = '',
+  class: className = '',
+  imgClass = '',
+  loading = 'lazy',
+  decoding = 'async',
+  width,
+  height,
+  sizes,
+} = Astro.props;
+
+const MOBILE_MEDIA = '(max-width: 767px)';
+
+// Fallback resolution: dark <-> light so a single uploaded theme never blanks.
+const lightSrc = light || dark;
+const darkSrc = dark || light;
+
+// If both themes resolve to the same source, render a single (non-toggled) picture.
+const singleTheme = Boolean(lightSrc) && lightSrc === darkSrc;
+const hasImage = Boolean(lightSrc);
+---
+
+{
+  hasImage &&
+    (singleTheme ? (
+      <picture class={className}>
+        {(mobileLight || mobileDark) && (
+          <source media={MOBILE_MEDIA} srcset={mobileLight || mobileDark} />
+        )}
+        <img
+          src={lightSrc}
+          alt={alt}
+          class={imgClass}
+          loading={loading}
+          decoding={decoding}
+          width={width}
+          height={height}
+          sizes={sizes}
+        />
+      </picture>
+    ) : (
+      <>
+        <picture class={`${className} dark:hidden`.trim()}>
+          {mobileLight && <source media={MOBILE_MEDIA} srcset={mobileLight} />}
+          <img
+            src={lightSrc}
+            alt={alt}
+            class={imgClass}
+            loading={loading}
+            decoding={decoding}
+            width={width}
+            height={height}
+            sizes={sizes}
+          />
+        </picture>
+        <picture class={`${className} hidden dark:block`.trim()}>
+          {mobileDark && <source media={MOBILE_MEDIA} srcset={mobileDark} />}
+          <img
+            src={darkSrc}
+            alt={alt}
+            class={imgClass}
+            loading={loading}
+            decoding={decoding}
+            width={width}
+            height={height}
+            sizes={sizes}
+          />
+        </picture>
+      </>
+    ))
+}
