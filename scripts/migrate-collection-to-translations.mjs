@@ -144,18 +144,29 @@ async function main() {
   const parentFields = unwrap(
     await authRequest(`/fields/${encodeURIComponent(collection)}?limit=-1&fields=field`)
   ).map((f) => f.field);
+  const aliasMeta = {
+    interface: "translations",
+    special: ["translations"],
+    options: { languageField: "code", defaultLanguage: "en" },
+    translations: [{ language: "en-US", translation: "Translations" }],
+  };
   if (!parentFields.includes("translations")) {
     await ensureField(collection, {
       field: "translations",
       type: "alias",
-      meta: {
-        interface: "translations",
-        special: ["translations"],
-        options: { languageField: "code", defaultLanguage: "en" },
-        translations: [{ language: "en-US", translation: "Translations" }],
-      },
+      meta: aliasMeta,
     });
-  } else console.log(`= Field exists: ${collection}.translations`);
+  } else {
+    // The field can already exist as a bare alias (e.g. auto-created by the O2M
+    // relation, or left over from a prior attempt) without the translations
+    // `special`, in which case Directus won't resolve `translations.*`. Force the
+    // correct meta so reads work regardless of how the field came to exist.
+    await authRequest(
+      `/fields/${encodeURIComponent(collection)}/translations`,
+      { method: "PATCH", body: j({ meta: aliasMeta }) }
+    );
+    console.log(`= Ensured alias meta: ${collection}.translations`);
+  }
 
   // 5. Public read on the junction.
   const policyId = await getPublicPolicyId();
