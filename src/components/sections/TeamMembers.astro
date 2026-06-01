@@ -2,6 +2,7 @@
 import { getTeamMembers, getAssetUrl } from '../../lib/directus';
 import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
 import { t } from '../../lib/translations';
+import ProgressiveImage from '../ProgressiveImage.astro';
 
 // Get current language
 const currentLang = getCurrentLanguage(Astro.url);
@@ -52,7 +53,12 @@ const teamMembers = teamMembersData.length > 0
             <div class="card-face card-front">
               <div class="card-image">
                 {member.photo ? (
-                  <img src={member.photo} alt={member.fullName} loading="lazy" />
+                  <ProgressiveImage
+                    src={member.photo}
+                    fill
+                    alt={member.fullName}
+                    loading="lazy"
+                  />
                 ) : (
                   <div class="card-placeholder">
                     <span>{member.fullName.split(' ').map(n => n[0]).join('')}</span>
@@ -247,6 +253,7 @@ const teamMembers = teamMembersData.length > 0
 
   /* Front Side Content */
   .card-image {
+    position: relative;
     flex: 1;
     overflow: hidden;
     background: var(--color-muted);
@@ -257,7 +264,7 @@ const teamMembers = teamMembersData.length > 0
     height: 100%;
     object-fit: cover;
     filter: grayscale(100%);
-    transition: filter 0.4s ease;
+    transition: filter 0.4s ease, opacity 350ms ease;
   }
 
   .team-card:hover .card-image img,
