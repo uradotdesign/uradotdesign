@@ -416,7 +416,12 @@ a[href^="#skip"]:focus {
  * Progressive image loading (blur-up + fade-in)
  * The opacity:0 initial state is only applied when JS is present
  * (html[data-progressive="js"]) so no-JS renders images normally (no FOUC).
+ * Wrapped in @layer components so Tailwind's utilities layer (e.g. `hidden`,
+ * `dark:hidden`, `dark:block` used by ThemeResponsiveImage) still wins the
+ * `display` cascade. Unlayered, `.ura-prog { display: block }` would override
+ * `hidden` and render both theme variants at once.
  * -------------------------------------------------------------------------- */
+@layer components {
 .ura-prog {
   position: relative;
   display: block;
@@ -500,4 +505,5 @@ html[data-progressive="js"] .ura-prog__img[data-loaded] {
   .ura-prog::before {
     transition: none !important;
   }
+}
 }
