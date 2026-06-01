@@ -30,3 +30,6 @@ pnpm-debug.log*
 # Directus data
 data/
 
+# Cursor plugin hook artifacts (machine-specific absolute paths)
+.github/hooks/
+
