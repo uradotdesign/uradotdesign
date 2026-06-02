@@ -12,6 +12,7 @@ import BlockQuote from './BlockQuote.astro';
 import BlockFaq from './BlockFaq.astro';
 import BlockLogos from './BlockLogos.astro';
 import BlockEmbed from './BlockEmbed.astro';
+import BlockCustomCode from './BlockCustomCode.astro';
 
 interface Props {
   blocks?: PageBlock[] | null;
@@ -32,6 +33,7 @@ const COMPONENTS: Record<string, any> = {
   block_faq: BlockFaq,
   block_logos: BlockLogos,
   block_embed: BlockEmbed,
+  block_custom_code: BlockCustomCode,
 };
 
 const visible = (blocks || []).filter(

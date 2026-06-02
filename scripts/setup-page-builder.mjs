@@ -97,6 +97,19 @@ const select = (field, label, choices, def) => ({
   schema: { default_value: def },
 });
 
+const code = (field, label, language) => ({
+  field,
+  type: "text",
+  meta: {
+    interface: "input-code",
+    width: "full",
+    sort: nextSort(),
+    options: { language, lineNumber: true },
+    translations: [{ language: "en-US", translation: label }],
+  },
+  schema: {},
+});
+
 const bool = (field, label, def = false) => ({
   field,
   type: "boolean",
@@ -370,6 +383,26 @@ function blockDefs() {
         };
       },
     },
+    {
+      name: "block_custom_code",
+      icon: "terminal",
+      display_template: "Custom code · {{name}}",
+      build: () => {
+        SORT = 1;
+        return {
+          // Trusted admin-authored markup/styles/scripts. Non-localized: language
+          // is handled inside the HTML or by using separate blocks per language.
+          fields: [
+            str("name", "Label (admin only)"),
+            select("container", "Container", ["contained", "full"], "contained"),
+            code("html", "HTML", "htmlmixed"),
+            code("css", "CSS", "css"),
+            code("js", "JavaScript", "javascript"),
+          ],
+          files: [],
+        };
+      },
+    },
   ];
 }
 
@@ -583,6 +616,12 @@ async function main() {
       junction_field: "pages_id",
     },
     schema: null,
+  });
+  // ensureRelation no-ops when the relation already exists, so explicitly sync
+  // the allowed collections — this is how a re-run picks up newly added blocks.
+  await authRequest("/relations/pages_blocks/item", {
+    method: "PATCH",
+    body: j({ meta: { one_allowed_collections: blockDefs().map((b) => b.name) } }),
   });
 
   await clearCache();

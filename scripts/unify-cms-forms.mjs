@@ -44,6 +44,7 @@ const TIDY_ONLY = new Set([
   "block_embed",
   "block_gallery_images",
   "block_logos_items",
+  "block_custom_code",
   "contact_submissions",
 ]);
 // Utility/system-ish collections we deliberately leave untouched.

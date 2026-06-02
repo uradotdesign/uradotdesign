@@ -42,7 +42,7 @@ const COLLECTIONS = [
   "pages_blocks", "block_hero", "block_richtext", "block_image",
   "block_two_column", "block_gallery", "block_gallery_images", "block_cta",
   "block_stats", "block_quote", "block_faq", "block_logos", "block_logos_items",
-  "block_embed",
+  "block_embed", "block_custom_code",
 ];
 
 async function buildTriggerCollections() {

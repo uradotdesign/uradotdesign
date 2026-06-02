@@ -1,0 +1,33 @@
+---
+import type { Language } from '../../lib/i18n';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data } = Astro.props;
+
+// Trusted admin-authored markup/styles/scripts from the CMS (same trust model as
+// the existing case-study `custom_code`). The CSP intentionally allows inline
+// HTML/CSS/JS (see src/middleware.ts).
+const html = (data.html as string) || '';
+const css = (data.css as string) || '';
+const js = (data.js as string) || '';
+const full = data.container === 'full';
+const wrapClass = full
+  ? 'w-full'
+  : 'mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16';
+---
+
+{
+  (html || css || js) && (
+    <section class="py-12 md:py-20">
+      <div class={`cc-block ${wrapClass}`}>
+        {css && <style set:html={css} />}
+        {html && <Fragment set:html={html} />}
+        {js && <script is:inline set:html={js} />}
+      </div>
+    </section>
+  )
+}

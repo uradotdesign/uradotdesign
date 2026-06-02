@@ -1097,6 +1097,7 @@ const PAGE_BLOCK_FIELDS = [
   "blocks.item:block_logos.logos.image",
   "blocks.item:block_logos.logos.sort",
   "blocks.item:block_embed.*",
+  "blocks.item:block_custom_code.*",
   "blocks.item:block_hero.translations.*",
   "blocks.item:block_richtext.translations.*",
   "blocks.item:block_image.translations.*",
