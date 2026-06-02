@@ -1,0 +1,135 @@
+---
+import { getAssetUrl } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const heading = getLocalizedField(data, 'heading', lang);
+const layout = (data.layout as string) === 'carousel' ? 'carousel' : 'single';
+const autoplay = layout === 'carousel' && data.autoplay !== false;
+
+const rawItems: any[] = Array.isArray(data.items) ? data.items : [];
+const items = rawItems
+  .map((it) => ({
+    quote: getLocalizedField(it, 'quote', lang),
+    author: getLocalizedField(it, 'author', lang),
+    role: getLocalizedField(it, 'role', lang),
+    avatar: getAssetUrl(it.avatar),
+    rating:
+      typeof it.rating === 'number' && it.rating > 0
+        ? Math.min(5, Math.round(it.rating))
+        : 0,
+  }))
+  .filter((it) => it.quote);
+---
+
+{
+  items.length > 0 && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        {heading && (
+          <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] mb-12 text-center">
+            {heading}
+          </h2>
+        )}
+        <div
+          class={
+            layout === 'carousel'
+              ? 'flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-4 -mx-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+              : 'grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8'
+          }
+          data-testimonial-track={autoplay ? 'autoplay' : undefined}
+        >
+          {items.map((it) => (
+            <figure
+              class={`flex flex-col rounded-3xl border border-[var(--color-border)] p-6 md:p-8 ${
+                layout === 'carousel'
+                  ? 'snap-start shrink-0 w-[85%] sm:w-[420px]'
+                  : ''
+              }`}
+            >
+              {it.rating > 0 && (
+                <div
+                  class="mb-4 text-[var(--color-foreground)]"
+                  aria-label={`${it.rating} out of 5`}
+                >
+                  {'\u2605'.repeat(it.rating)}
+                  <span class="opacity-30">{'\u2605'.repeat(5 - it.rating)}</span>
+                </div>
+              )}
+              <blockquote class="text-lg md:text-xl font-serif leading-relaxed flex-1">
+                {it.quote}
+              </blockquote>
+              {(it.author || it.avatar) && (
+                <figcaption class="mt-6 flex items-center gap-3">
+                  {it.avatar && (
+                    <img
+                      src={it.avatar}
+                      alt={it.author || ''}
+                      width="44"
+                      height="44"
+                      loading="lazy"
+                      decoding="async"
+                      class="h-11 w-11 rounded-full object-cover"
+                    />
+                  )}
+                  <div class="leading-tight">
+                    {it.author && (
+                      <div class="font-medium">{it.author}</div>
+                    )}
+                    {it.role && (
+                      <div class="text-sm opacity-60">{it.role}</div>
+                    )}
+                  </div>
+                </figcaption>
+              )}
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<script>
+  function initTestimonialCarousels() {
+    const tracks = document.querySelectorAll<HTMLElement>(
+      '[data-testimonial-track="autoplay"]'
+    );
+    tracks.forEach((track) => {
+      if (track.dataset.bound) return;
+      track.dataset.bound = '1';
+      let index = 0;
+      let timer: number | null = null;
+      const step = () => {
+        const cards = Array.from(track.children) as HTMLElement[];
+        if (cards.length < 2) return;
+        index = (index + 1) % cards.length;
+        track.scrollTo({
+          left: cards[index].offsetLeft - track.offsetLeft,
+          behavior: 'smooth',
+        });
+      };
+      const start = () => {
+        if (timer == null) timer = window.setInterval(step, 4500);
+      };
+      const stop = () => {
+        if (timer != null) {
+          window.clearInterval(timer);
+          timer = null;
+        }
+      };
+      track.addEventListener('mouseenter', stop);
+      track.addEventListener('mouseleave', start);
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) start();
+    });
+  }
+
+  initTestimonialCarousels();
+  document.addEventListener('astro:after-swap', initTestimonialCarousels);
+</script>
+

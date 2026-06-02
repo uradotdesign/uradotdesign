@@ -1,0 +1,120 @@
+---
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import BlockButton from './BlockButton.astro';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const heading = getLocalizedField(data, 'heading', lang);
+const subheading = getLocalizedField(data, 'subheading', lang);
+
+const rawTiers: any[] = Array.isArray(data.tiers) ? data.tiers : [];
+const tiers = rawTiers
+  .map((t) => ({
+    name: getLocalizedField(t, 'name', lang),
+    price: t?.price as string | undefined,
+    period: getLocalizedField(t, 'period', lang),
+    description: getLocalizedField(t, 'description', lang),
+    features: (getLocalizedField(t, 'features', lang) || '')
+      .split('\n')
+      .map((f) => f.trim())
+      .filter(Boolean),
+    ctaLabel: getLocalizedField(t, 'cta_label', lang),
+    ctaUrl: t?.cta_url as string | undefined,
+    highlighted: t?.highlighted === true,
+  }))
+  .filter((t) => t.name || t.price);
+
+const colMap: Record<number, string> = {
+  1: 'sm:grid-cols-1 max-w-sm',
+  2: 'sm:grid-cols-2 max-w-3xl',
+  3: 'sm:grid-cols-3 max-w-5xl',
+  4: 'sm:grid-cols-2 lg:grid-cols-4 max-w-6xl',
+};
+const cols = colMap[Math.min(tiers.length, 4) as 1 | 2 | 3 | 4] || colMap[3];
+---
+
+{
+  tiers.length > 0 && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        {(heading || subheading) && (
+          <div class="text-center mb-12">
+            {heading && (
+              <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em]">
+                {heading}
+              </h2>
+            )}
+            {subheading && (
+              <p class="mt-4 text-lg md:text-xl font-serif opacity-70 max-w-2xl mx-auto">
+                {subheading}
+              </p>
+            )}
+          </div>
+        )}
+        <div class={`mx-auto grid grid-cols-1 ${cols} gap-6 md:gap-8 items-stretch`}>
+          {tiers.map((t) => (
+            <div
+              class={`flex flex-col rounded-3xl p-8 ${
+                t.highlighted
+                  ? 'bg-[var(--color-foreground)] text-[var(--color-background)]'
+                  : 'border border-[var(--color-border)]'
+              }`}
+            >
+              {t.name && (
+                <h3 class="font-display text-xl md:text-2xl tracking-[-0.01em]">
+                  {t.name}
+                </h3>
+              )}
+              {t.price && (
+                <div class="mt-4 flex items-baseline gap-1">
+                  <span class="font-display text-4xl md:text-5xl tracking-[-0.02em]">
+                    {t.price}
+                  </span>
+                  {t.period && <span class="text-sm opacity-60">{t.period}</span>}
+                </div>
+              )}
+              {t.description && (
+                <p class="mt-3 text-base font-serif opacity-70">{t.description}</p>
+              )}
+              {t.features.length > 0 && (
+                <ul class="mt-6 space-y-3 flex-1">
+                  {t.features.map((f) => (
+                    <li class="flex items-start gap-3 text-sm md:text-base">
+                      <svg
+                        class="w-5 h-5 shrink-0 mt-0.5 opacity-70"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M20 6 9 17l-5-5" />
+                      </svg>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {t.ctaLabel && (
+                <div class="mt-8">
+                  <BlockButton
+                    label={t.ctaLabel}
+                    url={t.ctaUrl}
+                    variant={t.highlighted ? 'invert' : 'outline'}
+                    class="w-full justify-center"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

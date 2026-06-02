@@ -14,6 +14,18 @@ const logos: any[] = Array.isArray(data.logos) ? data.logos : [];
 const items = logos
   .map((l) => getAssetUrl(l.image))
   .filter((src): src is string => Boolean(src));
+
+const mode = (data.mode as string) === 'marquee' ? 'marquee' : 'grid';
+const speed =
+  typeof data.marquee_speed === 'number' && data.marquee_speed > 0
+    ? data.marquee_speed
+    : 30;
+// Duplicate the set so the marquee can loop seamlessly (translate by -50%).
+const marqueeItems = mode === 'marquee' ? [...items, ...items] : items;
+
+const logoClass =
+  'h-8 md:h-10 w-auto opacity-60 transition-opacity duration-200 hover:opacity-100';
+const imgClass = 'h-8 md:h-10 w-auto object-contain';
 ---
 
 {
@@ -25,18 +37,81 @@ const items = logos
             {heading}
           </p>
         )}
-        <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 md:gap-x-16">
-          {items.map((src) => (
-            <ProgressiveImage
-              src={src}
-              alt=""
-              class="h-8 md:h-10 w-auto opacity-60 transition-opacity duration-200 hover:opacity-100"
-              imgClass="h-8 md:h-10 w-auto object-contain"
-              optimize={false}
-            />
-          ))}
-        </div>
+        {mode === 'marquee' ? (
+          <div class="marquee">
+            <ul class="marquee__track" style={`--marquee-duration: ${speed}s`}>
+              {marqueeItems.map((src, i) => (
+                <li class="shrink-0" aria-hidden={i >= items.length ? 'true' : undefined}>
+                  <ProgressiveImage
+                    src={src}
+                    alt=""
+                    class={logoClass}
+                    imgClass={imgClass}
+                    optimize={false}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 md:gap-x-16">
+            {items.map((src) => (
+              <ProgressiveImage
+                src={src}
+                alt=""
+                class={logoClass}
+                imgClass={imgClass}
+                optimize={false}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )
 }
+
+<style>
+  .marquee {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 8%,
+      #000 92%,
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 8%,
+      #000 92%,
+      transparent
+    );
+  }
+  .marquee__track {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    width: max-content;
+    animation: marquee var(--marquee-duration, 30s) linear infinite;
+  }
+  .marquee:hover .marquee__track {
+    animation-play-state: paused;
+  }
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee__track {
+      animation: none;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+</style>

@@ -18,9 +18,13 @@ const panelClass =
     ? 'bg-gray-900 text-white'
     : style === 'accent'
       ? 'bg-[var(--color-foreground)] text-[var(--color-background)]'
-      : 'border border-[var(--color-border)]';
+      : style === 'gradient'
+        ? 'bg-gradient-to-br from-[var(--color-foreground)] to-[#FD5825] text-white'
+        : style === 'minimal'
+          ? ''
+          : 'border border-[var(--color-border)]';
 const buttonVariant =
-  style === 'default' ? 'solid' : 'invert';
+  style === 'default' || style === 'minimal' ? 'solid' : 'invert';
 ---
 
 {

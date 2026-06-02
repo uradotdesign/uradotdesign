@@ -18,11 +18,15 @@ const { authRequest } = createDirectusAdmin();
 const j = JSON.stringify;
 
 const SECRET = process.env.REVALIDATE_SECRET || "";
-if (!SECRET) {
-  console.error(
-    "Missing REVALIDATE_SECRET. Run with: REVALIDATE_SECRET=<value> node --env-file=.env scripts/setup-revalidate-flow.mjs"
+// Without the secret we can still keep an EXISTING flow's trigger scope in sync
+// (e.g. after adding new collections) — the request operation already carries
+// the secret. We only need it to create/refresh the operation itself.
+const TRIGGER_ONLY = !SECRET;
+if (TRIGGER_ONLY) {
+  console.warn(
+    "! No REVALIDATE_SECRET: will only sync the trigger collections on an existing flow.\n" +
+      "  To create the flow or rotate the secret, re-run with REVALIDATE_SECRET=<value>."
   );
-  process.exit(1);
 }
 
 const FLOW_NAME = "Revalidate Astro cache";
@@ -47,6 +51,12 @@ const COLLECTIONS = [
   "block_character_system", "block_character_system_options",
   "block_interactive_showcase", "block_interactive_showcase_tabs",
   "block_interactive_showcase_lotties",
+  // Phase 3 (audit) blocks.
+  "block_testimonial", "block_testimonial_items",
+  "block_video",
+  "block_accordion", "block_accordion_items",
+  "block_pricing", "block_pricing_tiers",
+  "block_timeline", "block_timeline_items",
   // Additive block-builder junctions on non-page collections.
   "case_studies_blocks", "posts_blocks", "services_blocks", "about_page_blocks",
 ];
@@ -90,6 +100,12 @@ async function main() {
   let flowId = flow?.id;
 
   if (!flowId) {
+    if (TRIGGER_ONLY) {
+      console.error(
+        "No existing flow to update and no REVALIDATE_SECRET to create one. Aborting."
+      );
+      process.exit(1);
+    }
     const created = await authRequest(`/flows`, {
       method: "POST",
       body: j({
@@ -110,6 +126,12 @@ async function main() {
       body: j({ status: "active", options: triggerOptions }),
     });
     console.log(`= Updated flow trigger (${flowId})`);
+  }
+
+  if (TRIGGER_ONLY) {
+    await authRequest(`/utils/cache/clear`, { method: "POST" }).catch(() => {});
+    console.log("\nDone (trigger collections synced; operation left untouched).");
+    return;
   }
 
   // Ensure the request operation exists and is current.

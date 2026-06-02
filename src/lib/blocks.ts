@@ -75,6 +75,31 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     sortKeys: ["tabs"],
     nestedSort: [{ parent: "tabs", child: "lotties" }],
   },
+  {
+    collection: "block_testimonial",
+    translations: true,
+    children: ["items.*", "items.translations.*"],
+    sortKeys: ["items"],
+  },
+  { collection: "block_video", translations: true },
+  {
+    collection: "block_accordion",
+    translations: true,
+    children: ["items.*", "items.translations.*"],
+    sortKeys: ["items"],
+  },
+  {
+    collection: "block_pricing",
+    translations: true,
+    children: ["tiers.*", "tiers.translations.*"],
+    sortKeys: ["tiers"],
+  },
+  {
+    collection: "block_timeline",
+    translations: true,
+    children: ["items.*", "items.translations.*"],
+    sortKeys: ["items"],
+  },
 ];
 
 /** Every block collection name (e.g. for M2A allow-lists / renderer guards). */

@@ -1,0 +1,107 @@
+---
+import { getAssetUrl } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const heading = getLocalizedField(data, 'heading', lang);
+const caption = getLocalizedField(data, 'caption', lang);
+
+const provider = (data.provider as string) || 'youtube';
+const rawUrl = (data.video_url as string) || '';
+const poster = getAssetUrl(data.poster);
+const fileUrl = getAssetUrl(data.video_file);
+const autoplay = data.autoplay === true;
+const loop = data.loop === true;
+const muted = data.muted === true || autoplay;
+
+const ratioMap: Record<string, string> = {
+  '16:9': '16 / 9',
+  '4:3': '4 / 3',
+  '1:1': '1 / 1',
+  '21:9': '21 / 9',
+};
+const aspect = ratioMap[(data.aspect_ratio as string) || '16:9'] || '16 / 9';
+
+/** Extracts the bare video id from a full URL or returns the input as-is. */
+function youtubeId(input: string): string {
+  const m = input.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/
+  );
+  return m ? m[1] : input.trim();
+}
+function vimeoId(input: string): string {
+  const m = input.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  return m ? m[1] : input.trim();
+}
+
+let embedUrl = '';
+if (provider === 'youtube' && rawUrl) {
+  const params = new URLSearchParams({
+    rel: '0',
+    ...(autoplay ? { autoplay: '1', mute: '1' } : {}),
+    ...(loop ? { loop: '1', playlist: youtubeId(rawUrl) } : {}),
+  });
+  embedUrl = `https://www.youtube-nocookie.com/embed/${youtubeId(rawUrl)}?${params}`;
+} else if (provider === 'vimeo' && rawUrl) {
+  const params = new URLSearchParams({
+    ...(autoplay ? { autoplay: '1', muted: '1' } : {}),
+    ...(loop ? { loop: '1' } : {}),
+  });
+  embedUrl = `https://player.vimeo.com/video/${vimeoId(rawUrl)}?${params}`;
+}
+
+const hasVideo = provider === 'file' ? Boolean(fileUrl) : Boolean(embedUrl);
+---
+
+{
+  hasVideo && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-5xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        {heading && (
+          <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] mb-8 text-center">
+            {heading}
+          </h2>
+        )}
+        <figure>
+          <div
+            class="relative w-full overflow-hidden rounded-3xl bg-black"
+            style={`aspect-ratio: ${aspect};`}
+          >
+            {provider === 'file' ? (
+              <video
+                class="absolute inset-0 h-full w-full object-cover"
+                src={fileUrl}
+                poster={poster || undefined}
+                controls
+                playsinline
+                autoplay={autoplay}
+                loop={loop}
+                muted={muted}
+                preload="metadata"
+              />
+            ) : (
+              <iframe
+                class="absolute inset-0 h-full w-full border-0"
+                src={embedUrl}
+                title={heading || caption || 'Video'}
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+              />
+            )}
+          </div>
+          {caption && (
+            <figcaption class="mt-4 text-center text-sm font-serif opacity-60">
+              {caption}
+            </figcaption>
+          )}
+        </figure>
+      </div>
+    </section>
+  )
+}

@@ -17,6 +17,11 @@ import BlockBeforeAfter from './BlockBeforeAfter.astro';
 import BlockLottieGrid from './BlockLottieGrid.astro';
 import BlockCharacterSystem from './BlockCharacterSystem.astro';
 import BlockInteractiveShowcase from './BlockInteractiveShowcase.astro';
+import BlockTestimonial from './BlockTestimonial.astro';
+import BlockVideo from './BlockVideo.astro';
+import BlockAccordion from './BlockAccordion.astro';
+import BlockPricing from './BlockPricing.astro';
+import BlockTimeline from './BlockTimeline.astro';
 
 interface Props {
   blocks?: PageBlock[] | null;
@@ -42,6 +47,11 @@ const COMPONENTS: Record<string, any> = {
   block_lottie_grid: BlockLottieGrid,
   block_character_system: BlockCharacterSystem,
   block_interactive_showcase: BlockInteractiveShowcase,
+  block_testimonial: BlockTestimonial,
+  block_video: BlockVideo,
+  block_accordion: BlockAccordion,
+  block_pricing: BlockPricing,
+  block_timeline: BlockTimeline,
 };
 
 const visible = (blocks || []).filter(
