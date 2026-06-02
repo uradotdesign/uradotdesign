@@ -1,0 +1,58 @@
+---
+import { getAssetUrl } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import { getUI } from '../../lib/translations';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const ui = await getUI(lang);
+
+const controlsPosition = data.controls_position === 'right' ? 'right' : 'bottom';
+const labelPlay = getLocalizedField(data, 'label_play', lang) || ui('lottie.playAll');
+const labelPause =
+  getLocalizedField(data, 'label_pause', lang) || ui('lottie.pauseAll');
+const labelStop = getLocalizedField(data, 'label_stop', lang) || ui('lottie.stopAll');
+
+const items: any[] = Array.isArray(data.items) ? data.items : [];
+const players = items
+  .map((it) => ({
+    path: getAssetUrl(it.animation),
+    loop: it.loop !== false,
+    autoplay: it.autoplay !== false,
+  }))
+  .filter((p) => p.path);
+---
+
+{
+  players.length > 0 && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        <lottie-player-grid
+          controls-position={controlsPosition}
+          label-play={labelPlay}
+          label-pause={labelPause}
+          label-stop={labelStop}
+        >
+          <div>
+            {players.map((p) => (
+              <div
+                class="w-40 h-40"
+                data-lottie-path={p.path}
+                data-loop={String(p.loop)}
+                data-autoplay={String(p.autoplay)}
+              />
+            ))}
+          </div>
+        </lottie-player-grid>
+      </div>
+    </section>
+  )
+}
+
+<script>
+  import '../../scripts/LottiePlayerGrid.js';
+</script>
