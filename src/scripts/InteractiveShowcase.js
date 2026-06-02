@@ -1,3 +1,5 @@
+import { loadLottie } from "./loadLottie.js";
+
 class InteractiveShowcase extends HTMLElement {
   constructor() {
     super();
@@ -576,11 +578,9 @@ class InteractiveShowcase extends HTMLElement {
     // Note: Controls generation is now handled in updateControls called by switchContent
     // We no longer call generateControls here to avoid conflicts.
 
-    // Dynamic import of lottie-web
     let lottie;
     try {
-      const module = await import("lottie-web");
-      lottie = module.default || module;
+      lottie = await loadLottie();
     } catch (e) {
       console.error("Lottie not found", e);
       return;

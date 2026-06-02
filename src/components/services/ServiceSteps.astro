@@ -94,6 +94,7 @@ const ui = await getUI(currentLang);
 
 <script>
   import type { AnimationItem } from 'lottie-web';
+  import { loadLottie as loadLottiePlayer } from '../../scripts/loadLottie';
 
   interface LottieCache {
     light: AnimationItem | null;
@@ -145,7 +146,7 @@ const ui = await getUI(currentLang);
       if (currentInitId !== initializationId) return null;
       
       try {
-        const lottie = (await import('lottie-web')).default;
+        const lottie = await loadLottiePlayer();
         
         // Double-check we're still the current initialization
         if (currentInitId !== initializationId) return null;

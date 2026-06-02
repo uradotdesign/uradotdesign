@@ -128,7 +128,8 @@ const services = servicesData.length > 0
 <script>
   // Import Lottie player
   import type { AnimationItem } from 'lottie-web';
-  
+  import { loadLottie } from '../../scripts/loadLottie';
+
   let lottie: any = null;
   const animations: Map<string, { light: AnimationItem | null, dark: AnimationItem | null, container: HTMLElement }> = new Map();
   const initializedSpotlights = new WeakSet<HTMLElement>();
@@ -147,7 +148,7 @@ const services = servicesData.length > 0
     if (typeof window === 'undefined') return;
 
     if (!lottie) {
-      lottie = await import('lottie-web');
+      lottie = await loadLottie();
     }
 
     cleanupLottie();
@@ -173,7 +174,7 @@ const services = servicesData.length > 0
       
       // Load the initial animation
       try {
-        const anim = lottie.default.loadAnimation({
+        const anim = lottie.loadAnimation({
           container: animContainer,
           renderer: 'svg',
           loop: false,
@@ -275,7 +276,7 @@ const services = servicesData.length > 0
       if (animData.dark) animData.dark.destroy();
       
       // Load new animation for current theme
-      const anim = lottie.default.loadAnimation({
+      const anim = lottie.loadAnimation({
         container: animData.container,
         renderer: 'svg',
         loop: false,

@@ -1,6 +1,7 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 import LanguageSwitcher from './LanguageSwitcher.astro';
+import WeatherIcon from './WeatherIcon.astro';
 import { getCurrentLanguage, getLocalizedField } from '../lib/i18n';
 import { getWeather } from '../pages/api/weather';
 import { t, getUI } from '../lib/translations';
@@ -281,53 +282,7 @@ if (showWeather && weatherLocation) {
       >
         <span class="hidden sm:inline">{weatherLocation.toUpperCase()}</span>
       <span class="ml-2 flex items-center" aria-label={weather.condition}>
-        {weather.icon === 'sun' && (
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="4" stroke-width="2"/>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        )}
-        {weather.icon === 'cloud-sun' && (
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="12" cy="10" r="3" stroke-width="2"/>
-            <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        )}
-        {weather.icon === 'cloud' && (
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        )}
-        {weather.icon === 'cloud-rain' && (
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25M8 19v2M12 19v3M16 19v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        )}
-        {weather.icon === 'cloud-lightning' && (
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12.5 18l-2 3h2.5l-2 3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        )}
-        {weather.icon === 'cloud-snow' && (
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M8 18.5h.01M12 18.5h.01M16 18.5h.01M10 21.5h.01M14 21.5h.01" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        )}
-        {weather.icon === 'cloud-fog' && (
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6 19h12M7 22h10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        )}
-        {/* Fallback for any unmapped icon */}
-        {['sun', 'cloud-sun', 'cloud', 'cloud-rain', 'cloud-lightning', 'cloud-snow', 'cloud-fog'].indexOf(weather.icon) === -1 && (
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-             <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        )}
+        <WeatherIcon icon={weather.icon} class="w-4 h-4" />
       </span>
       <time id="header-time" datetime="" class="ml-2"><span class="time-hours">--</span><span class="time-colon">:</span><span class="time-minutes">--</span> CEST</time>
       </div>
@@ -391,52 +346,7 @@ if (showWeather && weatherLocation) {
           <span class="flex flex-col items-end leading-tight">
              <span>{weatherLocation?.toUpperCase()}</span>
              <span class="opacity-70 flex items-center gap-1">
-               {weather.icon === 'sun' && (
-                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                   <circle cx="12" cy="12" r="4" stroke-width="2"/>
-                   <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-width="2" stroke-linecap="round"/>
-                 </svg>
-               )}
-               {weather.icon === 'cloud-sun' && (
-                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                   <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2" stroke-width="2" stroke-linecap="round"/>
-                   <circle cx="12" cy="10" r="3" stroke-width="2"/>
-                   <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                 </svg>
-               )}
-               {weather.icon === 'cloud' && (
-                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                   <path d="M6.5 19a4.5 4.5 0 01-.42-8.98 6.002 6.002 0 0111.84 0A4.5 4.5 0 0117.5 19H6.5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                 </svg>
-               )}
-               {weather.icon === 'cloud-rain' && (
-                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                   <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25M8 19v2M12 19v3M16 19v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                 </svg>
-               )}
-               {weather.icon === 'cloud-lightning' && (
-                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                   <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                   <path d="M12.5 18l-2 3h2.5l-2 3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                 </svg>
-               )}
-               {weather.icon === 'cloud-snow' && (
-                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                   <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                   <path d="M8 18.5h.01M12 18.5h.01M16 18.5h.01M10 21.5h.01M14 21.5h.01" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                 </svg>
-               )}
-               {weather.icon === 'cloud-fog' && (
-                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                   <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                   <path d="M6 19h12M7 22h10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                 </svg>
-               )}
-               {['sun', 'cloud-sun', 'cloud', 'cloud-rain', 'cloud-lightning', 'cloud-snow', 'cloud-fog'].indexOf(weather.icon) === -1 && (
-                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                   <path d="M19 16.2A5 5 0 0018 7h-1.26A8 8 0 104 15.25" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                 </svg>
-               )}
+               <WeatherIcon icon={weather.icon} class="w-3 h-3" />
                <time id="mobile-header-time" class="ml-1"><span class="time-hours">--</span><span class="time-colon">:</span><span class="time-minutes">--</span></time>
              </span>
           </span>

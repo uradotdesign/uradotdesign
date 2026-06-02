@@ -1,4 +1,5 @@
 import { watchTheme } from "./shadow-theme.js";
+import { loadLottie } from "./loadLottie.js";
 
 class LottiePlayer extends HTMLElement {
   constructor() {
@@ -207,11 +208,9 @@ class LottiePlayer extends HTMLElement {
   }
 
   async initLottie() {
-    // Dynamic import of lottie-web
     let lottie;
     try {
-      const module = await import("lottie-web");
-      lottie = module.default || module;
+      lottie = await loadLottie();
     } catch (e) {
       console.error("Lottie not found", e);
       return;
