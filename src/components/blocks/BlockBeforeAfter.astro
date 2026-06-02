@@ -1,0 +1,43 @@
+---
+import { getAssetUrl } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import { getUI } from '../../lib/translations';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const ui = await getUI(lang);
+
+const before = getAssetUrl(data.before_image);
+const after = getAssetUrl(data.after_image);
+const beforeAlt = getLocalizedField(data, 'before_alt', lang) || '';
+const afterAlt = getLocalizedField(data, 'after_alt', lang) || '';
+const beforeLabel =
+  getLocalizedField(data, 'before_label', lang) || ui('beforeAfter.before');
+const afterLabel =
+  getLocalizedField(data, 'after_label', lang) || ui('beforeAfter.after');
+---
+
+{
+  before && after && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-5xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        <before-after-toggle
+          before={before}
+          after={after}
+          before-alt={beforeAlt}
+          after-alt={afterAlt}
+          before-label={beforeLabel}
+          after-label={afterLabel}
+        />
+      </div>
+    </section>
+  )
+}
+
+<script>
+  import '../../scripts/BeforeAfterToggle.js';
+</script>
