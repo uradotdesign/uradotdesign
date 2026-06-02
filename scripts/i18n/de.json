@@ -1,0 +1,1029 @@
+{
+  "deCode": "de",
+  "collections": {
+    "about_page_translations": {
+      "parentField": "about_page_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "section_title": "Wirkungsvolles Design entsteht aus tiefem Verständnis.",
+            "section_text": "Design ist Teil von allem, was wir gestalten. Jede Entscheidung – was wir einbeziehen und was wir weglassen – prägt, wie Menschen ein System nutzen und verstehen. Die beste Arbeit entsteht, wenn wir diese Entscheidungen klar erkennen und bewusst treffen.",
+            "expertise_heading": "Expertise",
+            "expertise_intro": "Wir decken das gesamte Spektrum des Designs ab – von der Analyse von Problemen bis zur Gestaltung skalierbarer Systeme. Jede Leistung ist ein gezielter Weg, um komplexen Produkten Klarheit und Struktur zu geben.",
+            "approach_section_title": "Vorgehen",
+            "values_intro": "Unsere Wurzeln liegen in Open Source und Hackerspaces, wo Menschen genau darüber nachdenken, wie Technologie entsteht und wer auf sie angewiesen ist. Diese Herkunft hat die Prinzipien geprägt, die uns leiten."
+          }
+        }
+      ]
+    },
+    "approaches_translations": {
+      "parentField": "approaches_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "title": "Reibung aufdecken",
+            "description": "Wir untersuchen, wie sich das Produkt in der Praxis verhält – was reibungslos läuft, was fragil ist und wo Menschen nicht weiterkommen. So zeigt sich, wie Probleme zusammenhängen, damit Designentscheidungen die Ursachen angehen und nicht die Symptome."
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "de": {
+            "title": "Im Team arbeiten",
+            "description": "Wir arbeiten innerhalb der Teams, die wir unterstützen, und nehmen an zentralen Diskussionen teil, um zu verstehen, wie Entscheidungen getroffen werden. So bleibt Design an den realen technischen und organisatorischen Bedingungen ausgerichtet."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "de": {
+            "title": "Das System stärken",
+            "description": "Wir verwandeln unsere Erkenntnisse in Designänderungen, die über einzelne Bildschirme hinausgehen. Indem wir kleine Verbesserungen miteinander verknüpfen, helfen wir Teams, Systeme zu schaffen, die klarer, konsistenter und einfacher zu pflegen sind."
+          }
+        }
+      ]
+    },
+    "block_cta_translations": {
+      "parentField": "block_cta_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "heading": "Bereit, Ihre Seite zu erstellen?",
+            "subtext": "Erstellen, in der Vorschau ansehen und veröffentlichen – ganz ohne Entwickler.",
+            "button_label": "Kontakt aufnehmen"
+          }
+        }
+      ]
+    },
+    "block_embed_translations": {
+      "parentField": "block_embed_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "title": "Eingebettete Medien"
+          }
+        }
+      ]
+    },
+    "block_faq_translations": {
+      "parentField": "block_faq_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "heading": "Häufig gefragt"
+          }
+        }
+      ]
+    },
+    "block_gallery_images_translations": {
+      "parentField": "block_gallery_images_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "caption": "Eins"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "de": {
+            "caption": "Zwei"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "de": {
+            "caption": "Drei"
+          }
+        }
+      ]
+    },
+    "block_gallery_translations": {
+      "parentField": "block_gallery_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "heading": "Galerie"
+          }
+        }
+      ]
+    },
+    "block_hero_translations": {
+      "parentField": "block_hero_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 2,
+          "deRowId": 2,
+          "de": {
+            "eyebrow": "Seitenbaukasten",
+            "heading": "Seiten aus wiederverwendbaren Blöcken zusammenstellen",
+            "subheading": "Eine zweisprachige, blockbasierte Landingpage, vollständig in Directus zusammengestellt.",
+            "cta_label": "Projekt starten"
+          }
+        }
+      ]
+    },
+    "block_image_translations": {
+      "parentField": "block_image_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "caption": "Ein Bildblock in voller Breite mit optionaler Bildunterschrift."
+          }
+        }
+      ]
+    },
+    "block_logos_translations": {
+      "parentField": "block_logos_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "heading": "Weltweit von Teams geschätzt"
+          }
+        }
+      ]
+    },
+    "block_quote_translations": {
+      "parentField": "block_quote_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "quote": "Gutes Design ist so wenig Design wie möglich – aber nicht weniger, als die Aufgabe verlangt.",
+            "role": "Gründer, Ura Design"
+          }
+        }
+      ]
+    },
+    "block_richtext_translations": {
+      "parentField": "block_richtext_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 2,
+          "deRowId": 2,
+          "de": {
+            "body": "<h2>Rich-Text-Block</h2><p>Hier verfassen Redakteure längere Inhalte mit vollständiger Formatierung – <strong>fett</strong>, <em>kursiv</em>, Listen und Links.</p>"
+          }
+        }
+      ]
+    },
+    "block_stats_translations": {
+      "parentField": "block_stats_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "heading": "In Zahlen"
+          }
+        }
+      ]
+    },
+    "block_two_column_translations": {
+      "parentField": "block_two_column_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "heading": "Text neben Medien",
+            "body": "<p>Ein flexibles zweispaltiges Layout kombiniert Überschrift und Text mit einem Bild. Die Medienseite ist konfigurierbar.</p>",
+            "cta_label": "Mehr erfahren"
+          }
+        }
+      ]
+    },
+    "case_studies_translations": {
+      "parentField": "case_studies_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "title": "Auffrischung der visuellen Identität für Reset Tech",
+            "excerpt": "Wir haben die visuelle Identität von Reset Tech durch Workshops, klare Richtlinien und neue Illustrationen für Digital, Print und Datenvisualisierung aufgefrischt. Das Ergebnis ist eine progressive Identität, die ein vielfältiges Publikum anspricht.",
+            "cta_text": "Sehen Sie, wie es funktioniert hat",
+            "description": "Wir haben die visuelle Identität von Reset Tech durch Workshops, klare Richtlinien und neue Illustrationen für Digital, Print und Datenvisualisierung aufgefrischt. Das Ergebnis ist eine progressive Identität, die ein vielfältiges Publikum anspricht."
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "de": {
+            "title": "Dynamisches Illustrationssystem für OONI",
+            "excerpt": "Wir haben für OONI ein modulares Illustrationssystem geschaffen, mit dem sowohl Designer als auch Nicht-Designer ihre eigenen Illustrationen erstellen können – und so das OONIversum zum Leben erwecken.",
+            "cta_text": "Projekt ansehen",
+            "description": "Wir haben für OONI ein modulares Illustrationssystem geschaffen, mit dem sowohl Designer als auch Nicht-Designer ihre eigenen Illustrationen erstellen können – und so das OONIversum zum Leben erwecken."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "de": {
+            "title": "Komplexität entwirren für QubesOS",
+            "excerpt": "Wir haben uns darauf konzentriert, zentrale Aspekte der Nutzererfahrung zu verbessern: Barrierefreiheit, visuelle Konsistenz, klare Kommunikation und intuitives Interface-Design.",
+            "cta_text": "Sehen Sie, wie es funktioniert hat",
+            "description": "Wir haben uns darauf konzentriert, zentrale Aspekte der Nutzererfahrung zu verbessern: Barrierefreiheit, visuelle Konsistenz, klare Kommunikation und intuitives Interface-Design."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "de": {
+            "title": "UX- und UI-Verbesserungen für Mailvelope",
+            "excerpt": "Wir haben es einfacher gemacht, Mailvelope in Nextcloud Mail einzurichten und verschlüsselte E-Mails zu versenden.",
+            "description": "Wir haben es einfacher gemacht, Mailvelope in Nextcloud Mail einzurichten und verschlüsselte E-Mails zu versenden."
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 10,
+          "de": {
+            "title": "Tumpa – Desktop-App & Landingpage",
+            "excerpt": "Wir haben Tumpas Identität und Oberfläche transformiert und für intuitive Interaktionen sowie klare Abläufe bei der Verwaltung von OpenPGP-Schlüsseln gesorgt.",
+            "description": "Wir haben Tumpas Identität und Oberfläche transformiert und für intuitive Interaktionen sowie klare Abläufe bei der Verwaltung von OpenPGP-Schlüsseln gesorgt."
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 12,
+          "de": {
+            "title": "Open Technology Fund – Website-Illustrationen",
+            "excerpt": "Wir haben einen frischen visuellen Stil entwickelt und eine Reihe von Illustrationen für die neue Website des OTF gestaltet. Diese Visuals unterstreichen die Bedeutung offener Technologie und vor allem der Community. Sie bereichern die Website des OTF und schaffen ein visuell ansprechendes Nutzererlebnis.",
+            "description": "Wir haben einen frischen visuellen Stil entwickelt und eine Reihe von Illustrationen für die neue Website des OTF gestaltet. Diese Visuals unterstreichen die Bedeutung offener Technologie und vor allem der Community. Sie bereichern die Website des OTF und schaffen ein visuell ansprechendes Nutzererlebnis."
+          }
+        },
+        {
+          "parent": 7,
+          "deRowId": 14,
+          "de": {
+            "title": "Rebranding und Nutzerforschung für Rallly"
+          }
+        }
+      ]
+    },
+    "case_study_categories_translations": {
+      "parentField": "case_study_categories_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 7,
+          "deRowId": 2,
+          "de": {
+            "title": "Barrierefreiheit"
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 4,
+          "de": {
+            "title": "Branding"
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 6,
+          "de": {
+            "title": "Illustrationen"
+          }
+        },
+        {
+          "parent": 10,
+          "deRowId": 8,
+          "de": {
+            "title": "Interaktionsdesign"
+          }
+        },
+        {
+          "parent": 11,
+          "deRowId": 10,
+          "de": {
+            "title": "UX-Forschung"
+          }
+        },
+        {
+          "parent": 12,
+          "deRowId": 12,
+          "de": {
+            "title": "Webentwicklung"
+          }
+        }
+      ]
+    },
+    "clients_section_translations": {
+      "parentField": "clients_section_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "section_heading": "Organisationen, die wir unterstützt haben"
+          }
+        }
+      ]
+    },
+    "company_values_translations": {
+      "parentField": "company_values_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "title": "Verantwortung",
+            "description": "Wir arbeiten mit Teams, die Technologie entwickeln, die den Menschen respektiert.",
+            "subtitle": "Datenschutz, Transparenz und Gemeinwohl sind keine Extras – sie sind das Fundament."
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "de": {
+            "title": "Verständnis",
+            "description": "Wir nehmen uns Zeit, Teams, Nutzer und Rahmenbedingungen zu verstehen.",
+            "subtitle": "Dieses Verständnis führt zu besseren Entscheidungen und langlebigeren Ergebnissen."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "de": {
+            "title": "Intention",
+            "description": "Wir jagen weder Trends noch Funktionen um ihrer selbst willen hinterher.",
+            "subtitle": "Wir konzentrieren uns auf Entscheidungen, die das Produkt wirklich verbessern und das System stärken."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "de": {
+            "title": "Zusammenarbeit",
+            "description": "Wir werden Teil der Teams – als Partner, nicht als externe Auftragnehmer.",
+            "subtitle": "Unsere Aufgabe ist es, genau zuzuhören, die richtigen Fragen zu stellen und gemeinsam Lösungen zu entwickeln, die funktionieren."
+          }
+        }
+      ]
+    },
+    "footer_settings_translations": {
+      "parentField": "footer_settings_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "newsletter_title": "Erhalten Sie gelegentliche Updates darüber, was uns beschäftigt und woran wir arbeiten.",
+            "newsletter_button_text": "Newsletter abonnieren",
+            "company_section_title": "Unternehmen",
+            "socials_section_title": "Social Media",
+            "contact_section_title": "Kontakt",
+            "copyright_text": "Alle Rechte vorbehalten, Ura Design GmbH"
+          }
+        }
+      ]
+    },
+    "header_settings_translations": {
+      "parentField": "header_settings_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "cta_text": "SPRECHEN WIR"
+          }
+        }
+      ]
+    },
+    "hero_section_translations": {
+      "parentField": "hero_section_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "tagline": "Wir bringen Klarheit und Kohärenz in komplexe Systeme"
+          }
+        }
+      ]
+    },
+    "navigation_links_translations": {
+      "parentField": "navigation_links_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 3,
+          "deRowId": 2,
+          "de": {
+            "label": "ÜBER UNS"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 4,
+          "de": {
+            "label": "ARBEITEN"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 6,
+          "de": {
+            "label": "BLOG"
+          }
+        }
+      ]
+    },
+    "pages_translations": {
+      "parentField": "pages_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 4,
+          "deRowId": 6,
+          "de": {
+            "title": "Playground",
+            "seo_title": "ping2 1780344719086",
+            "seo_description": "Eine Demo aller Seitenbaukasten-Blöcke."
+          }
+        }
+      ]
+    },
+    "service_activities_translations": {
+      "parentField": "service_activities_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "title": "Markenstrategie",
+            "description": "Positionierung, Werte und Narrativ des Produkts für eine konsistente Kommunikation definieren."
+          }
+        },
+        {
+          "parent": 11,
+          "deRowId": 4,
+          "de": {
+            "title": "Produktstrategie",
+            "description": "Produktziele, Prioritäten und Erfolgskriterien definieren, um die Designrichtung vorzugeben."
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 6,
+          "de": {
+            "title": "Design-Audit",
+            "description": "Systematische Überprüfung von UX/UI, Barrierefreiheit und allgemeiner Usability des aktuellen Produkts."
+          }
+        },
+        {
+          "parent": 7,
+          "deRowId": 8,
+          "de": {
+            "title": "Stakeholder- & Nutzerforschung",
+            "description": "Forschung, die Team- und Nutzerperspektiven verbindet, um echte Bedürfnisse, Einschränkungen und Reibungspunkte aufzudecken."
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 10,
+          "de": {
+            "title": "Gemeinsame Workshops",
+            "description": "Teams in strukturierten Sessions auf Markenrichtung, Tonalität und Zielgruppenbedürfnisse ausrichten."
+          }
+        },
+        {
+          "parent": 12,
+          "deRowId": 12,
+          "de": {
+            "title": "Produktarchitektur",
+            "description": "User Journeys, Workflows und strukturelle Zusammenhänge abbilden, die das gesamte Erlebnis prägen."
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 14,
+          "de": {
+            "title": "Schnelle Nutzertests",
+            "description": "Überprüfen, wo das Design in realen Szenarien an seine Grenzen stößt."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 16,
+          "de": {
+            "title": "Gestaltung der visuellen Identität",
+            "description": "Logos, Farben und Typografie erkunden und verfeinern, um eine unverwechselbare visuelle Sprache zu schaffen."
+          }
+        },
+        {
+          "parent": 13,
+          "deRowId": 18,
+          "de": {
+            "title": "UX/UI-Design & Prototyping",
+            "description": "Zentrale Screens und Interaktionen erstellen und testen, um Struktur und Usability frühzeitig zu validieren."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 20,
+          "de": {
+            "title": "Markenrichtlinien",
+            "description": "Prinzipien, Assets und Nutzungsregeln dokumentieren, um eine konsistente Anwendung über alle Kontexte hinweg zu gewährleisten."
+          }
+        },
+        {
+          "parent": 14,
+          "deRowId": 22,
+          "de": {
+            "title": "Design-System",
+            "description": "Komponenten, Stile und Barrierefreiheitsstandards festlegen, um skalierbares, konsistentes Design sicherzustellen."
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 24,
+          "de": {
+            "title": "Security-UX-Review",
+            "description": "Bewerten, wie Datenschutz und Sicherheit aus Nutzersicht funktionieren – und Designbarrieren identifizieren, die Vertrauen, Akzeptanz oder Sicherheit beeinträchtigen."
+          }
+        },
+        {
+          "parent": 10,
+          "deRowId": 26,
+          "de": {
+            "title": "Design-Empfehlungen",
+            "description": "Erkenntnisse in umsetzbare Empfehlungen verwandeln, um Usability und Struktur zu verbessern."
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 28,
+          "de": {
+            "title": "Design-System",
+            "description": "Markenelemente zu wiederverwendbaren Komponenten ausbauen, die Identität und Interface verbinden."
+          }
+        }
+      ]
+    },
+    "service_checklist_items_translations": {
+      "parentField": "service_checklist_items_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "text": "Ein stimmiges Design-System, das sich an alle Markenflächen anpassen lässt"
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 4,
+          "de": {
+            "text": "Eine kohärente Designarchitektur, die Struktur, Interaktion und Verhalten definiert"
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 6,
+          "de": {
+            "text": "Belege dafür, wo Reibung entsteht und warum"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 8,
+          "de": {
+            "text": "Klare, praxisnahe Markenrichtlinien für eine konsistente Anwendung"
+          }
+        },
+        {
+          "parent": 10,
+          "deRowId": 10,
+          "de": {
+            "text": "Ein einheitliches Design-System für eine konsistente, skalierbare Umsetzung"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 12,
+          "de": {
+            "text": "Kontextbezogenes Verständnis der Nutzerbedürfnisse"
+          }
+        },
+        {
+          "parent": 7,
+          "deRowId": 14,
+          "de": {
+            "text": "Forschungsbasierte Erkenntnisse als Grundlage für Produktentscheidungen"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 16,
+          "de": {
+            "text": "Eine einheitliche visuelle Sprache, die widerspiegelt, wie das Team die Marke versteht"
+          }
+        },
+        {
+          "parent": 11,
+          "deRowId": 18,
+          "de": {
+            "text": "Prototypen, die Usability und Systemlogik validieren"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 20,
+          "de": {
+            "text": "Umsetzungsfertige Assets, die über Produkte und Plattformen hinweg skalieren"
+          }
+        },
+        {
+          "parent": 12,
+          "deRowId": 22,
+          "de": {
+            "text": "Dokumentation und Assets für eine reibungslose Umsetzung"
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 24,
+          "de": {
+            "text": "Eine priorisierte Roadmap für die nächsten Schritte"
+          }
+        }
+      ]
+    },
+    "service_steps_translations": {
+      "parentField": "service_steps_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 7,
+          "deRowId": 2,
+          "de": {
+            "title": "Die Strategie definieren",
+            "description": "Wir übersetzen die Audit-Ergebnisse in eine klare Designrichtung und stimmen Prioritäten, Erfolgskriterien und die Frage ab, was „besser“ für Nutzer und Teams bedeutet.",
+            "tags": "Produktstrategie"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 4,
+          "de": {
+            "title": "Das System auditieren",
+            "description": "Wir beginnen mit einer strukturierten Überprüfung der Produktleistung und messen Usability, Barrierefreiheit und Designkonsistenz. So erhalten wir eine faktische Ausgangsbasis, bevor menschliche Erkenntnisse hinzukommen.",
+            "tags": "Design-Audit"
+          }
+        },
+        {
+          "parent": 1,
+          "deRowId": 6,
+          "de": {
+            "title": "Die Vision ausrichten",
+            "description": "Wir klären, wie das Produkt kommunizieren soll – seine Positionierung, Werte und sein Narrativ. In gemeinsamen Workshops richten wir Teams auf Tonalität, Richtung und Zielgruppenbedürfnisse aus und schaffen so die Grundlage für einen stimmigen Auftritt.",
+            "tags": "Markenstrategie, Gemeinsame Workshops"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 8,
+          "de": {
+            "title": "Die Identität formen",
+            "description": "Wir experimentieren damit, wie die Marke aussehen und sich anfühlen könnte, und übersetzen die Strategie in Konzepte für Logos, Farben und Typografie. In dieser Phase geht es darum, Möglichkeiten zu testen und das herauszuarbeiten, was den Charakter des Produkts am besten einfängt.",
+            "tags": "Gestaltung der visuellen Identität"
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 10,
+          "de": {
+            "title": "Die Forschung vertiefen",
+            "description": "Anschließend blicken wir über die Oberfläche hinaus, um zu verstehen, wie Menschen das System nutzen und pflegen. Durch Nutzer- und Stakeholder-Forschung decken wir die Entscheidungen, Bedürfnisse und Einschränkungen auf, die seine heutige Form prägen.",
+            "tags": "Kontextbezogene Interviews, Schnelle Nutzertests, Nutzerforschung"
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 12,
+          "de": {
+            "title": "Das Erlebnis gestalten",
+            "description": "Wir gestalten die Architektur, die diese Strategie trägt, und definieren Journeys, Workflows und zentrale Interaktionen. Frühe Prototypen helfen, Ideen schnell zu testen und die Struktur zu verfeinern, bevor das vollständige Design entsteht.",
+            "tags": "Produktarchitektur, UX/UI-Design & Prototyping"
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 14,
+          "de": {
+            "title": "Das System verfeinern",
+            "description": "Wir überführen Designentscheidungen in wiederverwendbare Muster und Systeme – Komponenten, Stile und Barrierefreiheitsstandards, die Design skalierbar und konsistent halten.",
+            "tags": "Design-System"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 16,
+          "de": {
+            "title": "Die Richtung festlegen",
+            "description": "Wir fassen alles Gelernte zu klaren, umsetzbaren Prioritäten zusammen und verbinden Belege mit Kontext. Das Ergebnis ist eine praxisnahe Roadmap, die zeigt, wo Designverbesserungen die größte Wirkung entfalten.",
+            "tags": "Synthese der Erkenntnisse"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 18,
+          "de": {
+            "title": "Die Marke kodifizieren",
+            "description": "Wir überführen Designentscheidungen in klare, wiederverwendbare Standards und dokumentieren, wie visuelle Elemente über Produkte und Plattformen hinweg angewendet werden sollen. So wird die Marke zu einem lebendigen System, das auch beim Wachsen stimmig bleibt.",
+            "tags": "Markenrichtlinien, Design-System"
+          }
+        }
+      ]
+    },
+    "service_subservices_translations": {
+      "parentField": "service_subservices_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "text": "Design-Audit"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "de": {
+            "text": "Kontextbezogene Interviews"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "de": {
+            "text": "Nutzerforschung & Tests"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "de": {
+            "text": "Produktstrategie & Iteration"
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 10,
+          "de": {
+            "text": "UX/UI-Design & Prototyping"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 12,
+          "de": {
+            "text": "Design-Systeme"
+          }
+        },
+        {
+          "parent": 7,
+          "deRowId": 14,
+          "de": {
+            "text": "Strategie & Ausrichtung"
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 16,
+          "de": {
+            "text": "Gestaltung der visuellen Identität"
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 18,
+          "de": {
+            "text": "Markenrichtlinien"
+          }
+        },
+        {
+          "parent": 10,
+          "deRowId": 20,
+          "de": {
+            "text": "Produktstrategie & Iteration"
+          }
+        },
+        {
+          "parent": 11,
+          "deRowId": 22,
+          "de": {
+            "text": "Asset-Produktion"
+          }
+        },
+        {
+          "parent": 12,
+          "deRowId": 24,
+          "de": {
+            "text": "Produktionskuratierung"
+          }
+        }
+      ]
+    },
+    "services_translations": {
+      "parentField": "services_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "title": "Forensisches Audit",
+            "subtitle": "Audit & Diagnose",
+            "description": "Schwachstellen im Systemdesign aufdecken und Wege zur Verbesserung aufzeigen.",
+            "long_description": "<p><span style=\"white-space: pre-wrap;\">Eine detaillierte Diagnose von Usability, Barrierefreiheit und UX-Performance.</span></p>",
+            "cta_text": "Unseren Prozess ansehen",
+            "section_heading": "Verstehen, was funktioniert und was nicht",
+            "section_subheading": "Das Forensische Audit ist eine diagnostische Überprüfung des Produktdesigns – es verbindet Nutzerforschung, Barrierefreiheitstests und heuristische Analyse, um Schwächen und Verbesserungspotenziale zu identifizieren."
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "de": {
+            "title": "System-Blueprint",
+            "subtitle": "Design & Strategie",
+            "description": "Klare, skalierbare Produkte gestalten, die intuitiv zu bedienen und einfach zu pflegen sind.",
+            "long_description": "<p><span style=\"white-space: pre-wrap;\">Vollständiges Systemdesign, das prägt, wie das Produkt funktioniert, aussieht und sich anfühlt.</span></p>",
+            "cta_text": "Unseren Prozess ansehen",
+            "section_heading": "Gestalten, wie alles zusammenpasst",
+            "section_subheading": "System-Blueprint ist ein vollständiger Designprozess – von der Produktstrategie bis zum Interaktions- und Interface-Design. Wir bilden Abläufe ab, definieren die Architektur und prototypisieren Lösungen, die Usability mit technischen Gegebenheiten in Einklang bringen."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "de": {
+            "title": "Markenausrichtung",
+            "subtitle": "Visuelle Identität",
+            "description": "Eine visuelle Sprache definieren, die Sinn vermittelt und Wiedererkennung schafft.",
+            "long_description": "<p><span style=\"white-space: pre-wrap;\">Eine visuelle Identität, die klar und konsistent widerspiegelt, wofür eine Marke steht.</span></p>",
+            "cta_text": "Unseren Prozess ansehen",
+            "section_heading": "Bedeutung und Ausdruck in Einklang bringen",
+            "section_subheading": "Markenausrichtung verbindet internes Verständnis mit äußerem Ausdruck. Wir übersetzen Werte, Tonalität und Sinn in eine stimmige visuelle Identität, die über alle Plattformen und Produkte hinweg konsistent bleibt."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "de": {
+            "title": "Betreuung"
+          }
+        }
+      ]
+    },
+    "site_settings_translations": {
+      "parentField": "site_settings_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "site_tagline": "Systemische Einsicht. Praktisches Design."
+          }
+        }
+      ]
+    },
+    "team_members_translations": {
+      "parentField": "team_members_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "de": {
+            "role": "CEO",
+            "bio": "Gründer und Designstratege mit über 12 Jahren Erfahrung in der Leitung von Open-Source-Designinitiativen bei Ubuntu, Mozilla, Tor und Wikimedia. \nelio[at]ura.design"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "de": {
+            "role": "UX-Designer",
+            "bio": "Designstratege, der Usability und Forschungskoordination für komplexe, risikoreiche Tools leitet. Legt den Fokus auf Klarheit und Stimmigkeit über den gesamten Prozess hinweg – einschließlich UX-Writing und Inhaltsstruktur, die prägen, wie Menschen ein System verstehen.\nchristopher[at]ura.design"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "de": {
+            "role": "Lead Artist",
+            "bio": "Visueller Designer mit Spezialisierung auf visuelles Storytelling und Identitätsdesign. Widmet sich der visuellen Kohärenz über komplexe Ökosysteme hinweg und hat über 120 visuelle Identitätssysteme entwickelt.\nergi[at]ura.design"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "de": {
+            "role": "UX-Researcherin",
+            "bio": "UX-Researcherin mit Fokus auf Barrierefreiheit, Usability und Nutzertests bei Open-Source- und forschungsgetriebenen Tools. Setzt sich für inklusive Designmethoden ein, die komplexe Systeme verständlich und gerecht machen.\nanja[at]ura.design\n"
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 10,
+          "de": {
+            "role": "UX-Designerin",
+            "bio": "Designstrategin und Forscherin, die akademische Strenge mit praktischer UX-Arbeit verbindet. Autorin von peer-reviewter Forschung zu nutzerzentriertem Datenschutz und neuen Designpraktiken.\nangie[at]ura.design\n"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 12,
+          "de": {
+            "role": "DevOps-Engineer",
+            "bio": "Systems-Engineer mit Fokus auf sichere, skalierbare Infrastruktur für Open-Source- und Forschungsteams. Kam im ersten Jahr zu Ura und prägt bis heute unser technisches Fundament.\nanxhelo[at]ura.design"
+          }
+        }
+      ]
+    },
+    "testimonials_translations": {
+      "parentField": "testimonials_id",
+      "langField": "languages_code",
+      "items": [
+        {
+          "parent": 2,
+          "deRowId": 2,
+          "de": {
+            "quote": "Die Zusammenarbeit mit Ura war unglaublich! Ihr Team ist kurzfristig eingesprungen, um durchdachte, wunderschön gestaltete Social-Media-Assets zu erstellen, die die Botschaft und das Branding unseres Berichts perfekt eingefangen haben.",
+            "author_title": "Mitgründerin und Geschäftsführerin"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 4,
+          "de": {
+            "quote": "Ura Design hat unsere Sichtbarkeit verbessert und unseren Ruf sowie unser Selbstvertrauen gestärkt.\nMir gefällt, dass wir asynchron arbeiten können und nicht viele Videocalls brauchen, die unseren Flow unterbrechen."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 6,
+          "de": {
+            "quote": "Die Zusammenarbeit mit Ura war eine durch und durch professionelle Erfahrung, die von Sinn und gesellschaftlicher Wirkung getragen war. Ihr Team brachte Ehrlichkeit, Kooperation und ein starkes Gespür für den Wert von Gemeinschaft in das Projekt ein und hinterließ einen großen positiven Einfluss auf unsere Arbeit. Ura Design ist ein echtes Beispiel dafür, was es bedeutet, Professionalität mit Herz zu verbinden."
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 8,
+          "de": {
+            "quote": "Das Team von Ura war jederzeit bereit, uns bei Fragen zu bestehenden Designs oder dem Illustrationssystem zu unterstützen, das sie für uns aufgebaut haben. Und obwohl sie externe Dienstleister sind, waren sie lange Zeit ein unverzichtbarer Teil unseres Teams. Ein riesiges Lob an das Team!"
+          }
+        }
+      ]
+    }
+  }
+}

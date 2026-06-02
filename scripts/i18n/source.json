@@ -1,0 +1,1208 @@
+{
+  "enCode": "en",
+  "deCode": "de",
+  "collections": {
+    "about_page_translations": {
+      "parentField": "about_page_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "hero_label",
+        "hero_heading",
+        "section_title",
+        "section_text",
+        "expertise_heading",
+        "expertise_intro",
+        "approach_section_title",
+        "values_intro"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "section_title": "Effective design comes from deep understanding. ",
+            "section_text": "Design is part of everything we make. Every choice, what to include and what to leave out, shapes how people use and understand a system. The best work comes from seeing those choices clearly and making them with intent.",
+            "expertise_heading": "Expertise",
+            "expertise_intro": "We cover the full scope of design, from diagnosing issues to designing scalable systems. Each one is a focused way to bring clarity and structure to complex products.",
+            "approach_section_title": "Approach",
+            "values_intro": "Our roots are in open source and hacker spaces, where people think carefully about how technology is made and who depends on it. That background shaped the principles that guide us."
+          }
+        }
+      ]
+    },
+    "approaches_translations": {
+      "parentField": "approaches_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "title",
+        "description"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "title": "Uncover friction",
+            "description": "We study how the product behaves in practice; what’s smooth, what’s fragile, and where people get stuck. This reveals how issues connect, so design decisions address causes, not symptoms."
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "en": {
+            "title": "Work within the team",
+            "description": "We work within the teams we support, joining key discussions to understand how decisions are made. This keeps design aligned with real technical and organizational conditions."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "en": {
+            "title": "Strengthen the system",
+            "description": "We turn what we learn into design changes that reach beyond individual screens. By linking small improvements, we help teams build systems that are clearer, more consistent, and easier to maintain."
+          }
+        }
+      ]
+    },
+    "block_cta_translations": {
+      "parentField": "block_cta_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "heading",
+        "subtext",
+        "button_label"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "heading": "Ready to build your page?",
+            "subtext": "Compose, preview, and publish — no developer required.",
+            "button_label": "Get in touch"
+          }
+        }
+      ]
+    },
+    "block_embed_translations": {
+      "parentField": "block_embed_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "title"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "title": "Embedded media"
+          }
+        }
+      ]
+    },
+    "block_faq_translations": {
+      "parentField": "block_faq_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "heading"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "heading": "Frequently asked"
+          }
+        }
+      ]
+    },
+    "block_gallery_images_translations": {
+      "parentField": "block_gallery_images_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "caption"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "caption": "One"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "en": {
+            "caption": "Two"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "en": {
+            "caption": "Three"
+          }
+        }
+      ]
+    },
+    "block_gallery_translations": {
+      "parentField": "block_gallery_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "heading"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "heading": "Gallery"
+          }
+        }
+      ]
+    },
+    "block_hero_translations": {
+      "parentField": "block_hero_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "eyebrow",
+        "heading",
+        "subheading",
+        "cta_label"
+      ],
+      "items": [
+        {
+          "parent": 2,
+          "deRowId": 2,
+          "en": {
+            "eyebrow": "Page builder",
+            "heading": "Compose pages from reusable blocks",
+            "subheading": "A bilingual, block-based landing page assembled entirely in Directus.",
+            "cta_label": "Start a project"
+          }
+        }
+      ]
+    },
+    "block_image_translations": {
+      "parentField": "block_image_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "caption"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "caption": "A full-width image block with an optional caption."
+          }
+        }
+      ]
+    },
+    "block_logos_translations": {
+      "parentField": "block_logos_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "heading"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "heading": "Trusted by teams worldwide"
+          }
+        }
+      ]
+    },
+    "block_quote_translations": {
+      "parentField": "block_quote_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "quote",
+        "role"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "quote": "Good design is as little design as possible — but no less than the work demands.",
+            "role": "Founder, Ura Design"
+          }
+        }
+      ]
+    },
+    "block_richtext_translations": {
+      "parentField": "block_richtext_id",
+      "langField": "languages_code",
+      "htmlFields": [
+        "body"
+      ],
+      "fields": [
+        "body"
+      ],
+      "items": [
+        {
+          "parent": 2,
+          "deRowId": 2,
+          "en": {
+            "body": "<h2>Rich text block</h2><p>Editors write long-form content here with full formatting — <strong>bold</strong>, <em>italics</em>, lists and links.</p>"
+          }
+        }
+      ]
+    },
+    "block_stats_translations": {
+      "parentField": "block_stats_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "heading"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "heading": "By the numbers"
+          }
+        }
+      ]
+    },
+    "block_two_column_translations": {
+      "parentField": "block_two_column_id",
+      "langField": "languages_code",
+      "htmlFields": [
+        "body"
+      ],
+      "fields": [
+        "heading",
+        "body",
+        "cta_label"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "heading": "Text beside media",
+            "body": "<p>A flexible two-column layout pairs a headline and copy with an image. The media side is configurable.</p>",
+            "cta_label": "Learn more"
+          }
+        }
+      ]
+    },
+    "case_studies_translations": {
+      "parentField": "case_studies_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "title",
+        "excerpt",
+        "cta_text",
+        "description",
+        "seo_title",
+        "seo_description"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "title": "Visual Identity Refresh for Reset Tech",
+            "excerpt": "We refreshed Reset Tech’s visual identity through workshops, clear guidelines, and new illustrations for digital, print, and dataviz. The result is a progressive identity that connects with diverse audiences.",
+            "cta_text": "See how it worked",
+            "description": "We refreshed Reset Tech’s visual identity through workshops, clear guidelines, and new illustrations for digital, print, and dataviz. The result is a progressive identity that connects with diverse audiences."
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "en": {
+            "title": "Dynamic illustration system for OONI",
+            "excerpt": "We created a modular illustration system for OONI making it easy for both designers and non-designers to craft their own illustrations, bringing the OONIverse to life.",
+            "cta_text": "View Project",
+            "description": "We created a modular illustration system for OONI making it easy for both designers and non-designers to craft their own illustrations, bringing the OONIverse to life."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "en": {
+            "title": "Untangling Complexity for QubesOS",
+            "excerpt": "We focused on improving critical aspects of the user experience: accessibility, visual consistency, clear communication, and intuitive interface design.",
+            "cta_text": "See how it worked",
+            "description": "We focused on improving critical aspects of the user experience: accessibility, visual consistency, clear communication, and intuitive interface design."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "en": {
+            "title": "Mailvelope UX & UI Improvements",
+            "excerpt": "We made it easier to set up Mailvelope in Nextcloud Mail and send encrypted emails.",
+            "description": "We made it easier to set up Mailvelope in Nextcloud Mail and send encrypted emails."
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 10,
+          "en": {
+            "title": "Tumpa - Desktop App & Landing page",
+            "excerpt": "We transformed Tumpa’s identity and interface, ensuring intuitive interactions and clear pathways for OpenPGP key management.",
+            "description": "We transformed Tumpa’s identity and interface, ensuring intuitive interactions and clear pathways for OpenPGP key management."
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 12,
+          "en": {
+            "title": "Open Technology Fund - Website Illustrations",
+            "excerpt": "We created a fresh visual style, offering a series of illustrations for the OTF’s new website. These visuals highlight the importance of open technology and, most importantly, the community. They enhance OTF’s website, providing a visually engaging user experience.",
+            "description": "We created a fresh visual style, offering a series of illustrations for the OTF’s new website. These visuals highlight the importance of open technology and, most importantly, the community. They enhance OTF’s website, providing a visually engaging user experience."
+          }
+        },
+        {
+          "parent": 7,
+          "deRowId": 14,
+          "en": {
+            "title": "Rebranding and User Research for Rallly"
+          }
+        }
+      ]
+    },
+    "case_study_categories_translations": {
+      "parentField": "case_study_categories_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "title"
+      ],
+      "items": [
+        {
+          "parent": 7,
+          "deRowId": 2,
+          "en": {
+            "title": "Accessibility"
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 4,
+          "en": {
+            "title": "Branding"
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 6,
+          "en": {
+            "title": "Illustrations"
+          }
+        },
+        {
+          "parent": 10,
+          "deRowId": 8,
+          "en": {
+            "title": "Interaction Design"
+          }
+        },
+        {
+          "parent": 11,
+          "deRowId": 10,
+          "en": {
+            "title": "UX Research"
+          }
+        },
+        {
+          "parent": 12,
+          "deRowId": 12,
+          "en": {
+            "title": "Web Development"
+          }
+        }
+      ]
+    },
+    "clients_section_translations": {
+      "parentField": "clients_section_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "section_heading"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "section_heading": "Organizations we've supported"
+          }
+        }
+      ]
+    },
+    "company_values_translations": {
+      "parentField": "company_values_id",
+      "langField": "languages_code",
+      "htmlFields": [
+        "description"
+      ],
+      "fields": [
+        "title",
+        "description",
+        "subtitle"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "title": "Responsibility",
+            "description": "We work with teams who build technology that respects people.",
+            "subtitle": "Privacy, transparency, and public good are not extras, they are the foundation"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "en": {
+            "title": "Understanding",
+            "description": "We take time to understand teams, users, and constraints.",
+            "subtitle": "That understanding leads to better decisions and longer lasting results."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "en": {
+            "title": "Intention",
+            "description": "We don’t chase trends or features for their own sake.",
+            "subtitle": "We focus on decisions that genuinely improve the product and strengthen the system."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "en": {
+            "title": "Collaboration",
+            "description": "We integrate with teams as partners, not clients.",
+            "subtitle": "Our role is to listen closely, ask the right questions, and co-create solutions that work."
+          }
+        }
+      ]
+    },
+    "footer_settings_translations": {
+      "parentField": "footer_settings_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "cta_text",
+        "newsletter_title",
+        "newsletter_button_text",
+        "company_section_title",
+        "socials_section_title",
+        "contact_section_title",
+        "copyright_text"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "newsletter_title": "Get occasional updates on what we’re thinking and working on.",
+            "newsletter_button_text": "Sign up to our newsletter",
+            "company_section_title": "Company",
+            "socials_section_title": "Socials",
+            "contact_section_title": "Contact",
+            "copyright_text": "All rights reserved by Ura Design GmbH"
+          }
+        }
+      ]
+    },
+    "header_settings_translations": {
+      "parentField": "header_settings_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "cta_text"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "cta_text": "LET'S TALK"
+          }
+        }
+      ]
+    },
+    "hero_section_translations": {
+      "parentField": "hero_section_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "tagline"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "tagline": "We bring clarity and coherence to complex systems"
+          }
+        }
+      ]
+    },
+    "navigation_links_translations": {
+      "parentField": "navigation_links_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "label"
+      ],
+      "items": [
+        {
+          "parent": 3,
+          "deRowId": 2,
+          "en": {
+            "label": "WHO WE ARE"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 4,
+          "en": {
+            "label": "WORKS"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 6,
+          "en": {
+            "label": "BLOG"
+          }
+        }
+      ]
+    },
+    "pages_translations": {
+      "parentField": "pages_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "title",
+        "seo_title",
+        "seo_description"
+      ],
+      "items": [
+        {
+          "parent": 4,
+          "deRowId": 6,
+          "en": {
+            "title": "Playground",
+            "seo_title": "ping2 1780344719086",
+            "seo_description": "A demo of every page builder block."
+          }
+        }
+      ]
+    },
+    "service_activities_translations": {
+      "parentField": "service_activities_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "title",
+        "description"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "title": "Brand Strategy",
+            "description": "Define the product’s positioning, values, and narrative for consistent communication."
+          }
+        },
+        {
+          "parent": 11,
+          "deRowId": 4,
+          "en": {
+            "title": "Product Strategy ",
+            "description": "Define product goals, priorities, and success criteria to guide design direction."
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 6,
+          "en": {
+            "title": "Design Audit",
+            "description": "Systematic review of current product UX/UI, accessibility, and overall usability."
+          }
+        },
+        {
+          "parent": 7,
+          "deRowId": 8,
+          "en": {
+            "title": "Stakeholder & User Research",
+            "description": "Research that combines team and user perspectives to uncover real needs, constraints, and points of friction."
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 10,
+          "en": {
+            "title": "Collaborative workshops",
+            "description": "Align teams on brand direction, tone, and audience needs through structured sessions."
+          }
+        },
+        {
+          "parent": 12,
+          "deRowId": 12,
+          "en": {
+            "title": "Product Architecture",
+            "description": "Map user journeys, workflows, and structural relationships that shape the overall experience."
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 14,
+          "en": {
+            "title": "Rapid user testing",
+            "description": "Validate where the design breaks down in real-world scenarios."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 16,
+          "en": {
+            "title": "Visual identity design",
+            "description": "Explore and refine logos, color, and typography to create a distinctive visual language."
+          }
+        },
+        {
+          "parent": 13,
+          "deRowId": 18,
+          "en": {
+            "title": "UX/UI Design & Prototyping",
+            "description": "Create and test key screens and interactions to validate structure and usability early."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 20,
+          "en": {
+            "title": "Brand guidelines",
+            "description": "Document principles, assets, and usage rules for consistent application across contexts."
+          }
+        },
+        {
+          "parent": 14,
+          "deRowId": 22,
+          "en": {
+            "title": "Design System",
+            "description": "Formalize components, styles, and accessibility standards to ensure scalable, consistent design."
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 24,
+          "en": {
+            "title": "Security UX Review",
+            "description": "Evaluate how privacy and security perform from a user’s perspective; identifying design barriers that affect trust, adoption, or safety."
+          }
+        },
+        {
+          "parent": 10,
+          "deRowId": 26,
+          "en": {
+            "title": "Design recommendations",
+            "description": "Turn evidence into actionable guidance for improving usability and structure."
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 28,
+          "en": {
+            "title": "Design system",
+            "description": "Extend brand elements into reusable components that bridge identity and interface."
+          }
+        }
+      ]
+    },
+    "service_checklist_items_translations": {
+      "parentField": "service_checklist_items_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "text"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "text": "A cohesive design system adaptable across all brand surfaces"
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 4,
+          "en": {
+            "text": "A coherent design architecture that defines structure, interaction, and behavior"
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 6,
+          "en": {
+            "text": "Evidence of where friction occurs and why"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 8,
+          "en": {
+            "text": "Clear, practical brand guidelines for consistent application"
+          }
+        },
+        {
+          "parent": 10,
+          "deRowId": 10,
+          "en": {
+            "text": "A unified design system for consistent, scalable implementation"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 12,
+          "en": {
+            "text": "Contextual understanding of user needs"
+          }
+        },
+        {
+          "parent": 7,
+          "deRowId": 14,
+          "en": {
+            "text": "Research-backed insights to guide product decisions"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 16,
+          "en": {
+            "text": "A unified visual language that reflects how the team understands the brand"
+          }
+        },
+        {
+          "parent": 11,
+          "deRowId": 18,
+          "en": {
+            "text": "Prototypes that validate usability and system logic"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 20,
+          "en": {
+            "text": "Implementation-ready assets that scale across products and platforms"
+          }
+        },
+        {
+          "parent": 12,
+          "deRowId": 22,
+          "en": {
+            "text": "Documentation and assets to support smooth implementation"
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 24,
+          "en": {
+            "text": "A prioritized roadmap for next steps"
+          }
+        }
+      ]
+    },
+    "service_steps_translations": {
+      "parentField": "service_steps_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "title",
+        "description",
+        "tags"
+      ],
+      "items": [
+        {
+          "parent": 7,
+          "deRowId": 2,
+          "en": {
+            "title": "Define the Strategy",
+            "description": "We translate audit findings into a clear design direction; aligning on priorities, success criteria, and what “better” looks like for users and teams.",
+            "tags": "Product strategy"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 4,
+          "en": {
+            "title": "Audit the System",
+            "description": "We begin with a structured review of how the product performs; measuring usability, accessibility, and design consistency. This gives us a factual baseline before adding human insight.",
+            "tags": "Design audit"
+          }
+        },
+        {
+          "parent": 1,
+          "deRowId": 6,
+          "en": {
+            "title": "Align the Vision",
+            "description": "We clarify how the product should communicate — its positioning, values, and narrative. Through collaborative workshops, we align teams on voice, direction, and audience needs, creating a foundation for coherent expression.",
+            "tags": "Brand strategy, Collaborative workshops"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 8,
+          "en": {
+            "title": "Shape the Identity",
+            "description": "We experiment with how the brand could look and feel; translating strategy into concepts for logos, color, and typography. This stage is about testing possibilities and refining what best captures the product’s character.",
+            "tags": "Visual identity design"
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 10,
+          "en": {
+            "title": "Deepen the Research",
+            "description": "Next, we look beyond the interface to understand how people use and maintain the system. Through user and stakeholder research, we uncover the decisions, needs, and constraints shaping its current form.",
+            "tags": "Contextual interviews, Rapid user testing, User research"
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 12,
+          "en": {
+            "title": "Shape the Experience",
+            "description": "We design the architecture that supports that strategy, defining journeys, workflows, and key interactions. Early prototypes help test ideas quickly and refine structure before full design.",
+            "tags": "Product architecture, UX/UI Design & Prototyping"
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 14,
+          "en": {
+            "title": "Refine the System",
+            "description": "We formalize design decisions into reusable patterns and systems; components, styles, and accessibility standards that keep design scalable and consistent.",
+            "tags": "Design system"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 16,
+          "en": {
+            "title": "Define the Direction",
+            "description": "We synthesize everything we’ve learned into clear, actionable priorities; connecting evidence with context. The outcome is a practical roadmap that shows where design improvements will have the greatest impact.",
+            "tags": "Findings synthesis"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 18,
+          "en": {
+            "title": "Codify the Brand",
+            "description": "We formalize design decisions into clear, reusable standards; documenting how visual elements should be applied across products and platforms. This turns the brand into a living system that stays coherent as it scales",
+            "tags": "Brand guidelines, Design system"
+          }
+        }
+      ]
+    },
+    "service_subservices_translations": {
+      "parentField": "service_subservices_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "text"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "text": "Design Audit"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "en": {
+            "text": "Contextual Interviews"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "en": {
+            "text": "User Research & Testing"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "en": {
+            "text": "Product Strategy & Iteration"
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 10,
+          "en": {
+            "text": "UX/UI Design & Prototyping"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 12,
+          "en": {
+            "text": "Design Systems "
+          }
+        },
+        {
+          "parent": 7,
+          "deRowId": 14,
+          "en": {
+            "text": "Strategy & Alignment"
+          }
+        },
+        {
+          "parent": 8,
+          "deRowId": 16,
+          "en": {
+            "text": "Visual Identity Design"
+          }
+        },
+        {
+          "parent": 9,
+          "deRowId": 18,
+          "en": {
+            "text": "Brand Guidelines"
+          }
+        },
+        {
+          "parent": 10,
+          "deRowId": 20,
+          "en": {
+            "text": "Product Strategy & Iteration"
+          }
+        },
+        {
+          "parent": 11,
+          "deRowId": 22,
+          "en": {
+            "text": "Asset Production"
+          }
+        },
+        {
+          "parent": 12,
+          "deRowId": 24,
+          "en": {
+            "text": "Production Curation"
+          }
+        }
+      ]
+    },
+    "services_translations": {
+      "parentField": "services_id",
+      "langField": "languages_code",
+      "htmlFields": [
+        "long_description"
+      ],
+      "fields": [
+        "title",
+        "subtitle",
+        "description",
+        "long_description",
+        "cta_text",
+        "section_heading",
+        "section_subheading",
+        "seo_title",
+        "seo_description"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "title": "Forensic Audit",
+            "subtitle": "Audit & Diagnose",
+            "description": "Reveal weaknesses in system design and highlight paths for improvement.",
+            "long_description": "<p><span style=\"white-space: pre-wrap;\">A detailed diagnostic of usability, accessibility, and UX performance.</span></p>",
+            "cta_text": "See our process",
+            "section_heading": "Understand what works and what doesn’t",
+            "section_subheading": "The Forensic Audit is a diagnostic review of a product’s design; combining user research, accessibility testing, and heuristic analysis to identify weaknesses and opportunities for improvement."
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "en": {
+            "title": "System Blueprint",
+            "subtitle": "Design & Strategy",
+            "description": "Design clear, scalable products that are intuitive to use and easy to maintain.",
+            "long_description": "<p><span style=\"white-space: pre-wrap;\">Full system design that shapes how the product works, looks, and feels.</span></p>",
+            "cta_text": "See our process",
+            "section_heading": "Design how everything fits together",
+            "section_subheading": "System Blueprint is a full design process; from product strategy to interaction and interface design. We map flows, define architecture, and prototype solutions that align usability with technical realities."
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "en": {
+            "title": "Brand Alignment",
+            "subtitle": "Visual Identity",
+            "description": "Define a visual language that conveys purpose and sparks recognition.",
+            "long_description": "<p><span style=\"white-space: pre-wrap;\">A visual identity that reflects what a brand stands for, clearly and consistently.</span></p>",
+            "cta_text": "See our process",
+            "section_heading": "Align meaning with expression",
+            "section_subheading": "Brand Alignment bridges internal understanding and outward expression. We translate values, tone, and purpose into a cohesive visual identity that stays consistent across all platforms and products."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "en": {
+            "title": "Stewardship"
+          }
+        }
+      ]
+    },
+    "site_settings_translations": {
+      "parentField": "site_settings_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "site_tagline",
+        "site_description",
+        "newsletter_subtitle"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "site_tagline": " Systemic Insight. Practical Design. "
+          }
+        }
+      ]
+    },
+    "team_members_translations": {
+      "parentField": "team_members_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "role",
+        "bio"
+      ],
+      "items": [
+        {
+          "parent": 1,
+          "deRowId": 2,
+          "en": {
+            "role": "CEO",
+            "bio": "Founder and design strategist with over 12 years of experience leading open source design initiatives at Ubuntu, Mozilla, Tor, and Wikimedia. \nelio[at]ura.design"
+          }
+        },
+        {
+          "parent": 2,
+          "deRowId": 4,
+          "en": {
+            "role": "UX Designer",
+            "bio": "Design strategist leading usability and research coordination across complex, high-risk tools. Focuses on clarity and alignment across the whole process, including the UX writing and content structure that shape how people understand a system.\nchristopher[at]ura.design"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 6,
+          "en": {
+            "role": "Lead artist",
+            "bio": "Visual designer specializing in visual storytelling and identity design. Dedicated to creating visual coherence across complex ecosystems; has developed over 120 visual identity systems.\nergi[at]ura.design"
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 8,
+          "en": {
+            "role": "UX Researcher",
+            "bio": "UX researcher focused on accessibility, usability, and user testing across open source and research-driven tools. Advocates for inclusive design methods that make complex systems understandable and equitable.\nanja[at]ura.design\n"
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 10,
+          "en": {
+            "role": "UX Designer",
+            "bio": "Design strategist and researcher combining academic rigor with practical UX work. Author of peer-reviewed research on user-centred privacy and emerging design practices.\nangie[at]ura.design\n"
+          }
+        },
+        {
+          "parent": 6,
+          "deRowId": 12,
+          "en": {
+            "role": "DevOps Engineer",
+            "bio": "Systems engineer focused on secure, scalable infrastructure for open-source and research teams. Joined Ura in its first year and continues to shape our technical foundation.\nanxhelo[at]ura.design"
+          }
+        }
+      ]
+    },
+    "testimonials_translations": {
+      "parentField": "testimonials_id",
+      "langField": "languages_code",
+      "htmlFields": [],
+      "fields": [
+        "quote",
+        "author_title"
+      ],
+      "items": [
+        {
+          "parent": 2,
+          "deRowId": 2,
+          "en": {
+            "quote": "Working with Ura was incredible! Their team jumped in on short notice to create thoughtful, beautifully designed social media assets that perfectly captured our report’s message and branding.",
+            "author_title": "co-founder and Executive Director"
+          }
+        },
+        {
+          "parent": 3,
+          "deRowId": 4,
+          "en": {
+            "quote": "Ura Design improved our visibility, boosted our reputation and confidence.\nI like the fact that we can work asynchronously and we do not need to have many videocalls, which break our flow."
+          }
+        },
+        {
+          "parent": 4,
+          "deRowId": 6,
+          "en": {
+            "quote": "Working with Ura was a truly professional experience rooted in purpose and social impact. Their team brought honesty, collaboration, and a strong sense of community value to the project, leaving a big positive impact on our work. Ura Design is a genuine example of what it means to combine professionalism with heart."
+          }
+        },
+        {
+          "parent": 5,
+          "deRowId": 8,
+          "en": {
+            "quote": "Ura's team was ready to support us anytime we had questions about existing designs or the illustration system they've built for us, and even as external contractors, they have been an irreplaceable part of our team for a while. Huge kudos to the team!"
+          }
+        }
+      ]
+    }
+  }
+}
