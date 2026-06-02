@@ -34,9 +34,19 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     sortKeys: ["images"],
   },
   { collection: "block_cta", translations: true },
-  { collection: "block_stats", translations: true },
+  {
+    collection: "block_stats",
+    translations: true,
+    children: ["items.value", "items.sort", "items.translations.*"],
+    sortKeys: ["items"],
+  },
   { collection: "block_quote", translations: true },
-  { collection: "block_faq", translations: true },
+  {
+    collection: "block_faq",
+    translations: true,
+    children: ["items.sort", "items.translations.*"],
+    sortKeys: ["items"],
+  },
   {
     collection: "block_logos",
     translations: true,

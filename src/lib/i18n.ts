@@ -20,8 +20,10 @@ export function getLocalizedField<T extends Record<string, any>>(
     return undefined;
   }
 
-  // 1. Native translations (DB-backed collections): obj.translations is an array
-  //    of rows keyed by languages_code, each holding the localized `fieldName`.
+  // 1. Native translations: obj.translations is an array of rows keyed by
+  //    languages_code, each holding the localized `fieldName`. This is the only
+  //    localization mechanism — every collection (and every localized block
+  //    child, e.g. block_stats_items / block_faq_items) uses it.
   const translations = (obj as Record<string, any>).translations;
   if (Array.isArray(translations) && translations.length > 0) {
     const pick = (code: Language): string | undefined => {
@@ -37,21 +39,7 @@ export function getLocalizedField<T extends Record<string, any>>(
     }
   }
 
-  // 2. `_en`/`_de` suffix fields. The legacy DB columns are gone, but JSON
-  //    repeater items (e.g. block_stats.items, block_faq.items) still carry
-  //    localized keys inline, so this fallback remains necessary.
-  const langField = `${fieldName}_${language}` as keyof T;
-  if (obj[langField] != null) {
-    return obj[langField] as string;
-  }
-  if (language !== "en") {
-    const enField = `${fieldName}_en` as keyof T;
-    if (obj[enField] != null) {
-      return obj[enField] as string;
-    }
-  }
-
-  // 3. A non-localized bare field with the same name.
+  // 2. A non-localized bare field with the same name.
   if (obj[fieldName as keyof T] != null) {
     return obj[fieldName as keyof T] as string;
   }
@@ -61,7 +49,7 @@ export function getLocalizedField<T extends Record<string, any>>(
 
 /**
  * Transform an object with localized fields into a localized object
- * @param obj - Object with localized fields (native `translations[]` or `_en`/`_de` keys)
+ * @param obj - Object with a native `translations[]` array
  * @param fields - Array of field names to localize
  * @param language - Language code
  * @returns Object with localized values
