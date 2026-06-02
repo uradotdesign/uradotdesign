@@ -4,6 +4,7 @@ import {
   getSiteSettings,
   getAccessibilitySettings,
   getAssetUrl,
+  isPreviewActive,
 } from "../lib/directus";
 import { getCurrentLanguage } from "../lib/i18n";
 import { t } from "../lib/translations";
@@ -23,6 +24,11 @@ export interface Props {
 const settings = await getSiteSettings();
 const accessibilitySettings = await getAccessibilitySettings();
 const currentLang = getCurrentLanguage(Astro.url);
+
+// In Live Preview only, load Tailwind's browser JIT so editors see arbitrary
+// CMS classes compile instantly — before a deploy bakes them into the static
+// CSS. Never loaded in normal production responses.
+const isPreview = isPreviewActive(Astro.url);
 
 const { title, description, image, fullWidth = false } = Astro.props;
 
@@ -114,6 +120,16 @@ const screenReaderAnnouncements =
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type={faviconType} href={faviconUrl} />
     <ClientRouter fallback="animate" />
+
+    {/* Live Preview only: runtime Tailwind so unsafelisted classes render live. */}
+    {
+      isPreview && (
+        <script
+          is:inline
+          src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"
+        />
+      )
+    }
 
     <!-- SEO Meta Tags -->
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />
