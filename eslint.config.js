@@ -19,6 +19,8 @@ export default [
       "node_modules/**",
       "public/**",
       "*.min.js",
+      // Applied, one-off migration scripts kept only for history.
+      "scripts/archive/**",
     ],
   },
   js.configs.recommended,
@@ -32,7 +34,12 @@ export default [
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrors: "none",
+          ignoreRestSiblings: true,
+        },
       ],
       "no-empty": ["warn", { allowEmptyCatch: true }],
       // Opinionated and prone to false positives on default-then-assign
