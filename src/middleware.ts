@@ -65,5 +65,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
     response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   }
 
+  // Shared-cache (CDN/nginx) micro-caching for anonymous HTML GETs. Browsers
+  // still revalidate every time (max-age=0); a shared cache may serve a stored
+  // copy for up to 60s and refresh in the background. Deliberately skips
+  // preview, API routes, non-200 responses, anything that sets cookies, and
+  // any handler that already set its own Cache-Control (e.g. sitemap).
+  const contentType = response.headers.get('content-type') || '';
+  if (
+    context.request.method === 'GET' &&
+    response.status === 200 &&
+    contentType.includes('text/html') &&
+    !url.pathname.startsWith('/api/') &&
+    !isPreview &&
+    !response.headers.has('set-cookie') &&
+    !response.headers.has('cache-control')
+  ) {
+    response.headers.set(
+      'Cache-Control',
+      'public, max-age=0, s-maxage=60, stale-while-revalidate=86400'
+    );
+  }
+
   return response;
 });

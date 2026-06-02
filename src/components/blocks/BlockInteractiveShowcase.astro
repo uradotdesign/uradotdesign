@@ -64,7 +64,13 @@ const tabs = (Array.isArray(data.tabs) ? data.tabs : [])
                     {t.showControls && <div class="controls" />}
                   </>
                 ) : (
-                  <img src={t.image} alt={t.label} class="main-image" />
+                  <img
+                    src={t.image}
+                    alt={t.label}
+                    class="main-image"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 )}
               </div>
             </div>

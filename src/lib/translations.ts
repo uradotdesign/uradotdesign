@@ -4,10 +4,9 @@ import { messages, type Lang } from "../i18n/messages";
 /** Resolver returned by {@link getUI}: looks up a UI string by key. */
 export type UIResolver = (key: string, vars?: Record<string, string>) => string;
 
-// Cache for translations to avoid multiple API calls
-let translationsCache: Record<string, Record<string, string>> = {};
-let lastFetchTime: Record<string, number> = {};
-const CACHE_DURATION = 300000; // 5 minutes
+// Translation content is cached in Redis by getTranslations/getTranslationsByNamespace
+// (and busted by the revalidate webhook), so no module-level content cache is
+// kept here — that previously served up to 5-minute-stale UI strings.
 
 // Flag to track if translations collection exists (skip fetching if it doesn't)
 let translationsCollectionExists: boolean | null = null;
@@ -33,19 +32,7 @@ export async function t(
     translationsCollectionExists = null;
   }
 
-  const cacheKey = language;
-  const now = Date.now();
-  
-  // Check if cache is still valid
-  if (
-    translationsCache[cacheKey] &&
-    lastFetchTime[cacheKey] &&
-    now - lastFetchTime[cacheKey] < CACHE_DURATION
-  ) {
-    return translationsCache[cacheKey][key] || fallback || key;
-  }
-  
-  // Fetch fresh translations
+  // Fetch translations (Redis-cached inside getTranslations).
   try {
     const translations = await getTranslations(language);
     if (Object.keys(translations).length === 0 && translationsCollectionExists === null) {
@@ -54,8 +41,6 @@ export async function t(
     } else {
       translationsCollectionExists = true;
     }
-    translationsCache[cacheKey] = translations;
-    lastFetchTime[cacheKey] = now;
 
     return translations[key] || fallback || key;
   } catch (error: any) {
@@ -110,17 +95,6 @@ export async function getNamespaceTranslations(
     translationsCollectionExists = null;
   }
 
-  const cacheKey = `${language}:${namespace}`;
-  const now = Date.now();
-
-  if (
-    translationsCache[cacheKey] &&
-    lastFetchTime[cacheKey] &&
-    now - lastFetchTime[cacheKey] < CACHE_DURATION
-  ) {
-    return translationsCache[cacheKey];
-  }
-
   try {
     const translations = await getTranslationsByNamespace(language, namespace);
     if (Object.keys(translations).length === 0 && translationsCollectionExists === null) {
@@ -129,8 +103,6 @@ export async function getNamespaceTranslations(
     } else {
       translationsCollectionExists = true;
     }
-    translationsCache[cacheKey] = translations;
-    lastFetchTime[cacheKey] = now;
 
     return translations;
   } catch (error: any) {
@@ -168,11 +140,13 @@ export function getNestedValue(
 }
 
 /**
- * Clear translation cache (useful for testing or language switching)
+ * Resets the "translations collection exists" guard so the next lookup
+ * re-checks the CMS (e.g. after the collection is created). Translation content
+ * itself lives in Redis and is busted by the revalidate webhook.
  */
 export function clearTranslationCache() {
-  translationsCache = {};
-  lastFetchTime = {};
+  translationsCollectionExists = null;
+  collectionCheckTime = 0;
 }
 
 // Export type for translations

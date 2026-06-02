@@ -1281,84 +1281,95 @@ export async function getServices(options?: {
   );
 }
 
+const SERVICE_RELATION_COLLECTIONS = [
+  { key: "checklist_items", collection: "service_checklist_items" },
+  { key: "steps", collection: "service_steps" },
+  { key: "activities_list", collection: "service_activities" },
+  { key: "subservices", collection: "service_subservices" },
+] as const;
+
+function emptyServiceRelations(): Record<string, any[]> {
+  return { checklist_items: [], steps: [], activities_list: [], subservices: [] };
+}
+
 export async function getBatchServiceRelations(serviceIds: number[]) {
   if (serviceIds.length === 0) return new Map<number, any>();
 
-  const collections = [
-    { key: "checklist_items", collection: "service_checklist_items" },
-    { key: "steps", collection: "service_steps" },
-    { key: "activities_list", collection: "service_activities" },
-    { key: "subservices", collection: "service_subservices" },
-  ] as const;
+  // Cache a plain object keyed by service id (Maps don't survive JSON caching),
+  // then rebuild the Map for callers.
+  const cacheKey = createCacheKey("service_relations_batch", {
+    ids: [...serviceIds].sort((a, b) => a - b),
+  });
 
-  const results = await Promise.allSettled(
-    collections.map(({ collection }) =>
-      directus.request(
-        readItems(collection as any, {
-          fields: ["*", "translations.*"],
-          filter: { service_id: { _in: serviceIds } },
-          sort: ["sort"],
-        } as any)
+  const byId = await cacheConfig(cacheKey, async () => {
+    const results = await Promise.allSettled(
+      SERVICE_RELATION_COLLECTIONS.map(({ collection }) =>
+        directus.request(
+          readItems(collection as any, {
+            fields: ["*", "translations.*"],
+            filter: { service_id: { _in: serviceIds } },
+            sort: ["sort"],
+          } as any)
+        )
       )
-    )
-  );
+    );
+
+    const record: Record<number, Record<string, any[]>> = {};
+    serviceIds.forEach((id) => {
+      record[id] = emptyServiceRelations();
+    });
+
+    results.forEach((result, i) => {
+      const { key } = SERVICE_RELATION_COLLECTIONS[i];
+      if (result.status === "fulfilled") {
+        (result.value as any[]).forEach((item: any) => {
+          const entry = record[item.service_id];
+          if (entry) entry[key].push(item);
+        });
+      }
+    });
+
+    return record;
+  });
 
   const map = new Map<number, Record<string, any[]>>();
   serviceIds.forEach((id) => {
-    map.set(id, { checklist_items: [], steps: [], activities_list: [], subservices: [] });
+    map.set(id, (byId as Record<number, any>)[id] ?? emptyServiceRelations());
   });
-
-  results.forEach((result, i) => {
-    const { key } = collections[i];
-    if (result.status === "fulfilled") {
-      (result.value as any[]).forEach((item: any) => {
-        const entry = map.get(item.service_id);
-        if (entry) entry[key].push(item);
-      });
-    }
-  });
-
   return map;
 }
 
 // Helper to fetch service relations separately
 export async function getServiceRelations(serviceId: number) {
-  const collections = [
-    { key: "checklist_items", collection: "service_checklist_items" },
-    { key: "steps", collection: "service_steps" },
-    { key: "activities_list", collection: "service_activities" },
-    { key: "subservices", collection: "service_subservices" },
-  ] as const;
-
-  const results = await Promise.allSettled(
-    collections.map(({ collection }) =>
-      directus.request(
-        readItems(collection as any, {
-          fields: ["*", "translations.*"],
-          filter: { service_id: { _eq: serviceId } },
-          sort: ["sort"],
-        } as any)
+  return cacheConfig(`service_relations:${serviceId}`, async () => {
+    const results = await Promise.allSettled(
+      SERVICE_RELATION_COLLECTIONS.map(({ collection }) =>
+        directus.request(
+          readItems(collection as any, {
+            fields: ["*", "translations.*"],
+            filter: { service_id: { _eq: serviceId } },
+            sort: ["sort"],
+          } as any)
+        )
       )
-    )
-  );
+    );
 
-  const relations: Record<string, any[]> = {
-    checklist_items: [],
-    steps: [],
-    activities_list: [],
-    subservices: [],
-  };
+    const relations = emptyServiceRelations();
 
-  results.forEach((result, i) => {
-    const { key } = collections[i];
-    if (result.status === "fulfilled") {
-      relations[key] = result.value as any[];
-    } else {
-      console.warn(`Service relation "${key}" for service ${serviceId}:`, result.reason?.message || "failed");
-    }
+    results.forEach((result, i) => {
+      const { key } = SERVICE_RELATION_COLLECTIONS[i];
+      if (result.status === "fulfilled") {
+        relations[key] = result.value as any[];
+      } else {
+        console.warn(
+          `Service relation "${key}" for service ${serviceId}:`,
+          result.reason?.message || "failed"
+        );
+      }
+    });
+
+    return relations;
   });
-
-  return relations;
 }
 
 // Blog Posts helpers
@@ -1368,12 +1379,21 @@ export async function getBlogPosts(options?: {
   sort?: string[];
   fields?: string[];
 }) {
-  return fetchCollection<BlogPost>("posts", {
-    limit: options?.limit,
-    filter: options?.filter,
+  const cacheKey = createCacheKey("posts", {
+    limit: options?.limit ?? null,
+    filter: options?.filter ?? null,
     sort: options?.sort ?? ["-published_date"],
-    fields: options?.fields,
+    fields: options?.fields ?? null,
   });
+
+  return cacheConfig(cacheKey, () =>
+    fetchCollection<BlogPost>("posts", {
+      limit: options?.limit,
+      filter: options?.filter,
+      sort: options?.sort ?? ["-published_date"],
+      fields: options?.fields,
+    })
+  );
 }
 
 export async function getBlogPostBySlug(slug: string) {
