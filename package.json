@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
+    "scan:cms": "node scripts/scan-cms-tailwind.mjs",
+    "prebuild": "node scripts/scan-cms-tailwind.mjs || true",
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",

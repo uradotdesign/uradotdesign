@@ -45,6 +45,8 @@
 @source inline("{,hover:,dark:}{text,bg}-{white,black}");
 @source inline("{text,bg,border}-{slate,gray,zinc,neutral,stone,red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose}-{50,{100..900..100},950}");
 @source inline("{,hover:}{text,bg,border}-[var(--color-{foreground,background,muted,muted-foreground,primary,primary-foreground,primary-hover,secondary,secondary-foreground,accent,accent-foreground,card,card-foreground,destructive,border})]");
+/* Long-tail classes actually used in CMS content (regenerated at build time). */
+@source "./cms-classes.generated.html";
 
 /*
  * Z-Index Scale:
