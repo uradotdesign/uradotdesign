@@ -14,8 +14,16 @@
  * gated by PREVIEW_SECRET in the URL. The script prints the token so you can
  * add it to the server .env.
  *
+ * IMPORTANT: Directus MASKS the `token` field on read (it returns the literal
+ * string "**********"), so the real value can never be read back via the API.
+ * For an EXISTING preview user we therefore leave the token untouched — writing
+ * `user.token` back would overwrite the live token with the mask and break
+ * preview (every draft would 404). Pass `--rotate` to deliberately issue a new
+ * token (and then update DIRECTUS_PREVIEW_TOKEN in the server .env to match).
+ *
  * Usage:
- *   node --env-file=.env scripts/setup-preview-access.mjs
+ *   node --env-file=.env scripts/setup-preview-access.mjs            # idempotent; never touches an existing token
+ *   node --env-file=.env scripts/setup-preview-access.mjs --rotate   # issue a fresh token for the existing user
  */
 
 import crypto from "node:crypto";
@@ -92,13 +100,18 @@ async function main() {
   );
 
   // 3. The preview user + static token. --------------------------------------
+  // Don't request the `token` field: Directus masks it ("**********"), and we
+  // must never write that mask back (see header note).
   let user = unwrap(
     await authRequest(
-      `/users?filter[email][_eq]=${encodeURIComponent(USER_EMAIL)}&limit=1&fields=id,token`
+      `/users?filter[email][_eq]=${encodeURIComponent(USER_EMAIL)}&limit=1&fields=id`
     )
   )[0];
+  const rotate = process.argv.includes("--rotate");
   const newToken = "uradp_" + crypto.randomBytes(32).toString("hex");
-  let token;
+  // `token` is only populated when we actually create the user or rotate it; a
+  // null value means "leave the existing token untouched".
+  let token = null;
   if (!user) {
     token = newToken;
     const created = await authRequest("/users", {
@@ -114,13 +127,23 @@ async function main() {
     });
     user = created?.data || created;
     console.log(`+ Created preview user: ${user.id}`);
-  } else {
-    token = user.token || newToken;
+  } else if (rotate) {
+    token = newToken;
     await authRequest(`/users/${user.id}`, {
       method: "PATCH",
       body: j({ status: "active", token }),
     });
-    console.log(`= Preview user exists: ${user.id}`);
+    console.log(`= Preview user exists: ${user.id} (token ROTATED)`);
+  } else {
+    // Keep the user active but NEVER touch the token (can't read it; writing
+    // the masked value would clobber the live token).
+    await authRequest(`/users/${user.id}`, {
+      method: "PATCH",
+      body: j({ status: "active" }),
+    });
+    console.log(
+      `= Preview user exists: ${user.id} (token left unchanged; pass --rotate to issue a new one)`
+    );
   }
 
   // 4. Attach the policy directly to the user (directus_access). -------------
@@ -139,11 +162,18 @@ async function main() {
     console.log(`= Policy already linked to preview user`);
   }
 
-  console.log(
-    "\n=== DIRECTUS_PREVIEW_TOKEN (add to the Astro container env) ===\n" +
-      token +
-      "\n===============================================================\n"
-  );
+  if (token) {
+    console.log(
+      "\n=== DIRECTUS_PREVIEW_TOKEN (set this in the Astro container env) ===\n" +
+        token +
+        "\n===================================================================\n"
+    );
+  } else {
+    console.log(
+      "\n(Token unchanged — the existing DIRECTUS_PREVIEW_TOKEN remains valid.\n" +
+        " Re-run with --rotate to issue a new token, then update the server .env.)\n"
+    );
+  }
 }
 
 main().catch((e) => {
