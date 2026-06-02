@@ -13,6 +13,8 @@ import BlockFaq from './BlockFaq.astro';
 import BlockLogos from './BlockLogos.astro';
 import BlockEmbed from './BlockEmbed.astro';
 import BlockCustomCode from './BlockCustomCode.astro';
+import BlockBeforeAfter from './BlockBeforeAfter.astro';
+import BlockLottieGrid from './BlockLottieGrid.astro';
 
 interface Props {
   blocks?: PageBlock[] | null;
@@ -34,6 +36,8 @@ const COMPONENTS: Record<string, any> = {
   block_logos: BlockLogos,
   block_embed: BlockEmbed,
   block_custom_code: BlockCustomCode,
+  block_before_after: BlockBeforeAfter,
+  block_lottie_grid: BlockLottieGrid,
 };
 
 const visible = (blocks || []).filter(
