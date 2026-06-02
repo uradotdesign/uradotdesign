@@ -769,11 +769,22 @@ if (showWeather && weatherLocation) {
     transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease;
   }
 
-  /* Disable view transition animations for header - instant swap */
-  ::view-transition-old(header),
+  /* Header is its own view-transition group so it never cross-fades with the
+     page (root) during navigation. Critically, we must HIDE the OLD snapshot:
+     with `animation: none` the old image would otherwise stay at opacity 1
+     underneath the new one, and because the CTA is translucent (bg-white/30)
+     the old scrolled/dark CTA bled through the new translucent CTA — the
+     "Let's talk" color flash. Showing only the new (post-swap, already
+     scroll-reconciled) snapshot makes the header render its correct current
+     state instantly, with no bleed-through and no cross-fade. */
+  ::view-transition-old(header) {
+    animation: none;
+    opacity: 0;
+  }
   ::view-transition-new(header) {
     animation: none;
     mix-blend-mode: normal;
+    opacity: 1;
   }
 
   /* Logo styling - theme-aware */
@@ -934,10 +945,15 @@ if (showWeather && weatherLocation) {
     display: none;
   }
 
-  /* Disable view transitions for mobile nav */
-  ::view-transition-old(mobile-nav),
+  /* Same as the header: hide the OLD mobile-nav snapshot so the translucent
+     bar can't show its previous state bleeding through during a navigation. */
+  ::view-transition-old(mobile-nav) {
+    animation: none;
+    opacity: 0;
+  }
   ::view-transition-new(mobile-nav) {
     animation: none;
+    opacity: 1;
   }
 
   /* CTA button scrolled state - Light theme: darker, Dark theme: lighter */
