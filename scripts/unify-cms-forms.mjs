@@ -46,8 +46,17 @@ const TIDY_ONLY = new Set([
   "block_logos_items",
   "contact_submissions",
 ]);
-const NEVER = new Set([]);
+// Utility/system-ish collections we deliberately leave untouched.
+const NEVER = new Set(["translations", "languages"]);
 const TINY_THRESHOLD = 4;
+
+/**
+ * Per-collection fixes the generic classifier can't infer from names.
+ *   force: { fieldName: sectionKey }  -> override section for specific fields.
+ *   mode:  "accordion" | "tidy"        -> force the form mode.
+ * Start empty; fill in only what a dry-run reveals.
+ */
+const OVERRIDES = {};
 
 function parseArgs(argv) {
   const args = { dryRun: false, only: null, ungroup: null, ungroupAll: false };
@@ -104,6 +113,7 @@ function dataFieldCount(fields) {
 }
 
 function resolveMode(name, fields) {
+  if (OVERRIDES[name]?.mode) return OVERRIDES[name].mode;
   if (TIDY_ONLY.has(name)) return "tidy";
   if (dataFieldCount(fields) <= TINY_THRESHOLD) return "tidy";
   return "accordion";
@@ -114,6 +124,13 @@ async function buildForCollection(name) {
   const mode = resolveMode(name, fields);
   const translationBaseNames = await getTranslationBaseNames(name);
   const plan = buildLayoutPlan({ fields, translationBaseNames, mode });
+
+  const force = OVERRIDES[name]?.force;
+  if (force && mode === "accordion") {
+    for (const u of plan.fieldUpdates) {
+      if (force[u.field]) u.group = sectionGroupField(force[u.field]);
+    }
+  }
   return { fields, mode, plan };
 }
 
@@ -133,6 +150,99 @@ function printPlan(name, mode, plan) {
   }
 }
 
+async function getField(collection, field) {
+  try {
+    const res = await authRequest(
+      `/fields/${encodeURIComponent(collection)}/${encodeURIComponent(field)}`
+    );
+    return res?.data ?? null;
+  } catch (e) {
+    // Directus returns 403 (not 404) when the field path doesn't exist yet.
+    if (e.status === 404 || e.status === 403) return null;
+    throw e;
+  }
+}
+
+async function upsertGroupField(collection, g) {
+  const meta = {
+    interface: "group-detail",
+    special: ["alias", "no-data", "group"],
+    group: null,
+    sort: g.sort,
+    width: "full",
+    hidden: false,
+    options: { start: g.start, headerIcon: g.icon, headerColor: null },
+    translations: [{ language: "en-US", translation: g.label }],
+  };
+  const existing = await getField(collection, g.field);
+  if (existing) {
+    await authRequest(`/fields/${encodeURIComponent(collection)}/${g.field}`, {
+      method: "PATCH",
+      body: j({ meta }),
+    });
+  } else {
+    await authRequest(`/fields/${encodeURIComponent(collection)}`, {
+      method: "POST",
+      body: j({ field: g.field, type: "alias", schema: null, meta }),
+    });
+  }
+}
+
+async function patchFieldMeta(collection, field, meta) {
+  await authRequest(
+    `/fields/${encodeURIComponent(collection)}/${encodeURIComponent(field)}`,
+    { method: "PATCH", body: j({ meta }) }
+  );
+}
+
+/**
+ * Neutralize pre-existing layout scaffolding (old `*_divider` groups, etc.) that
+ * is NOT one of our grp_* groups: hide it and detach it so only the canonical
+ * sections render. Reversible.
+ */
+async function neutralizeStaleLayout(collection, fields, keepGroupFields) {
+  const keep = new Set(keepGroupFields);
+  for (const f of fields) {
+    if (!isLayoutField(f)) continue;
+    if (keep.has(f.field)) continue;
+    if (f.field.startsWith(GROUP_PREFIX)) continue;
+    await patchFieldMeta(collection, f.field, { hidden: true, group: null });
+  }
+}
+
+async function applyCollection(name) {
+  const { fields, mode, plan } = await buildForCollection(name);
+  // The migrator created the translations alias hidden while editors still used
+  // the legacy _en/_de fields. Now that those are hidden, the translations
+  // interface is the primary Content section and must be revealed.
+  const translationFields = new Set(
+    fields
+      .filter((f) => (f.meta?.special || []).includes("translations"))
+      .map((f) => f.field)
+  );
+
+  if (mode === "accordion") {
+    for (const g of plan.groups) await upsertGroupField(name, g);
+  }
+  // Keep the primary key pinned above every section.
+  if (fields.some((f) => f.field === "id")) {
+    await patchFieldMeta(name, "id", { group: null, sort: 0 });
+  }
+  for (const u of plan.fieldUpdates) {
+    const meta = { group: u.group, width: u.width };
+    if (u.sort != null) meta.sort = u.sort;
+    if (translationFields.has(u.field)) meta.hidden = false;
+    await patchFieldMeta(name, u.field, meta);
+  }
+  for (const field of plan.hides) {
+    await patchFieldMeta(name, field, { hidden: true });
+  }
+  const keepGroups = mode === "accordion" ? plan.groups.map((g) => g.field) : [];
+  await neutralizeStaleLayout(name, fields, keepGroups);
+
+  printPlan(name, mode, plan);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   console.log(`\nUnify CMS forms -> ${process.env.DIRECTUS_URL}`);
@@ -145,8 +255,17 @@ async function main() {
     .sort();
 
   for (const name of collections) {
-    const { mode, plan } = await buildForCollection(name);
-    printPlan(name, mode, plan);
+    if (args.dryRun) {
+      const { mode, plan } = await buildForCollection(name);
+      printPlan(name, mode, plan);
+    } else {
+      await applyCollection(name);
+    }
+  }
+
+  if (!args.dryRun) {
+    await authRequest(`/utils/cache/clear`, { method: "POST" }).catch(() => {});
+    console.log("\nCache cleared.");
   }
   console.log(`\n${collections.length} collection(s).`);
 }
