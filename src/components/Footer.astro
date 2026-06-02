@@ -39,7 +39,7 @@ if (footerSettings?.show_temperature && weatherLocation) {
 const socialLinks = socialLinksData.map((s) => ({
   platform: s.platform,
   url: s.url,
-  ariaLabel: s.aria_label,
+  ariaLabel: getLocalizedField(s, "aria_label", currentLang) || s.aria_label,
 }));
 
 const currentYear = new Date().getFullYear();
@@ -195,7 +195,7 @@ const showTemperature = footerSettings?.show_temperature ?? true;
         footerLogo && (
           <img
             src={footerLogo}
-            alt={siteSettings?.site_name || "Logo"}
+            alt={siteSettings?.site_name || ui("footer.logoAlt")}
             class="h-10 w-auto"
             loading="lazy"
             decoding="async"
@@ -364,7 +364,7 @@ const showTemperature = footerSettings?.show_temperature ?? true;
                   href={`/${currentLang}/blog`}
                   class="underline hover:no-underline transition-colors"
                 >
-                  Blog
+                  {ui("nav.blog")}
                 </a>
               </li>
             </ul>
@@ -446,7 +446,7 @@ const showTemperature = footerSettings?.show_temperature ?? true;
                   href={`/${currentLang}/blog`}
                   class="underline hover:no-underline transition-colors"
                 >
-                  Blog
+                  {ui("nav.blog")}
                 </a>
               </li>
             </ul>
@@ -593,7 +593,8 @@ const showTemperature = footerSettings?.show_temperature ?? true;
             <p
               class="text-sm"
               set:html={
-                copyrightText || `All rights reserved by ${companyLegalName}`
+                copyrightText ||
+                ui("footer.copyright", { name: companyLegalName ?? "" })
               }
             />
           )
@@ -608,7 +609,8 @@ const showTemperature = footerSettings?.show_temperature ?? true;
           (copyrightText || companyLegalName) && (
             <p
               set:html={
-                copyrightText || `All rights reserved by ${companyLegalName}`
+                copyrightText ||
+                ui("footer.copyright", { name: companyLegalName ?? "" })
               }
             />
           )

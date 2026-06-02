@@ -112,7 +112,13 @@ export interface HeroSection {
   show_services_grid?: boolean;
   show_weather?: boolean;
   status?: "draft" | "published";
-  translations?: Array<{ languages_code?: string; tagline?: string }>;
+  translations?: Array<{
+    languages_code?: string;
+    tagline?: string;
+    heading_line1?: string;
+    heading_line2?: string;
+    cta_button_text?: string;
+  }>;
 }
 
 // Service relational collections
@@ -226,6 +232,11 @@ export interface Client {
   aria_label?: string;
   sort_order?: number;
   status?: "draft" | "published";
+  translations?: Array<{
+    languages_code?: string;
+    logo_alt_text?: string;
+    aria_label?: string;
+  }>;
 }
 
 export interface ClientsSection {
@@ -255,6 +266,7 @@ export interface SocialLink {
   aria_label: string;
   sort_order?: number;
   status?: "draft" | "published";
+  translations?: Array<{ languages_code?: string; aria_label?: string }>;
 }
 
 export interface SiteSettings {
@@ -409,6 +421,13 @@ export interface CaseStudySection {
   custom_code_3?: string;
   case_study_id: number;
   images?: CaseStudySectionImage[];
+  translations?: Array<{
+    languages_code?: string;
+    title?: string;
+    content_1?: string;
+    content_2?: string;
+    content_3?: string;
+  }>;
 }
 
 export interface CaseStudySectionImage {
@@ -421,6 +440,7 @@ export interface CaseStudySectionImage {
   image_dark?: string;
   image_mobile_light?: string;
   image_mobile_dark?: string;
+  translations?: Array<{ languages_code?: string; alt?: string }>;
 }
 
 export interface TeamMember {
@@ -546,6 +566,11 @@ export interface Certification {
   title: string;
   organization: string;
   year: string;
+  translations?: Array<{
+    languages_code?: string;
+    title?: string;
+    organization?: string;
+  }>;
 }
 
 export interface AboutPage {
@@ -623,6 +648,12 @@ export interface BlogPost {
   seo_image?: string;
   date_created?: string;
   date_updated?: string;
+  translations?: Array<{
+    languages_code?: string;
+    title?: string;
+    excerpt?: string;
+    content?: string;
+  }>;
 }
 
 // Define the schema type
@@ -1285,7 +1316,7 @@ export async function getBlogPostBySlug(slug: string) {
       limit: 1,
       filter: { slug: { _eq: slug } },
       sort: ["-published_date"],
-      fields: ["*", "author.*"],
+      fields: ["*", "author.*", "translations.*"],
     });
     return post || null;
   });
@@ -1476,6 +1507,7 @@ export async function getSocialLinks() {
   return cacheConfig("social_links", () =>
     fetchCollection<SocialLink>("social_links", {
       sort: ["sort_order"],
+      fields: ["*", "translations.*"],
     })
   );
 }
@@ -1651,6 +1683,7 @@ export async function getCertifications(options?: {
       limit: options?.limit,
       filter: options?.filter,
       sort: ["sort", "-year"],
+      fields: ["*", "translations.*"],
     })
   );
 }

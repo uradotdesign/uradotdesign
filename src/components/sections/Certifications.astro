@@ -1,22 +1,15 @@
 ---
 import { getCertifications } from "../../lib/directus";
-import { getCurrentLanguage } from "../../lib/i18n";
-import { t } from "../../lib/translations";
+import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
+import { getUI } from "../../lib/translations";
 
 const currentLang = getCurrentLanguage(Astro.url);
+const ui = await getUI(currentLang);
 const certifications = await getCertifications();
 const headingId = "certifications-heading";
 
-const heading = await t(
-  "certifications.heading",
-  currentLang,
-  "RECOGNITION & CERTIFICATIONS"
-);
-const noCertificationsText = await t(
-  "certifications.empty",
-  currentLang,
-  "No certifications available."
-);
+const heading = ui("certifications.heading");
+const noCertificationsText = ui("certifications.empty");
 ---
 
 <section class="py-16 md:py-24" aria-labelledby={headingId}>
@@ -43,10 +36,10 @@ const noCertificationsText = await t(
             >
               <div class="grid grid-cols-1 md:grid-cols-[4fr_2fr_1fr] gap-4 md:gap-8 items-baseline">
                 <h3 class="spotlight-text text-2xl md:text-3xl font-display">
-                  {cert.title}
+                  {getLocalizedField(cert, "title", currentLang)}
                 </h3>
                 <p class="spotlight-text text-sm md:text-base md:text-end text-start font-mono uppercase">
-                  {cert.organization}
+                  {getLocalizedField(cert, "organization", currentLang)}
                 </p>
                 <p class="spotlight-text text-sm md:text-base font-mono md:text-end text-start">
                   {cert.year}

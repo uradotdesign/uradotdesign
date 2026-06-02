@@ -1,18 +1,25 @@
 ---
 import { getBlogPosts } from "../../lib/directus";
-import { getCurrentLanguage } from "../../lib/i18n";
-import { t } from "../../lib/translations";
+import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
+import { getUI } from "../../lib/translations";
 
 const currentLang = getCurrentLanguage(Astro.url);
-const heading = await t("latest.heading", currentLang, "Latest From Us");
-const minRead = await t("latest.min_read", currentLang, "min read");
+const ui = await getUI(currentLang);
+const heading = ui("latest.heading");
+const minRead = ui("blog.minRead");
 
-const articles = await getBlogPosts({
+const rawArticles = await getBlogPosts({
   limit: 3,
   filter: { status: { _eq: "published" } },
   sort: ["-published_date"],
-  fields: ["id", "title", "slug", "published_date", "excerpt"],
+  fields: ["id", "title", "slug", "published_date", "excerpt", "translations.*"],
 });
+
+const articles = rawArticles.map((post) => ({
+  ...post,
+  title: getLocalizedField(post, "title", currentLang) || post.title,
+  excerpt: getLocalizedField(post, "excerpt", currentLang) || post.excerpt,
+}));
 
 function estimateReadingTime(excerpt: string | undefined): number {
   if (!excerpt) return 3;

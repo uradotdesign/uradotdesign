@@ -2,11 +2,12 @@
 import { Image } from "astro:assets";
 import { getCaseStudies, getAssetUrl } from '../../lib/directus';
 import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
-import { t } from '../../lib/translations';
+import { t, getUI } from '../../lib/translations';
 import ThemeResponsiveImage from '../ThemeResponsiveImage.astro';
 
 // Get current language
 const currentLang = getCurrentLanguage(Astro.url);
+const ui = await getUI(currentLang);
 const defaultCtaText = await t('case_studies.cta_text', currentLang, currentLang === 'de' ? 'Fallstudie ansehen' : 'See Case Study');
 
 // Fetch featured case studies from Directus
@@ -68,7 +69,7 @@ const caseStudies = caseStudiesData.length > 0
   aria-labelledby="case-studies-heading"
 >
   <div class="w-full sm:max-w-7xl sm:mx-auto px-0 sm:px-8 lg:px-12 xl:px-16">
-    <h2 id="case-studies-heading" class="sr-only">Case Studies</h2>
+    <h2 id="case-studies-heading" class="sr-only">{ui('caseStudies.srHeading')}</h2>
     <!-- Case Studies Grid -->
     <div class="flex overflow-x-auto snap-x snap-mandatory -mx-0 px-6 pb-8 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 sm:overflow-visible sm:snap-none sm:mx-0 sm:px-0 scrollbar-hide">
       {caseStudies.map((caseStudy) => (

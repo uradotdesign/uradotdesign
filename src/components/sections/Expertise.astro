@@ -1,7 +1,7 @@
 ---
 import { getAboutPage, getAssetUrl, getServices, getBatchServiceRelations } from "../../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
-import { t } from "../../lib/translations";
+import { t, getUI } from "../../lib/translations";
 
 export interface Props {
   page?: "about" | "home" | "services" | "work";
@@ -10,10 +10,11 @@ export interface Props {
 }
 
 const currentLang = getCurrentLanguage(Astro.url);
+const ui = await getUI(currentLang);
 const { page = "about", heading, intro } = Astro.props;
 
 const aboutData = await getAboutPage();
-const defaultHeading = await t("expertise.heading", currentLang, "EXPERTISE");
+const defaultHeading = ui("expertise.heading");
 const sectionHeading =
   heading ||
   getLocalizedField(aboutData, "expertise_heading", currentLang) ||
@@ -96,7 +97,7 @@ const localizedGroups = servicesWithSubservices.map((s) => ({
                         aria-hidden="true"
                       />
                     ) : (
-                      <span class="sr-only">Icon</span>
+                      <span class="sr-only">{ui("expertise.iconAlt")}</span>
                     )}
                   </span>
                   <h3 class="font-display font-normal leading-[1.1] text-3xl md:text-4xl">

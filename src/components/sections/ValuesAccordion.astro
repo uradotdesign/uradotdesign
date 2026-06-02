@@ -1,7 +1,7 @@
 ---
 import { getCompanyValues } from "../../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
-import { t } from "../../lib/translations";
+import { t, getUI } from "../../lib/translations";
 
 interface Props {
   introText?: string;
@@ -9,6 +9,7 @@ interface Props {
 
 const { introText } = Astro.props;
 const currentLang = getCurrentLanguage(Astro.url);
+const ui = await getUI(currentLang);
 const companyValues = await getCompanyValues();
 const defaultValueTitle = await t("values.default_title", currentLang, "Value");
 
@@ -28,7 +29,7 @@ const values: Value[] = companyValues.map((v) => ({
 
 <section class="py-16 px-4 sm:px-6 lg:px-8 relative" aria-labelledby="values-heading">
   <div class="container mx-auto">
-    <h2 id="values-heading" class="sr-only">Our Values</h2>
+    <h2 id="values-heading" class="sr-only">{ui("values.srHeading")}</h2>
     <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-16 lg:gap-24">
       <!-- Left Column: Intro Text -->
       <div class="hidden lg:block">

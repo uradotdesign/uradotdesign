@@ -1,10 +1,11 @@
 ---
 import { getHeroSection, getServices, getAssetUrl, getFileMetadata } from '../../lib/directus';
 import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
-import { t } from '../../lib/translations';
+import { t, getUI } from '../../lib/translations';
 
 const currentPath = Astro.url.pathname;
 const currentLang = getCurrentLanguage(Astro.url);
+const ui = await getUI(currentLang);
 const langPrefix = `/${currentLang}`;
 
 // Fetch data from Directus
@@ -19,11 +20,11 @@ const servicesData = await getServices({
 });
 // Header is handled by `components/Header.astro`
 
-// Use Directus data (no hardcoded fallbacks)
-const headingLine1 = heroData?.heading_line1 || "";
-const headingLine2 = heroData?.heading_line2 || "";
+// Use Directus data (localized via native translations, falling back to base)
+const headingLine1 = getLocalizedField(heroData, 'heading_line1', currentLang) || "";
+const headingLine2 = getLocalizedField(heroData, 'heading_line2', currentLang) || "";
 const tagline = getLocalizedField(heroData, 'tagline', currentLang) || "";
-const ctaButtonText = heroData?.cta_button_text || "";
+const ctaButtonText = getLocalizedField(heroData, 'cta_button_text', currentLang) || "";
 const ctaButtonLink = heroData?.cta_button_link || "#contact";
 const showServicesGrid = heroData?.show_services_grid ?? true;
 
@@ -136,7 +137,7 @@ const services = servicesData.length > 0
       <button 
         id="video-control" 
         class="video-control" 
-        aria-label="Pause/Play background video"
+        aria-label={ui('hero.videoToggle')}
         data-has-light-video={isVideoLight ? 'true' : 'false'}
         data-has-dark-video={isVideoDark ? 'true' : 'false'}
       >

@@ -9,7 +9,7 @@ import {
   getPreviewItemBySlug,
   type BlogPost,
 } from "../../../lib/directus";
-import { getLocalizedField } from "../../../lib/i18n";
+import { getLocalizedField, type Language } from "../../../lib/i18n";
 import { getUI } from "../../../lib/translations";
 import ProgressiveImage from "../../../components/ProgressiveImage.astro";
 
@@ -27,13 +27,18 @@ if (!slug) {
 // Live Preview: draft-aware, cache-bypassing fetch when ?preview=<secret>.
 const isPreview = isPreviewActive(Astro.url);
 const post = isPreview
-  ? await getPreviewItemBySlug<BlogPost>("posts", slug, ["*", "author.*"])
+  ? await getPreviewItemBySlug<BlogPost>("posts", slug, [
+      "*",
+      "author.*",
+      "translations.*",
+    ])
   : await getBlogPostBySlug(slug);
 
 if (!post) {
   return Astro.redirect("/404");
 }
 
+const language = lang as Language;
 const ui = await getUI(lang);
 
 // Helper to calculate reading time
@@ -44,8 +49,9 @@ function calculateReadingTime(text: string): number {
   return Math.ceil(words / wordsPerMinute);
 }
 
-const title = post.title;
-const content = post.content || "";
+const title = getLocalizedField(post, "title", language) || post.title;
+const content =
+  getLocalizedField(post, "content", language) || post.content || "";
 const readingTime = calculateReadingTime(content);
 const publishedDate = post.published_date
   ? new Date(post.published_date).toLocaleDateString(
@@ -70,8 +76,9 @@ const coverImage = getAssetUrl(post.cover_image);
 const coverImageLqip = getAssetThumbUrl(coverImage);
 
 // Strip HTML for meta description
+const excerpt = getLocalizedField(post, "excerpt", language) || post.excerpt;
 const description =
-  post.excerpt || content.replace(/<[^>]*>?/gm, "").substring(0, 160) + "...";
+  excerpt || content.replace(/<[^>]*>?/gm, "").substring(0, 160) + "...";
 
 // Optional SEO overrides (fall back to the post's title/excerpt/cover image).
 const seoImage = getAssetUrl(post.seo_image);
@@ -94,7 +101,7 @@ const coverFocal = coverMeta
   {
     isPreview && (
       <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] bg-[#FD5825] text-white text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full shadow-lg pointer-events-none">
-        Preview · draft content
+        {ui("preview.draft")}
       </div>
     )
   }
@@ -190,10 +197,10 @@ const coverFocal = coverMeta
 
       {/* Context / Excerpt */}
       {
-        post.excerpt && (
+        excerpt && (
           <div class="mb-16 max-w-3xl">
             <p class="text-xl opacity-90 font-serif leading-relaxed">
-              {post.excerpt}
+              {excerpt}
             </p>
           </div>
         )

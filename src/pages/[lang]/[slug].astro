@@ -17,12 +17,14 @@ import {
   type Service
 } from "../../lib/directus";
 import { getLocalizedField, type Language } from "../../lib/i18n";
+import { getUI } from "../../lib/translations";
 import PageBlocks from "../../components/blocks/PageBlocks.astro";
 
 export const prerender = false;
 
 const { lang: langParam, slug } = Astro.params;
 const lang = (langParam as Language) || "en";
+const ui = await getUI(lang);
 
 if (!slug) {
   return Astro.redirect("/404");
@@ -324,7 +326,7 @@ const pageImage = type === 'service'
 
   {isPreview && type === 'page' && (
     <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] bg-[#FD5825] text-white text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full shadow-lg pointer-events-none">
-      Preview · draft content
+      {ui("preview.draft")}
     </div>
   )}
   

@@ -1,5 +1,10 @@
 ---
 import { getClients, getAssetUrl } from "../../lib/directus";
+import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
+import { getUI } from "../../lib/translations";
+
+const currentLang = getCurrentLanguage(Astro.url);
+const ui = await getUI(currentLang);
 
 // Fetch clients
 const clientsData = await getClients({
@@ -11,6 +16,7 @@ const clientsData = await getClients({
     "logo_alt_text",
     "website",
     "aria_label",
+    "translations.*",
   ],
 });
 
@@ -21,9 +27,13 @@ const clients = clientsData
     name: c.name,
     logoLight: getAssetUrl(c.logo_light),
     logoDark: getAssetUrl(c.logo_dark),
-    altText: c.logo_alt_text || `${c.name} logo`,
+    altText:
+      getLocalizedField(c, "logo_alt_text", currentLang) ||
+      ui("clients.logoAlt", { name: c.name }),
     website: c.website,
-    ariaLabel: c.aria_label || `Visit ${c.name} website`,
+    ariaLabel:
+      getLocalizedField(c, "aria_label", currentLang) ||
+      ui("clients.visitWebsite", { name: c.name }),
   }));
 
 // Split clients into 3 groups for mobile rows
@@ -48,7 +58,7 @@ const loopGroup3 = [...group3, ...group3, ...group3];
     <section class="py-16 sm:py-20 bg-[var(--color-background)] overflow-hidden">
       <div class="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
         <div class="flex items-center gap-6 mb-12">
-          <span class="uppercase text-xs font-semibold">All Clients</span>
+          <span class="uppercase text-xs font-semibold">{ui("clients.all")}</span>
           <div
             class="flex-1 h-px bg-[var(--color-border)]"
             aria-hidden="true"

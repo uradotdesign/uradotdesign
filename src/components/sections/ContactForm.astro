@@ -260,7 +260,7 @@ const clientMessages = {
               required
               aria-required="true"
               class="w-full px-5 py-4 rounded-md border bg-gray-50 dark:bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:rounded-md transition-all text-base"
-              placeholder="you@company.com"
+              placeholder={currentLang === "de" ? "name@firma.de" : "you@company.com"}
             />
             <p
               class="error-message invisible text-xs text-red-500 mt-1 h-4"

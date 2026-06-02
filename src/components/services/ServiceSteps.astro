@@ -1,4 +1,7 @@
 ---
+import { getCurrentLanguage } from "../../lib/i18n";
+import { getUI } from "../../lib/translations";
+
 export interface Props {
   steps: Array<{
     number: string;
@@ -12,11 +15,13 @@ export interface Props {
 }
 
 const { steps, lottieLight, lottieDark, accentColor = "#10b981" } = Astro.props;
+const currentLang = getCurrentLanguage(Astro.url);
+const ui = await getUI(currentLang);
 ---
 
 <section
   class="service-steps-container relative py-20 lg:py-32"
-  aria-label="Service process steps"
+  aria-label={ui("services.steps")}
   style={`--timeline-accent: ${accentColor}`}
 >
   <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">

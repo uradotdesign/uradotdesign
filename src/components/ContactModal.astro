@@ -312,7 +312,7 @@ const clientMessages = {
                 required
                 aria-required="true"
                 class="modal-input w-full px-4 py-3 rounded-lg border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="you@company.com"
+                placeholder={currentLang === "de" ? "name@firma.de" : "you@company.com"}
               />
               <p
                 class="error-message invisible text-xs text-red-500 mt-1 h-4"

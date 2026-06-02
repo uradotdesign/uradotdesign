@@ -2,9 +2,10 @@
 import { Image } from "astro:assets";
 import { getClients, getClientsSection, getAssetUrl } from "../../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
-import { t } from "../../lib/translations";
+import { t, getUI } from "../../lib/translations";
 
 const currentLang = getCurrentLanguage(Astro.url);
+const ui = await getUI(currentLang);
 
 // Fetch clients and section heading from Directus
 const clientsData = await getClients({
@@ -16,6 +17,7 @@ const clientsData = await getClients({
     "logo_alt_text",
     "website",
     "aria_label",
+    "translations.*",
   ],
 });
 const clientsSection = await getClientsSection();
@@ -33,20 +35,18 @@ const heading =
   getLocalizedField(clientsSection, "section_heading", currentLang) ||
   defaultHeading;
 
-const visitWebsiteLabel = await t(
-  "clients.visit_website",
-  currentLang,
-  currentLang === "de" ? "Besuchen Sie die Website von" : "Visit website of"
-);
-
 const clients =
   clientsData.length > 0
     ? clientsData.map((c) => ({
         name: c.name,
         logoLight: c.logo_light ? getAssetUrl(c.logo_light) : null,
         logoDark: c.logo_dark ? getAssetUrl(c.logo_dark) : null,
-        altText: c.logo_alt_text || `${c.name} logo`,
-        ariaLabel: c.aria_label || `${visitWebsiteLabel} ${c.name}`,
+        altText:
+          getLocalizedField(c, "logo_alt_text", currentLang) ||
+          ui("clients.logoAlt", { name: c.name }),
+        ariaLabel:
+          getLocalizedField(c, "aria_label", currentLang) ||
+          ui("clients.visitWebsite", { name: c.name }),
         website: c.website,
       }))
     : [];
@@ -73,7 +73,7 @@ const clients =
         <div
           class="grid grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-center"
           role="list"
-          aria-label="List of our clients"
+          aria-label={ui("clients.srList")}
         >
           {
             clients.map(

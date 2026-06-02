@@ -7,7 +7,7 @@ import {
   isPreviewActive,
 } from "../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
-import { t } from "../lib/translations";
+import { t, getUI } from "../lib/translations";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import SkipLinks from "../components/SkipLinks.astro";
@@ -98,6 +98,24 @@ const landmarkRegions = accessibilitySettings?.landmark_regions ?? true;
 const ariaLabelsEnabled = accessibilitySettings?.aria_labels_enabled ?? true;
 const screenReaderAnnouncements =
   accessibilitySettings?.screen_reader_announcements ?? true;
+
+// UI string resolver (code catalog + CMS override) for chrome/a11y text
+const ui = await getUI(currentLang);
+
+// Language alternates for SEO (hreflang + og:locale). Paths are prefixed with
+// the language code (e.g. /en/about, /de/about), so swap the first segment.
+const buildAlternate = (lng: string) => {
+  const seg = Astro.url.pathname.split("/").filter(Boolean);
+  if (seg[0] === "en" || seg[0] === "de") seg[0] = lng;
+  else seg.unshift(lng);
+  return new URL("/" + seg.join("/"), Astro.site ?? siteUrl).href;
+};
+const alternates = [
+  { lang: "en", href: buildAlternate("en"), ogLocale: "en_US" },
+  { lang: "de", href: buildAlternate("de"), ogLocale: "de_DE" },
+];
+const ogLocale = currentLang === "de" ? "de_DE" : "en_US";
+const ogLocaleAlternate = currentLang === "de" ? "en_US" : "de_DE";
 ---
 
 <!doctype html>
@@ -128,6 +146,12 @@ const screenReaderAnnouncements =
 
     <!-- SEO Meta Tags -->
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />
+    {
+      alternates.map((alt) => (
+        <link rel="alternate" hreflang={alt.lang} href={alt.href} />
+      ))
+    }
+    <link rel="alternate" hreflang="x-default" href={alternates[0].href} />
     <title>{siteTitle}</title>
     <meta name="description" content={siteDescription} />
 
@@ -137,6 +161,8 @@ const screenReaderAnnouncements =
     <meta property="og:title" content={siteTitle} />
     <meta property="og:description" content={siteDescription} />
     <meta property="og:site_name" content={siteName} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={ogLocaleAlternate} />
     {ogImage && <meta property="og:image" content={ogImage} />}
 
     <!-- Twitter -->
@@ -213,7 +239,7 @@ const screenReaderAnnouncements =
             id="main-content"
             class="flex-1"
             tabindex="-1"
-            aria-label={ariaLabelsEnabled ? "Main content" : undefined}
+            aria-label={ariaLabelsEnabled ? ui("a11y.mainContent") : undefined}
             transition:name="main-content"
           >
             <slot />
@@ -245,6 +271,7 @@ const screenReaderAnnouncements =
           aria-live="polite"
           aria-atomic="true"
           class="sr-only"
+          data-page-loaded-label={ui("a11y.pageLoaded", { title: "" }).trim()}
         />
       )
     }
@@ -296,8 +323,10 @@ const screenReaderAnnouncements =
           if (document.documentElement.dataset.screenReader === "true") {
             const announcer = document.getElementById("announcements");
             if (announcer) {
+              const label =
+                announcer.dataset.pageLoadedLabel || "Page loaded:";
               setTimeout(() => {
-                announcer.textContent = "Page loaded: " + document.title;
+                announcer.textContent = label + " " + document.title;
               }, 100);
             }
           }

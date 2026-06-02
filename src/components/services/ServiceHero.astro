@@ -1,7 +1,7 @@
 ---
 import { getServices, getAssetUrl } from "../../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
-import { t } from "../../lib/translations";
+import { getUI } from "../../lib/translations";
 
 export interface Props {
   currentService: {
@@ -23,7 +23,8 @@ export interface Props {
 
 const { currentService } = Astro.props;
 const currentLang = getCurrentLanguage(Astro.url);
-const letsTalk = await t('services.lets_talk', currentLang, "LET'S TALK");
+const ui = await getUI(currentLang);
+const letsTalk = ui('common.letsTalkCaps');
 
 // Fetch all services for tabs
 const allServicesData = await getServices({
@@ -118,7 +119,7 @@ const allServices = await Promise.all(
     <div class="mt-12 lg:mt-24 mb-4 flex justify-start md:justify-end shrink-0 overflow-x-auto overflow-y-hidden scrollbar-hide">
       <nav
         class="flex items-center relative border-b border-foreground/10 w-auto"
-        aria-label="Service navigation"
+        aria-label={ui('services.nav')}
       >
         {
           allServices.map((service, index) => {

@@ -1,5 +1,6 @@
 ---
 import ThemeResponsiveImage from "../ThemeResponsiveImage.astro";
+import { getUI } from "../../lib/translations";
 
 export interface Props {
   title: string;
@@ -14,9 +15,8 @@ export interface Props {
 const { title, subtitle, description, image, link, linkText, currentLang } =
   Astro.props;
 
-const defaultLinkText =
-  linkText ||
-  (currentLang === "de" ? "Wie es funktioniert hat" : "See how it worked");
+const ui = await getUI(currentLang);
+const defaultLinkText = linkText || ui("services.seeHow");
 const headingId = "service-case-study-heading";
 ---
 
@@ -33,7 +33,7 @@ const headingId = "service-case-study-heading";
             id={headingId}
             class="text-sm font-mono uppercase tracking-wider text-foreground/60"
           >
-            RELEVANT CASE STUDY
+            {ui("services.relevantCaseStudy")}
           </h2>
         </div>
       </div>

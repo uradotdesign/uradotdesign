@@ -41,7 +41,9 @@ const CASE_STUDY_FIELDS = [
   "seo_image",
   "translations.*",
   "sections.*", // Fetch all section fields
+  "sections.translations.*",
   "sections.images.*",
+  "sections.images.translations.*",
 ];
 
 // Live Preview: draft-aware, cache-bypassing fetch when ?preview=<secret>.
@@ -137,7 +139,7 @@ const worksLink = `/${lang}/works`;
   {
     isPreview && (
       <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] bg-[#FD5825] text-white text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full shadow-lg pointer-events-none">
-        Preview · draft content
+        {ui("preview.draft")}
       </div>
     )
   }
@@ -204,7 +206,7 @@ const worksLink = `/${lang}/works`;
           logo && (
             <img
               src={logo}
-              alt={`${clientName} logo`}
+              alt={ui("work.logoAlt", { name: clientName })}
               class="h-14 w-auto object-contain brightness-0 invert opacity-90"
             />
           )
@@ -239,7 +241,7 @@ const worksLink = `/${lang}/works`;
                       rel="noopener noreferrer"
                       class="hero-link text-lg font-medium border-b border-white pb-0.5 hover:opacity-70 transition-opacity block w-fit"
                     >
-                      {link.label}
+                      {getLocalizedField(link, "label", lang) || link.label}
                     </a>
                   </div>
                 ))}
@@ -275,7 +277,7 @@ const worksLink = `/${lang}/works`;
                 {/* Left: Section Title */}
                 <div class="lg:w-1/6 lg:sticky lg:top-32 h-fit">
                   <h2 class="text-lg font-mono opacity-80 font-medium">
-                    {section.title}
+                    {getLocalizedField(section, "title", lang) || section.title}
                   </h2>
                 </div>
 
@@ -290,7 +292,9 @@ const worksLink = `/${lang}/works`;
                   }`}
                 >
                   {[1, 2, 3].map((col) => {
-                    const content = section[`content_${col}`];
+                    const content =
+                      getLocalizedField(section, `content_${col}`, lang) ||
+                      section[`content_${col}`];
                     const customCode = section[`custom_code_${col}`];
                     const images = colImages[col - 1];
                     if (!content && !customCode && images.length === 0) return null;
@@ -308,7 +312,7 @@ const worksLink = `/${lang}/works`;
                             dark={getAssetUrl(img.image_dark)}
                             mobileLight={getAssetUrl(img.image_mobile_light)}
                             mobileDark={getAssetUrl(img.image_mobile_dark)}
-                            alt={img.alt || ""}
+                            alt={getLocalizedField(img, "alt", lang) || img.alt || ""}
                             class="block w-full"
                             imgClass="w-full h-auto rounded-lg"
                             sizes="(max-width: 1024px) 100vw, 50vw"

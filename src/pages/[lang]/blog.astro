@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getBlogPosts, getAssetUrl, getAssetThumbUrl } from "../../lib/directus";
-import type { Language } from "../../lib/i18n";
+import { getLocalizedField, type Language } from "../../lib/i18n";
 import ProgressiveImage from "../../components/ProgressiveImage.astro";
 
 export const prerender = false;
@@ -14,6 +14,8 @@ if (!supportedLanguages.includes(lang)) {
 
 const copy = {
   en: {
+    eyebrow: "Journal",
+    title: "Blog",
     description: "Insights and updates from the Ura Design team",
     intro:
       "Insights and updates from our team on design, open source, and building better digital experiences.",
@@ -28,6 +30,8 @@ const copy = {
     dateLocale: "en-US",
   },
   de: {
+    eyebrow: "Journal",
+    title: "Blog",
     description: "Einblicke, Tutorials und Updates vom Ura Design Team",
     intro:
       "Einblicke, Tutorials und Updates von unserem Team zu Design, Open Source und besseren digitalen Erlebnissen.",
@@ -42,11 +46,18 @@ const copy = {
   },
 }[lang];
 
-const articles = await getBlogPosts({
+const rawArticles = await getBlogPosts({
   filter: { status: { _eq: "published" } },
   sort: ["-published_date"],
-  fields: ["id", "title", "slug", "excerpt", "content", "cover_image", "published_date", "badge", "author.full_name", "author.photo"],
+  fields: ["id", "title", "slug", "excerpt", "content", "cover_image", "published_date", "badge", "author.full_name", "author.photo", "translations.*"],
 });
+
+const articles = rawArticles.map((a) => ({
+  ...a,
+  title: getLocalizedField(a, "title", lang) || a.title,
+  excerpt: getLocalizedField(a, "excerpt", lang) || a.excerpt,
+  content: getLocalizedField(a, "content", lang) || a.content,
+}));
 
 function calculateReadingTime(text: string): number {
   if (!text) return 0;
@@ -60,7 +71,7 @@ const featuredArticle = articles[0];
 const remainingArticles = articles.slice(1);
 ---
 
-<BaseLayout title="Blog" description={copy.description}>
+<BaseLayout title={copy.title} description={copy.description}>
   {/* Hero Section */}
   <section
     class="relative flex items-end bg-[var(--color-background)] text-[var(--color-foreground)]"
@@ -74,12 +85,12 @@ const remainingArticles = articles.slice(1);
           <span
             class="block text-xs uppercase font-mono font-medium tracking-wider opacity-60 mb-6"
           >
-            Journal
+            {copy.eyebrow}
           </span>
           <h1
             class="font-display text-6xl sm:text-7xl lg:text-8xl xl:text-9xl leading-[0.9]"
           >
-            Blog
+            {copy.title}
           </h1>
         </div>
 
