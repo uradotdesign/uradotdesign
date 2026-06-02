@@ -1,4 +1,5 @@
 ---
-// Redirect root to /en
-return Astro.redirect('/en', 302);
+// Redirect root to the default locale. 301 (permanent) so search engines
+// consolidate "/" into "/en".
+return Astro.redirect('/en', 301);
 ---

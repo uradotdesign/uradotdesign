@@ -1228,6 +1228,30 @@ export async function getPagePreviewBySlug(slug: string): Promise<Page | null> {
   return sortPageBlocks(page);
 }
 
+/**
+ * Lists pages (no block expansion). Used for the sitemap and other places that
+ * only need slugs/metadata. Cached under the shared `directus:config` namespace.
+ */
+export async function getPages(options?: {
+  filter?: DirectusFilter;
+  fields?: string[];
+  limit?: number;
+}): Promise<Page[]> {
+  const cacheKey = createCacheKey("pages_list", {
+    filter: options?.filter ?? null,
+    fields: options?.fields ?? null,
+    limit: options?.limit ?? null,
+  });
+  return cacheConfig(cacheKey, () =>
+    fetchCollection<Page>("pages", {
+      limit: options?.limit,
+      filter: options?.filter,
+      sort: [],
+      fields: options?.fields ?? ["*"],
+    })
+  );
+}
+
 export async function getHeroSection() {
   return cacheConfig("hero_section", () =>
     fetchSingletonById<HeroSection>("hero_section", 1, ["*", "translations.*"])

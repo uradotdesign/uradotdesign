@@ -4,6 +4,7 @@ import {
   getSiteSettings,
   getAccessibilitySettings,
   getAssetUrl,
+  getSocialLinks,
   isPreviewActive,
 } from "../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
@@ -19,6 +20,8 @@ export interface Props {
   description?: string;
   image?: string;
   fullWidth?: boolean;
+  /** Page-specific structured data (JSON-LD) appended after the global schema. */
+  jsonLd?: Record<string, any> | Record<string, any>[];
 }
 
 const settings = await getSiteSettings();
@@ -30,7 +33,7 @@ const currentLang = getCurrentLanguage(Astro.url);
 // CSS. Never loaded in normal production responses.
 const isPreview = isPreviewActive(Astro.url);
 
-const { title, description, image } = Astro.props;
+const { title, description, image, jsonLd } = Astro.props;
 
 // Site Info from Directus
 const siteName = settings?.site_name || "Ura Design";
@@ -116,6 +119,41 @@ const alternates = [
 ];
 const ogLocale = currentLang === "de" ? "de_DE" : "en_US";
 const ogLocaleAlternate = currentLang === "de" ? "en_US" : "de_DE";
+
+// Canonical/OG URLs strip query strings (e.g. ?preview=, ?lang=) so shared and
+// indexed URLs stay clean.
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+// Structured data (JSON-LD): a global Organization + WebSite graph on every
+// page, plus any page-specific schema passed via the `jsonLd` prop.
+const socialLinks = await getSocialLinks();
+const sameAs = (socialLinks || [])
+  .filter((s) => s.url && s.status !== "draft")
+  .map((s) => s.url);
+const orgLogo =
+  ogImage || new URL("/favicon.svg", Astro.site ?? siteUrl).href;
+const globalJsonLd: Record<string, any>[] = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: siteName,
+    url: siteUrl,
+    logo: orgLogo,
+    ...(sameAs.length ? { sameAs } : {}),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteName,
+    url: siteUrl,
+    inLanguage: langCode,
+  },
+];
+const pageJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+const jsonLdGraph = [...globalJsonLd, ...pageJsonLd];
+// Escape `<` so the serialized JSON can't break out of the <script> element.
+const serializeJsonLd = (obj: Record<string, any>) =>
+  JSON.stringify(obj).replace(/</g, "\\u003c");
 ---
 
 <!doctype html>
@@ -145,7 +183,7 @@ const ogLocaleAlternate = currentLang === "de" ? "en_US" : "de_DE";
     }
 
     <!-- SEO Meta Tags -->
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />
+    <link rel="canonical" href={canonicalUrl} />
     {
       alternates.map((alt) => (
         <link rel="alternate" hreflang={alt.lang} href={alt.href} />
@@ -157,7 +195,7 @@ const ogLocaleAlternate = currentLang === "de" ? "en_US" : "de_DE";
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content={ogType} />
-    <meta property="og:url" content={Astro.url} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={siteTitle} />
     <meta property="og:description" content={siteDescription} />
     <meta property="og:site_name" content={siteName} />
@@ -167,7 +205,7 @@ const ogLocaleAlternate = currentLang === "de" ? "en_US" : "de_DE";
 
     <!-- Twitter -->
     <meta property="twitter:card" content={twitterCard} />
-    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:url" content={canonicalUrl} />
     <meta property="twitter:title" content={siteTitle} />
     <meta property="twitter:description" content={siteDescription} />
     {twitterSite && <meta property="twitter:site" content={twitterSite} />}
@@ -177,6 +215,17 @@ const ogLocaleAlternate = currentLang === "de" ? "en_US" : "de_DE";
       )
     }
     {twitterImage && <meta property="twitter:image" content={twitterImage} />}
+
+    <!-- Structured Data (JSON-LD) -->
+    {
+      jsonLdGraph.map((schema) => (
+        <script
+          is:inline
+          type="application/ld+json"
+          set:html={serializeJsonLd(schema)}
+        />
+      ))
+    }
 
     <!-- Analytics: Plausible (Self-Hosted) -->
     {

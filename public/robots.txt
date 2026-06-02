@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /*?preview=
+
+Sitemap: https://ura.design/sitemap.xml

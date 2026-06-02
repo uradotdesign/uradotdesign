@@ -136,12 +136,43 @@ const sectionImagesByColumn = (section: any, column: number) =>
 // Breadcrumb text
 const ui = await getUI(lang);
 const worksLink = `/${lang}/works`;
+
+// Structured data: case study (CreativeWork) + breadcrumb trail.
+const workUrl = new URL(`/${lang}/work/${slug}`, Astro.site).href;
+const workImage = seoImage || coverImage || imageLight;
+const caseStudyJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  name: title,
+  ...(metaDescription ? { description: metaDescription } : {}),
+  ...(workImage ? { image: [workImage] } : {}),
+  ...(clientName ? { creator: { "@type": "Organization", name: clientName } } : {}),
+  ...((study as any).date_updated
+    ? { dateModified: new Date((study as any).date_updated).toISOString() }
+    : {}),
+  url: workUrl,
+  inLanguage: lang,
+};
+const workBreadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Work",
+      item: new URL(worksLink, Astro.site).href,
+    },
+    { "@type": "ListItem", position: 2, name: title, item: workUrl },
+  ],
+};
 ---
 
 <BaseLayout
   title={metaTitle}
   description={metaDescription}
   image={seoImage || coverImage || imageLight || undefined}
+  jsonLd={[caseStudyJsonLd, workBreadcrumbJsonLd]}
 >
   {
     isPreview && (
