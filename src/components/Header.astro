@@ -179,8 +179,8 @@ if (showWeather && weatherLocation) {
   </div>
 
   <!-- Navigation with Dropdowns -->
-  <nav id="main-navigation" role="navigation" aria-label={mainNavLabel} class="flex items-center gap-8">
-    <ul role="menubar" class={['hidden lg:flex items-center gap-8 text-sm font-medium font-mono', isOverlay ? 'adaptive-color' : 'text-white'].join(' ')}>
+  <nav id="main-navigation" role="navigation" aria-label={mainNavLabel} class="flex items-center gap-4 xl:gap-8 min-w-0">
+    <ul role="menubar" class={['hidden lg:flex items-center gap-4 xl:gap-8 text-sm font-medium font-mono', isOverlay ? 'adaptive-color' : 'text-white'].join(' ')}>
       {showServicesMenu && services.length > 0 && (
       <li class="relative" role="none">
         <details class="group relative">

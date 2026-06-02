@@ -182,6 +182,31 @@ html.astro-transitioning body {
   line-height: 1.1;
 }
 
+/* ----------------------------------------------------------------------------
+ * Language-responsive layout safety
+ * German translations are frequently longer than English and contain long
+ * compound words. Headings must never force horizontal overflow; the opt-in
+ * .hyphenate utility enables hyphenation for tight labels/headings (relies on
+ * the correct <html lang> set in BaseLayout).
+ * -------------------------------------------------------------------------- */
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    overflow-wrap: break-word;
+  }
+}
+
+@layer utilities {
+  .hyphenate {
+    hyphens: auto;
+    overflow-wrap: anywhere;
+  }
+}
+
 :root {
   --color-background: #fafafa;
   --color-foreground: #0a0a0a;
