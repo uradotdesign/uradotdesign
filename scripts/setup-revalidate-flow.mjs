@@ -43,6 +43,7 @@ const COLLECTIONS = [
   "block_two_column", "block_gallery", "block_gallery_images", "block_cta",
   "block_stats", "block_quote", "block_faq", "block_logos", "block_logos_items",
   "block_embed", "block_custom_code",
+  "block_before_after", "block_lottie_grid", "block_lottie_grid_items",
 ];
 
 async function buildTriggerCollections() {
