@@ -1133,6 +1133,11 @@ const PAGE_BLOCK_FIELDS = [
   "blocks.item:block_faq.translations.*",
   "blocks.item:block_logos.translations.*",
   "blocks.item:block_embed.translations.*",
+  "blocks.item:block_before_after.*",
+  "blocks.item:block_before_after.translations.*",
+  "blocks.item:block_lottie_grid.*",
+  "blocks.item:block_lottie_grid.items.*",
+  "blocks.item:block_lottie_grid.translations.*",
 ];
 
 export const PAGE_WITH_BLOCKS_FIELDS = [...PAGE_BASE_FIELDS, ...PAGE_BLOCK_FIELDS];
@@ -1144,7 +1149,7 @@ function sortPageBlocks(page: Page | null): Page | null {
     for (const b of page.blocks) {
       const item = b.item;
       if (item && typeof item === "object") {
-        for (const key of ["images", "logos"]) {
+        for (const key of ["images", "logos", "items"]) {
           const list = (item as Record<string, any>)[key];
           if (Array.isArray(list)) {
             list.sort((x, y) => (x?.sort || 0) - (y?.sort || 0));
