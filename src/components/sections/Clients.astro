@@ -1,7 +1,7 @@
 ---
 import { Image } from "astro:assets";
 import { getClients, getClientsSection, getAssetUrl } from "../../lib/directus";
-import { getCurrentLanguage } from "../../lib/i18n";
+import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
 import { t } from "../../lib/translations";
 
 const currentLang = getCurrentLanguage(Astro.url);
@@ -30,9 +30,8 @@ const defaultHeading = await t(
 );
 
 const heading =
-  currentLang === "de"
-    ? clientsSection?.section_heading_de || defaultHeading
-    : clientsSection?.section_heading_en || defaultHeading;
+  getLocalizedField(clientsSection, "section_heading", currentLang) ||
+  defaultHeading;
 
 const visitWebsiteLabel = await t(
   "clients.visit_website",

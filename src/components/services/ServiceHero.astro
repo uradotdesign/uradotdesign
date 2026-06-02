@@ -68,10 +68,7 @@ const allServices = await Promise.all(
         id: s.id,
         slug: s.slug,
         title:
-          getLocalizedField(s, "title", currentLang) ??
-          s.title_en ??
-          s.title_de ??
-          s.slug,
+          getLocalizedField(s, "title", currentLang) ?? s.slug,
         colorAccent: s.color_accent || "#10b981",
         serviceIcon: s.service_icon,
         svgContent,

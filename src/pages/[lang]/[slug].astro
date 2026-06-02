@@ -48,7 +48,7 @@ const services = await getServices({
     show_in_hero: { _neq: false }
   },
   limit: 1,
-  fields: ["*", "relevant_case_study.*"]
+  fields: ["*", "relevant_case_study.*", "relevant_case_study.translations.*"]
 });
 
 if (services && services.length > 0) {
@@ -97,10 +97,7 @@ if (type === 'service') {
 
   // Process service data
   const localizedTitle =
-    getLocalizedField(service, "title", lang) ??
-    service.title_en ??
-    service.title_de ??
-    service.slug;
+    getLocalizedField(service, "title", lang) ?? service.slug;
 
   const localizedSubtitle = getLocalizedField(service, "subtitle", lang);
   const localizedDescription =
@@ -203,12 +200,12 @@ if (type === 'service') {
     }
 
     caseStudyProps = {
-      title: getLocalizedField(caseStudy, "title", lang) || caseStudy.title_en,
-      subtitle: caseStudy.client_name,
-      description:
-        getLocalizedField(caseStudy, "excerpt", lang) ||
-        caseStudy.excerpt_en ||
+      title:
+        getLocalizedField(caseStudy, "title", lang) ||
+        caseStudy.client_name ||
         "",
+      subtitle: caseStudy.client_name,
+      description: getLocalizedField(caseStudy, "excerpt", lang) || "",
       image: caseStudyImage,
       link: caseStudy.case_study_url || `/${lang}/work/${caseStudy.slug}`,
       linkText: getLocalizedField(caseStudy, "cta_text", lang),

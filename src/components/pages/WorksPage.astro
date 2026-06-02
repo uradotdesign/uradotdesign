@@ -114,9 +114,7 @@ const categoryMap = new Map<number, NormalizedCategory>();
 const orderedCategories: NormalizedCategory[] = categoryRecords.map((cat) => {
   const slug = cat.slug || `category-${cat.id}`;
   const label =
-    (lang === "de"
-      ? cat.title_de || cat.title_en
-      : cat.title_en || cat.title_de) ||
+    getLocalizedField(cat, "title", lang) ||
     translations.categoryLabels[
       slug as keyof typeof translations.categoryLabels
     ] ||
@@ -134,19 +132,18 @@ function buildCategoryList(entry: any): NormalizedCategory[] {
       const rel = link?.category_id;
       if (!rel) return null;
 
+      const relTitle = getLocalizedField(rel, "title", lang);
       const slug =
         rel.slug ||
-        (rel.title_en || rel.title_de
-          ? (rel.title_en || rel.title_de)
+        (relTitle
+          ? relTitle
               .toLowerCase()
               .replace(/[^a-z0-9]+/gi, "-")
               .replace(/^-+|-+$/g, "")
           : `category-${rel.id ?? rel.slug}`);
 
       const label =
-        (lang === "de"
-          ? rel.title_de || rel.title_en
-          : rel.title_en || rel.title_de) ||
+        relTitle ||
         translations.categoryLabels[
           slug as keyof typeof translations.categoryLabels
         ] ||
@@ -170,7 +167,6 @@ function buildCategoryList(entry: any): NormalizedCategory[] {
 function normalizeCaseStudy(entry: any): NormalizedCaseStudy {
   const title =
     getLocalizedField(entry, "title", lang) ||
-    entry.title_en ||
     entry.client_name ||
     translations.pageTitle;
   const excerpt = getLocalizedField(entry, "excerpt", lang) || "";

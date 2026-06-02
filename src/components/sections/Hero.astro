@@ -22,9 +22,7 @@ const servicesData = await getServices({
 // Use Directus data (no hardcoded fallbacks)
 const headingLine1 = heroData?.heading_line1 || "";
 const headingLine2 = heroData?.heading_line2 || "";
-const tagline = heroData?.tagline_en && heroData?.tagline_de 
-  ? (currentLang === 'de' ? heroData.tagline_de : heroData.tagline_en)
-  : "";
+const tagline = getLocalizedField(heroData, 'tagline', currentLang) || "";
 const ctaButtonText = heroData?.cta_button_text || "";
 const ctaButtonLink = heroData?.cta_button_link || "#contact";
 const showServicesGrid = heroData?.show_services_grid ?? true;
@@ -53,8 +51,6 @@ const services = servicesData.length > 0
       .map((s) => ({
         name:
           getLocalizedField(s, "title", currentLang) ||
-          s.title_en ||
-          s.title_de ||
           defaultServiceTitle,
         href: `/${currentLang}/${s.slug}`,
       }))

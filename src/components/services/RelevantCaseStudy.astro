@@ -28,8 +28,7 @@ if (caseStudy.featured_image_light && caseStudy.featured_image_dark) {
 
 const clientName = caseStudy.client_name;
 const logo = getAssetUrl(caseStudy.logo);
-const title =
-  getLocalizedField(caseStudy, "title", currentLang) || caseStudy.title_en;
+const title = getLocalizedField(caseStudy, "title", currentLang);
 const ctaText =
   getLocalizedField(caseStudy, "cta_text", currentLang) ||
   (currentLang === "de" ? "Fallstudie ansehen" : "See Case Study");

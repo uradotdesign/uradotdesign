@@ -6,7 +6,7 @@ import {
   getAssetUrl,
   isPreviewActive,
 } from "../lib/directus";
-import { getCurrentLanguage } from "../lib/i18n";
+import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
 import { t } from "../lib/translations";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
@@ -44,9 +44,7 @@ const defaultTagline = await t(
   "Holistic Design for Nuanced Systems"
 );
 const siteTagline =
-  (currentLang === "de"
-    ? settings?.site_tagline_de
-    : settings?.site_tagline_en) || defaultTagline;
+  getLocalizedField(settings, "site_tagline", currentLang) || defaultTagline;
 
 const siteTitle = title
   ? `${title} | ${siteName}`
@@ -60,9 +58,7 @@ const defaultDesc = await t(
 );
 const siteDescription =
   description ||
-  (currentLang === "de"
-    ? settings?.site_description_de
-    : settings?.site_description_en) ||
+  getLocalizedField(settings, "site_description", currentLang) ||
   defaultDesc;
 
 // Favicon
@@ -94,9 +90,8 @@ const defaultTheme = settings?.default_theme || "light";
 
 // Accessibility settings
 const langCode =
-  currentLang === "de"
-    ? accessibilitySettings?.site_language_de || "de"
-    : accessibilitySettings?.site_language_en || "en";
+  getLocalizedField(accessibilitySettings, "site_language", currentLang) ||
+  (currentLang === "de" ? "de" : "en");
 const focusIndicators = accessibilitySettings?.focus_indicators ?? true;
 const reduceMotion = accessibilitySettings?.reduce_motion ?? false;
 const landmarkRegions = accessibilitySettings?.landmark_regions ?? true;

@@ -50,7 +50,7 @@ const caseStudies = caseStudiesData.length > 0
             .map((link: any) => {
               const rel = link?.category_id;
               if (!rel) return null;
-              return rel.title_en || rel.title_de;
+              return getLocalizedField(rel, 'title', currentLang);
             })
             .filter(Boolean)
         : [];
@@ -59,7 +59,7 @@ const caseStudies = caseStudiesData.length > 0
         id: cs.id,
         clientName: cs.client_name,
         logo: getAssetUrl(cs.logo),
-        title: getLocalizedField(cs, 'title', currentLang) || cs.title_en,
+        title: getLocalizedField(cs, 'title', currentLang),
         excerpt: getLocalizedField(cs, 'excerpt', currentLang),
         ctaText: getLocalizedField(cs, 'cta_text', currentLang) || defaultCtaText,
         url: cs.case_study_url || `/${currentLang}/work/${cs.slug}`,

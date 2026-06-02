@@ -15,7 +15,7 @@ const teamMembers = teamMembersData.length > 0
   ? teamMembersData.map(member => ({
       id: member.id,
       fullName: member.full_name,
-      role: getLocalizedField(member, 'role', currentLang) || member.role_en,
+      role: getLocalizedField(member, 'role', currentLang),
       bio: getLocalizedField(member, 'bio', currentLang),
       photo: member.photo ? getAssetUrl(member.photo) : null,
       email: member.email,

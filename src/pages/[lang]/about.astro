@@ -8,7 +8,7 @@ import ContactForm from "../../components/sections/ContactForm.astro";
 import Expertise from "../../components/sections/Expertise.astro";
 import Testimonials from "../../components/sections/Testimonials.astro";
 import { getAboutPage, getApproaches, getAssetUrl } from "../../lib/directus";
-import type { Language } from "../../lib/i18n";
+import { getLocalizedField, type Language } from "../../lib/i18n";
 import ThemeResponsiveImage from "../../components/ThemeResponsiveImage.astro";
 
 export const prerender = false;
@@ -52,9 +52,9 @@ const copy = {
   },
 }[lang];
 
-// Localized CMS field accessor (no cross-language fallback, mirrors originals).
+// Localized CMS field accessor (native translations, EN fallback via helper).
 const cms = (field: string): string | undefined =>
-  (aboutData as Record<string, any> | null)?.[`${field}_${lang}`];
+  getLocalizedField(aboutData, field, lang);
 
 const heroLabel = cms("hero_label") || copy.heroLabel;
 const heroHeading = cms("hero_heading") || copy.heroHeading;
@@ -230,8 +230,8 @@ const valuesImageDark = valuesImageDarkId
   <Approach
     sectionTitle={approachTitle}
     approaches={approachesData.map((app) => ({
-      title: lang === "de" ? app.title_de || app.title_en : app.title_en,
-      description: (lang === "de" ? app.description_de : app.description_en) || "",
+      title: getLocalizedField(app, "title", lang) || "",
+      description: getLocalizedField(app, "description", lang) || "",
       borderAnimation: app.border_animation,
     }))}
   />

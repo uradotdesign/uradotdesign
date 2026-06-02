@@ -43,9 +43,8 @@ const overlaySetting = headerSettings?.overlay_mode !== false;
 const showServicesMenu = headerSettings?.show_services_menu !== false;
 
 const defaultCtaText = await t('header.cta', currentLang, "LET'S TALK");
-const ctaText = currentLang === 'de' 
-  ? (headerSettings?.cta_text_de || defaultCtaText)
-  : (headerSettings?.cta_text_en || defaultCtaText);
+const ctaText =
+  getLocalizedField(headerSettings, 'cta_text', currentLang) || defaultCtaText;
 
 const homeLabel = await t('header.home_label', currentLang, currentLang === 'de' ? 'Ura Design Startseite' : 'Ura Design Home');
 const mainNavLabel = await t('header.main_nav_label', currentLang, currentLang === 'de' ? 'Hauptnavigation' : 'Main navigation');

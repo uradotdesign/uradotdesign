@@ -16,9 +16,7 @@ const aboutData = await getAboutPage();
 const defaultHeading = await t("expertise.heading", currentLang, "EXPERTISE");
 const sectionHeading =
   heading ||
-  (currentLang === "de"
-    ? aboutData?.expertise_heading_de
-    : aboutData?.expertise_heading_en) ||
+  getLocalizedField(aboutData, "expertise_heading", currentLang) ||
   defaultHeading;
 
 const defaultIntro = await t(
@@ -31,9 +29,7 @@ const defaultIntro = await t(
 
 const introText =
   intro ||
-  (currentLang === "de"
-    ? aboutData?.expertise_intro_de
-    : aboutData?.expertise_intro_en) ||
+  getLocalizedField(aboutData, "expertise_intro", currentLang) ||
   defaultIntro;
 
 const services = await getServices({
@@ -54,8 +50,8 @@ const localizedGroups = servicesWithSubservices.map((s) => ({
   title: getLocalizedField(s, "title", currentLang),
   icon: s.service_icon,
   iconBg: s.color_accent || "#E5E7EB",
-  points: s.subservices.map((sub: { text_en?: string; text_de?: string }) => 
-    currentLang === 'de' ? (sub.text_de || sub.text_en) : sub.text_en
+  points: s.subservices.map((sub: Record<string, any>) =>
+    getLocalizedField(sub, "text", currentLang)
   ).filter(Boolean),
 }));
 ---
