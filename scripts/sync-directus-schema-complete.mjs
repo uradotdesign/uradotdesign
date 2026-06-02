@@ -27,6 +27,7 @@ try {
 const BASE_URL = admin.baseUrl;
 const {
   authRequest,
+  getToken,
   ensureCollection,
   ensureField,
   ensureSingleton,

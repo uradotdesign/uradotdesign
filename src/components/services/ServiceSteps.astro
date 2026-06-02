@@ -131,7 +131,7 @@ const ui = await getUI(currentLang);
     // Clear any existing content immediately
     lottieContainer.innerHTML = '';
 
-    let lottieCache: LottieCache = { light: null, dark: null };
+    const lottieCache: LottieCache = { light: null, dark: null };
     const lottieLight = lottieContainer.getAttribute('data-lottie-light');
     const lottieDark = lottieContainer.getAttribute('data-lottie-dark');
 

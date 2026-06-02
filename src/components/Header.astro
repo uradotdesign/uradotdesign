@@ -273,7 +273,6 @@ if (showWeather && weatherLocation) {
   <!-- Right Side: Weather & Time (Desktop only) -->
   <div class="hidden lg:flex items-center gap-4">
     {showWeather && weatherLocation && weather && (
-      <!-- Location Time & Weather -->
       <div 
         class={['inline-flex items-center text-xs sm:text-sm font-medium font-mono', overlay ? 'adaptive-color' : ''].join(' ')}
         role="status"

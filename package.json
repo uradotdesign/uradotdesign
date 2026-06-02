@@ -10,26 +10,39 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "check": "astro check",
+    "test": "node --test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "directus:start": "docker-compose up -d",
     "directus:stop": "docker-compose down",
     "directus:logs": "docker-compose logs -f directus",
     "schema:sync": "node scripts/sync-directus-schema-complete.mjs"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.9",
     "@astrojs/node": "^10.1.2",
     "@directus/sdk": "^21.3.0",
     "astro": "^6.4.2",
     "ioredis": "^5.11.0",
     "lottie-web": "^5.13.0",
-    "typescript": "^6.0.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^24.12.4",
-    "tailwindcss": "^4.3.0"
+    "eslint": "^10.4.1",
+    "eslint-plugin-astro": "^1.7.0",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.3",
+    "prettier-plugin-astro": "^0.14.1",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1"
   },
   "engines": {
     "node": ">=18.20.8"
