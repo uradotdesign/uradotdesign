@@ -90,12 +90,24 @@ html.hydrated {
   animation-name: fade-in-quick;
 }
 
-/* Header and Footer - persist without animation */
+/* Persisted chrome (header, footer, mobile nav): never cross-fade with the
+   page during navigation. Show ONLY the NEW (post-swap, already
+   scroll-reconciled) snapshot. Plain `animation: none` leaves the OLD snapshot
+   at opacity 1 underneath the new one; because the header CTA / mobile bar are
+   translucent, the previous (e.g. scrolled/dark) state bled through the new
+   translucent element — the "Let's talk" color flash. Hiding the old snapshot
+   renders the current chrome instantly with no bleed-through. */
 ::view-transition-old(header),
-::view-transition-new(header),
 ::view-transition-old(footer),
-::view-transition-new(footer) {
+::view-transition-old(mobile-nav) {
   animation: none;
+  opacity: 0;
+}
+::view-transition-new(header),
+::view-transition-new(footer),
+::view-transition-new(mobile-nav) {
+  animation: none;
+  opacity: 1;
 }
 
 @keyframes fade-out-quick {
