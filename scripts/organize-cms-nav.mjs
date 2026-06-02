@@ -75,6 +75,12 @@ const COLLECTIONS = {
   company_values: { group: "team_proof", sort: 5, icon: "favorite", display_template: "{{translations.title}}" },
   approaches: { group: "team_proof", sort: 6, icon: "route", display_template: "{{translations.title}}" },
 
+  // Translation sub-collections (hidden children). They need their own display
+  // template so the parent's relational `translations` list column renders the
+  // translated title instead of raw row IDs (e.g. "[1,2]").
+  company_values_translations: { group: "company_values", sort: 1, hidden: true, icon: "translate", display_template: "{{title}}" },
+  approaches_translations: { group: "approaches", sort: 1, hidden: true, icon: "translate", display_template: "{{title}}" },
+
   // System
   translations: { group: "system_data", sort: 1, icon: "translate", display_template: "{{key}} ({{language}})" },
   contact_submissions: { group: "system_data", sort: 2, icon: "inbox", display_template: "{{first_name}} {{last_name}} – {{email}}" },
