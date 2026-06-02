@@ -50,6 +50,7 @@ const languages = [
         languages.map((lang) => (
           <a
             href={lang.path}
+            data-astro-reload
             role="menuitem"
             class:list={[
               "block px-4 py-2 text-sm transition-colors cursor-pointer focus:outline-none",

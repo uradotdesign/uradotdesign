@@ -732,11 +732,13 @@ if (showWeather && weatherLocation) {
     });
 
     // The persisted header carries its live classes (e.g. `.scrolled`) across a
-    // navigation. Reconciling scroll state on the new page therefore toggles the
-    // CTA / adaptive colors, which would animate over 300ms (the jarring
-    // "Let's talk" recolor flash) when navigating while scrolled. Freeze every
-    // header transition for the swap window so the reconciliation is instant,
-    // then restore transitions on the next frame.
+    // navigation. Reconciling scroll state on the new page toggles the CTA /
+    // adaptive colors, which would animate over 300ms (the jarring "Let's talk"
+    // recolor flash) when navigating while scrolled. Freeze every header
+    // transition for the *whole* swap window and only restore it once the
+    // navigation has fully settled (astro:page-load), after scroll restoration
+    // has run — otherwise a late scroll reset re-toggles `.scrolled` with
+    // transitions enabled and the flash returns.
     const freezeHeaderTransitions = () => {
       document
         .querySelector('header[data-scroll-threshold]')
@@ -744,25 +746,32 @@ if (showWeather && weatherLocation) {
     };
     document.addEventListener('astro:before-swap', freezeHeaderTransitions);
 
-    // Astro resets scroll *before* astro:after-swap and the new view-transition
-    // snapshot is captured *after* it, so applying the new page's scroll state +
-    // active link here (synchronously, no rAF) leaves zero post-swap recolor flash.
     document.addEventListener('astro:after-swap', () => {
       const header = document.querySelector(
         'header[data-scroll-threshold]'
       ) as HTMLElement | null;
       // Cover direct navigations (no before-swap on first paint of a fresh load).
       header?.classList.add('nav-swapping');
-      const dd = document.querySelector('header details.group') as HTMLDetailsElement | null;
-      if (dd) dd.open = false;
+      // Close every open header dropdown (services + language), not just the first.
+      document
+        .querySelectorAll<HTMLDetailsElement>('header details[open]')
+        .forEach((d) => (d.open = false));
       if (isMenuOpen) setMenu(false);
       applyScrollState();
       updateActiveNav();
-      if (header) {
-        // Force the frozen state to flush before re-enabling transitions.
-        void header.offsetWidth;
-        requestAnimationFrame(() => header.classList.remove('nav-swapping'));
-      }
+    });
+
+    // Restore header transitions only after the navigation has fully settled
+    // (scroll restoration done). Reconcile once more while still frozen, flush,
+    // then re-enable on the next frame so the reconciliation is never animated.
+    document.addEventListener('astro:page-load', () => {
+      const header = document.querySelector(
+        'header[data-scroll-threshold]'
+      ) as HTMLElement | null;
+      if (!header || !header.classList.contains('nav-swapping')) return;
+      applyScrollState();
+      void header.offsetWidth;
+      requestAnimationFrame(() => header.classList.remove('nav-swapping'));
     });
   }
 
