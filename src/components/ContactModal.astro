@@ -7,7 +7,7 @@ import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
 const currentLang = getCurrentLanguage(Astro.url);
 
 const teamMembers = await getContactTeamMembers({
-  fields: ["id", "full_name", "role_en", "role_de", "photo", "email"],
+  fields: ["id", "full_name", "translations.*", "photo", "email"],
 });
 
 // Localized section copy (localized strings, no CMS lookup needed).

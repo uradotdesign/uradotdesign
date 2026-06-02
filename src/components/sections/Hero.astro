@@ -12,7 +12,7 @@ const heroData = await getHeroSection();
 // Only fetch necessary fields for services (name/title, slug, show_in_hero)
 const servicesData = await getServices({ 
   limit: 4,
-  fields: ['title_en', 'title_de', 'slug', 'show_in_hero'],
+  fields: ['slug', 'show_in_hero'],
   filter: {
     show_in_hero: { _eq: true }
   }

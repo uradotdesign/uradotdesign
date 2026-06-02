@@ -17,13 +17,7 @@ const caseStudiesData = await getCaseStudies({
     "id",
     "slug",
     "client_name",
-    "title_en",
-    "title_de",
     "logo",
-    "excerpt_en",
-    "excerpt_de",
-    "cta_text_en",
-    "cta_text_de",
     "case_study_url",
     "featured_image_light",
     "featured_image_dark",
@@ -31,8 +25,7 @@ const caseStudiesData = await getCaseStudies({
     "featured_image_mobile_dark",
     "categories.category_id.id",
     "categories.category_id.slug",
-    "categories.category_id.title_en",
-    "categories.category_id.title_de",
+    "categories.category_id.translations.*",
   ],
 });
 

@@ -1060,15 +1060,9 @@ const PAGE_BASE_FIELDS = [
   "status",
   "slug",
   "title",
-  "title_en",
-  "title_de",
   "content",
   "seo_title",
-  "seo_title_en",
-  "seo_title_de",
   "seo_description",
-  "seo_description_en",
-  "seo_description_de",
   "seo_image",
   "translations.*",
 ];
@@ -1086,8 +1080,6 @@ const PAGE_BLOCK_FIELDS = [
   "blocks.item:block_two_column.*",
   "blocks.item:block_gallery.*",
   "blocks.item:block_gallery.images.image",
-  "blocks.item:block_gallery.images.caption_en",
-  "blocks.item:block_gallery.images.caption_de",
   "blocks.item:block_gallery.images.sort",
   "blocks.item:block_cta.*",
   "blocks.item:block_stats.*",
@@ -1452,7 +1444,7 @@ export async function getCaseStudyBySlug(slug: string) {
 export async function getCaseStudyCategories() {
   return cacheConfig("case_study_categories", () =>
     fetchCollection<CaseStudyCategory>("case_study_categories", {
-      sort: ["sort_order", "title_en"],
+      sort: ["sort_order"],
       statusField: null,
       fields: ["*", "translations.*"],
     })
@@ -1561,10 +1553,6 @@ export async function getTeamMembers(options?: {
     "id",
     "full_name",
     "slug",
-    "role_en",
-    "role_de",
-    "bio_en",
-    "bio_de",
     "photo",
     "email",
     "linkedin_url",
@@ -1694,8 +1682,6 @@ export async function getContactTeamMembers(options?: {
     "id",
     "full_name",
     "slug",
-    "role_en",
-    "role_de",
     "photo",
     "email",
     "linkedin_url",
