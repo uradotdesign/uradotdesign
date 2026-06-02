@@ -731,15 +731,38 @@ if (showWeather && weatherLocation) {
       }
     });
 
+    // The persisted header carries its live classes (e.g. `.scrolled`) across a
+    // navigation. Reconciling scroll state on the new page therefore toggles the
+    // CTA / adaptive colors, which would animate over 300ms (the jarring
+    // "Let's talk" recolor flash) when navigating while scrolled. Freeze every
+    // header transition for the swap window so the reconciliation is instant,
+    // then restore transitions on the next frame.
+    const freezeHeaderTransitions = () => {
+      document
+        .querySelector('header[data-scroll-threshold]')
+        ?.classList.add('nav-swapping');
+    };
+    document.addEventListener('astro:before-swap', freezeHeaderTransitions);
+
     // Astro resets scroll *before* astro:after-swap and the new view-transition
     // snapshot is captured *after* it, so applying the new page's scroll state +
     // active link here (synchronously, no rAF) leaves zero post-swap recolor flash.
     document.addEventListener('astro:after-swap', () => {
+      const header = document.querySelector(
+        'header[data-scroll-threshold]'
+      ) as HTMLElement | null;
+      // Cover direct navigations (no before-swap on first paint of a fresh load).
+      header?.classList.add('nav-swapping');
       const dd = document.querySelector('header details.group') as HTMLDetailsElement | null;
       if (dd) dd.open = false;
       if (isMenuOpen) setMenu(false);
       applyScrollState();
       updateActiveNav();
+      if (header) {
+        // Force the frozen state to flush before re-enabling transitions.
+        void header.offsetWidth;
+        requestAnimationFrame(() => header.classList.remove('nav-swapping'));
+      }
     });
   }
 
@@ -955,6 +978,14 @@ if (showWeather && weatherLocation) {
 
   :global(.dark) header.scrolled .header-cta-button:hover {
     background-color: rgba(255, 255, 255, 0.3);
+  }
+
+  /* While a view-transition swap is in flight, the persisted header reconciles
+     its scroll state instantly so the CTA / adaptive colors never animate
+     (prevents the "Let's talk" recolor flash). Restored on the next frame. */
+  header.nav-swapping,
+  header.nav-swapping * {
+    transition: none !important;
   }
 </style>
 
