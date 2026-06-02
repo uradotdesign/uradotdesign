@@ -12,6 +12,8 @@ import {
   getPageWithBlocks,
   getPagePreviewBySlug,
   isPreviewActive,
+  PAGE_BLOCK_FIELDS,
+  sortBlocks,
   type Page,
   type PageBlock,
   type Service
@@ -50,7 +52,7 @@ const services = await getServices({
     show_in_hero: { _neq: false }
   },
   limit: 1,
-  fields: ["*", "relevant_case_study.*", "relevant_case_study.translations.*"]
+  fields: ["*", "relevant_case_study.*", "relevant_case_study.translations.*", ...PAGE_BLOCK_FIELDS]
 });
 
 if (services && services.length > 0) {
@@ -238,6 +240,11 @@ if (type === 'page') {
   };
 }
 
+// Additive page-builder blocks for service pages (rendered after the
+// existing service sections; never replaces them).
+const serviceBlocks: PageBlock[] =
+  type === 'service' ? sortBlocks((data as Service).blocks) : [];
+
 // Common Meta (optional SEO overrides fall back to the page's own values)
 const pageTitle = type === 'service'
   ? getLocalizedField(data, 'seo_title', lang) || currentService?.title
@@ -301,27 +308,31 @@ const pageImage = type === 'service'
         )
       }
 
+      <!-- Additive page-builder blocks (after the service sections) -->
+      {serviceBlocks.length > 0 && <PageBlocks blocks={serviceBlocks} lang={lang} />}
+
       <!-- Contact Form Section -->
       <ContactForm />
     </>
   )}
 
   {type === 'page' && pageContent && (
-    pageBlocks.length > 0 ? (
-      <PageBlocks blocks={pageBlocks} lang={lang} />
-    ) : (
-      <article class="w-full">
-        <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pt-32 pb-20 md:pt-48 md:pb-32">
-          <h1 class="font-display text-5xl sm:text-7xl lg:text-8xl mb-12 pb-8 border-b border-[var(--color-border)]">
-            {pageContent.title}
-          </h1>
-          <div
-            class="prose dark:prose-invert prose-lg max-w-2xl mx-auto prose-headings:font-display prose-headings:font-normal prose-p:font-serif prose-img:rounded-none prose-img:w-full"
-            set:html={pageContent.content}
-          />
-        </div>
-      </article>
-    )
+    <>
+      {pageContent.content && (
+        <article class="w-full">
+          <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pt-32 pb-20 md:pt-48 md:pb-32">
+            <h1 class="font-display text-5xl sm:text-7xl lg:text-8xl mb-12 pb-8 border-b border-[var(--color-border)]">
+              {pageContent.title}
+            </h1>
+            <div
+              class="prose dark:prose-invert prose-lg max-w-2xl mx-auto prose-headings:font-display prose-headings:font-normal prose-p:font-serif prose-img:rounded-none prose-img:w-full"
+              set:html={pageContent.content}
+            />
+          </div>
+        </article>
+      )}
+      {pageBlocks.length > 0 && <PageBlocks blocks={pageBlocks} lang={lang} />}
+    </>
   )}
 
   {isPreview && type === 'page' && (

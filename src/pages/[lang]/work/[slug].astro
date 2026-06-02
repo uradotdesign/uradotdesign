@@ -6,11 +6,14 @@ import {
   getAssetMeta,
   isPreviewActive,
   getPreviewItemBySlug,
+  PAGE_BLOCK_FIELDS,
+  sortBlocks,
   type CaseStudy,
 } from "../../../lib/directus";
 import { getLocalizedField, type Language } from "../../../lib/i18n";
 import { getUI } from "../../../lib/translations";
 import ThemeResponsiveImage from "../../../components/ThemeResponsiveImage.astro";
+import PageBlocks from "../../../components/blocks/PageBlocks.astro";
 
 const { lang: langParam, slug } = Astro.params;
 const lang = (langParam as Language) || "en";
@@ -44,6 +47,8 @@ const CASE_STUDY_FIELDS = [
   "sections.translations.*",
   "sections.images.*",
   "sections.images.translations.*",
+  // Additive page-builder blocks (rendered after the sections).
+  ...PAGE_BLOCK_FIELDS,
 ];
 
 // Live Preview: draft-aware, cache-bypassing fetch when ?preview=<secret>.
@@ -78,6 +83,9 @@ if (!study) {
   console.error(`Study not found for slug: ${slug} and lang: ${lang}`);
   return Astro.redirect("/404");
 }
+
+// Additive page-builder blocks (sorted; never replaces the sections above).
+const caseStudyBlocks = sortBlocks(study.blocks);
 
 // Normalize data
 const title = getLocalizedField(study, "title", lang);
@@ -330,6 +338,9 @@ const worksLink = `/${lang}/works`;
         })
       : null
   }
+
+  {/* Additive page-builder blocks (after the case study sections) */}
+  {caseStudyBlocks.length > 0 && <PageBlocks blocks={caseStudyBlocks} lang={lang} />}
 
   <!-- Inject the custom element script for Before/After toggle -->
   <script>

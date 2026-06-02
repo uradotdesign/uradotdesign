@@ -1,0 +1,63 @@
+---
+import { getAssetUrl } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import { getUI } from '../../lib/translations';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const ui = await getUI(lang);
+
+const groupId = `cs-${data.id}`;
+const title = getLocalizedField(data, 'title', lang) || ui('character.pick');
+
+const options = (Array.isArray(data.options) ? data.options : [])
+  .map((o: any) => ({
+    value: String(o.id),
+    label: getLocalizedField(o, 'label', lang) || '',
+    image: getAssetUrl(o.image),
+    isDefault: o.is_default === true,
+  }))
+  .filter((o) => o.image);
+
+const hasExplicitDefault = options.some((o) => o.isDefault);
+---
+
+{
+  options.length > 0 && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-5xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        <div class="flex flex-col items-center gap-8">
+          <character-picker group-id={groupId}>
+            <span slot="title">{title}</span>
+            {options.map((o, i) => (
+              <div
+                class="item"
+                data-value={o.value}
+                data-selected={
+                  o.isDefault || (!hasExplicitDefault && i === 0)
+                    ? 'true'
+                    : undefined
+                }
+              >
+                {o.label}
+              </div>
+            ))}
+          </character-picker>
+          <character-display group-id={groupId} class="w-full">
+            {options.map((o) => (
+              <img src={o.image} alt={o.label} data-value={o.value} />
+            ))}
+          </character-display>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<script>
+  import '../../scripts/CharacterSystem.js';
+</script>

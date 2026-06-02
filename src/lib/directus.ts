@@ -203,6 +203,8 @@ export interface Service {
   checklist_items?: ServiceChecklistItem[];
   steps?: ServiceStep[];
   activities_list?: ServiceActivity[];
+  // Additive page-builder blocks rendered after the service sections.
+  blocks?: PageBlock[];
   // Settings
   sort_order?: number;
   status?: "draft" | "published" | "archived";
@@ -366,6 +368,8 @@ export interface CaseStudy {
   year?: string;
   links?: { label: string; url: string }[];
   sections?: CaseStudySection[];
+  // Additive page-builder blocks rendered after the case study sections.
+  blocks?: PageBlock[];
   // SEO & Social (optional overrides)
   seo_title_en?: string;
   seo_title_de?: string;
@@ -599,6 +603,8 @@ export interface AboutPage {
   expertise_intro_en?: string;
   expertise_intro_de?: string;
   translations?: Array<{ languages_code?: string; hero_label?: string; hero_heading?: string; section_title?: string; section_text?: string; expertise_heading?: string; expertise_intro?: string; approach_section_title?: string; values_intro?: string }>;
+  // Additive page-builder blocks rendered near the bottom of the about page.
+  blocks?: PageBlock[];
 }
 
 export interface Approach {
@@ -654,6 +660,8 @@ export interface BlogPost {
     excerpt?: string;
     content?: string;
   }>;
+  // Additive page-builder blocks rendered after the post content.
+  blocks?: PageBlock[];
 }
 
 // Define the schema type
@@ -975,7 +983,7 @@ async function fetchSingletonHTTP<T>(
   try {
     // Freshness is handled by the Redis config cache (cacheConfig); no need for
     // a cache-buster query param here.
-    const url = `${directusUrl}/items/${collection}?fields=${fields}`;
+    const url = `${directusUrl}/items/${collection}?fields=${encodeURIComponent(fields)}`;
 
     const res = await fetchWithTimeout(url, {
       method: "GET",
@@ -1101,7 +1109,7 @@ const PAGE_BASE_FIELDS = [
 // Deep M2A field selection: one `item:<collection>.*` per block type, plus the
 // O2M children (gallery images / logos) that hold files. Centralized so the
 // field list lives in exactly one place.
-const PAGE_BLOCK_FIELDS = [
+export const PAGE_BLOCK_FIELDS = [
   "blocks.id",
   "blocks.collection",
   "blocks.sort",
@@ -1138,26 +1146,55 @@ const PAGE_BLOCK_FIELDS = [
   "blocks.item:block_lottie_grid.*",
   "blocks.item:block_lottie_grid.items.*",
   "blocks.item:block_lottie_grid.translations.*",
+  "blocks.item:block_character_system.*",
+  "blocks.item:block_character_system.translations.*",
+  "blocks.item:block_character_system.options.*",
+  "blocks.item:block_character_system.options.translations.*",
+  "blocks.item:block_interactive_showcase.*",
+  "blocks.item:block_interactive_showcase.translations.*",
+  "blocks.item:block_interactive_showcase.tabs.*",
+  "blocks.item:block_interactive_showcase.tabs.translations.*",
+  "blocks.item:block_interactive_showcase.tabs.lotties.*",
 ];
 
 export const PAGE_WITH_BLOCKS_FIELDS = [...PAGE_BASE_FIELDS, ...PAGE_BLOCK_FIELDS];
 
-/** Sorts a page's blocks (and nested O2M children) by their `sort` field. */
-function sortPageBlocks(page: Page | null): Page | null {
-  if (page?.blocks?.length) {
-    page.blocks.sort((a, b) => (a.sort || 0) - (b.sort || 0));
-    for (const b of page.blocks) {
-      const item = b.item;
-      if (item && typeof item === "object") {
-        for (const key of ["images", "logos", "items"]) {
-          const list = (item as Record<string, any>)[key];
-          if (Array.isArray(list)) {
-            list.sort((x, y) => (x?.sort || 0) - (y?.sort || 0));
+/**
+ * Sorts a block list (and the nested O2M children each block may carry) in
+ * place by their `sort` field, returning the same array (or [] when absent).
+ * Shared by every collection that hosts the additive M2A page-builder.
+ */
+export function sortBlocks(blocks?: PageBlock[] | null): PageBlock[] {
+  if (!Array.isArray(blocks) || blocks.length === 0) return blocks || [];
+  blocks.sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  for (const b of blocks) {
+    const item = b.item;
+    if (item && typeof item === "object") {
+      for (const key of ["images", "logos", "items", "options", "tabs"]) {
+        const list = (item as Record<string, any>)[key];
+        if (Array.isArray(list)) {
+          list.sort((x, y) => (x?.sort || 0) - (y?.sort || 0));
+        }
+      }
+      // interactive-showcase: sort each tab's nested lottie list too.
+      const tabs = (item as Record<string, any>).tabs;
+      if (Array.isArray(tabs)) {
+        for (const tab of tabs) {
+          if (Array.isArray(tab?.lotties)) {
+            tab.lotties.sort(
+              (x: any, y: any) => (x?.sort || 0) - (y?.sort || 0)
+            );
           }
         }
       }
     }
   }
+  return blocks;
+}
+
+/** Sorts a page's blocks (and nested O2M children) by their `sort` field. */
+function sortPageBlocks(page: Page | null): Page | null {
+  if (page?.blocks) sortBlocks(page.blocks);
   return page;
 }
 
@@ -1321,8 +1358,9 @@ export async function getBlogPostBySlug(slug: string) {
       limit: 1,
       filter: { slug: { _eq: slug } },
       sort: ["-published_date"],
-      fields: ["*", "author.*", "translations.*"],
+      fields: ["*", "author.*", "translations.*", ...PAGE_BLOCK_FIELDS],
     });
+    if (post) sortBlocks(post.blocks);
     return post || null;
   });
 }
@@ -1695,7 +1733,12 @@ export async function getCertifications(options?: {
 
 // About Page helpers
 export async function getAboutPage(): Promise<AboutPage | null> {
-  return cacheConfig("about_page", () => fetchSingletonHTTP<AboutPage>("about_page", "*,translations.*"));
+  return cacheConfig("about_page", async () => {
+    const fields = ["*", "translations.*", ...PAGE_BLOCK_FIELDS].join(",");
+    const about = await fetchSingletonHTTP<AboutPage>("about_page", fields);
+    if (about) sortBlocks(about.blocks);
+    return about;
+  });
 }
 
 export async function getApproaches() {

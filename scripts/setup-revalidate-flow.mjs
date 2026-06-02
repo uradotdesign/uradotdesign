@@ -44,6 +44,11 @@ const COLLECTIONS = [
   "block_stats", "block_quote", "block_faq", "block_logos", "block_logos_items",
   "block_embed", "block_custom_code",
   "block_before_after", "block_lottie_grid", "block_lottie_grid_items",
+  "block_character_system", "block_character_system_options",
+  "block_interactive_showcase", "block_interactive_showcase_tabs",
+  "block_interactive_showcase_lotties",
+  // Additive block-builder junctions on non-page collections.
+  "case_studies_blocks", "posts_blocks", "services_blocks", "about_page_blocks",
 ];
 
 async function buildTriggerCollections() {

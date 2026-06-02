@@ -19,11 +19,16 @@ const FOLDERS = [
   { key: "site_configuration", label: "Site Configuration", icon: "settings", sort: 1 },
   { key: "content_pages", label: "Pages", icon: "description", sort: 2 },
   { key: "work", label: "Work", icon: "library_books", sort: 3 },
-  { key: "services_group", label: "Services", icon: "design_services", sort: 4 },
-  { key: "blog", label: "Blog", icon: "article", sort: 5 },
   { key: "team_proof", label: "Team & Proof", icon: "groups", sort: 6 },
   { key: "system_data", label: "System", icon: "database", sort: 7 },
 ];
+
+/**
+ * Folders we deliberately collapsed because they only ever held a single
+ * visible collection — that lone item is now promoted to the top level
+ * (group: null) below, so the empty folder is deleted on each run.
+ */
+const OBSOLETE_FOLDERS = ["services_group", "blog"];
 
 /**
  * Per-collection nav meta. `group` is the folder key (or a parent collection
@@ -35,7 +40,7 @@ const COLLECTIONS = {
   header_settings: { group: "site_configuration", sort: 2, icon: "tune" },
   hero_section: { group: "site_configuration", sort: 3, icon: "dashboard" },
   footer_settings: { group: "site_configuration", sort: 4, icon: "web_asset" },
-  navigation_links: { group: "site_configuration", sort: 5, icon: "link", display_template: "{{label_en}}" },
+  navigation_links: { group: "site_configuration", sort: 5, icon: "link", display_template: "{{translations.label}}" },
   social_links: { group: "site_configuration", sort: 6, icon: "share", display_template: "{{platform}}" },
   accessibility_settings: { group: "site_configuration", sort: 7, icon: "accessibility" },
 
@@ -46,29 +51,29 @@ const COLLECTIONS = {
   pages: { group: "content_pages", sort: 4, icon: "description", display_template: "{{title}}" },
 
   // Work
-  case_studies: { group: "work", sort: 1, icon: "library_books", display_template: "{{client_name}} – {{title_en}}" },
-  case_study_categories: { group: "work", sort: 2, icon: "category", display_template: "{{title_en}}" },
+  case_studies: { group: "work", sort: 1, icon: "library_books", display_template: "{{client_name}} – {{translations.title}}" },
+  case_study_categories: { group: "work", sort: 2, icon: "category", display_template: "{{translations.title}}" },
   case_study_sections: { group: "case_studies", sort: 1, hidden: true, icon: "view_agenda", display_template: "{{title}}" },
   case_study_section_images: { group: "case_studies", sort: 2, hidden: true, icon: "image", display_template: "{{alt}}" },
   case_studies_categories: { group: "case_studies", sort: 3, hidden: true, icon: "link" },
 
-  // Services
-  services: { group: "services_group", sort: 1, icon: "design_services", display_template: "{{title_en}}" },
-  service_subservices: { group: "services", sort: 1, hidden: true, icon: "list", display_template: "{{text_en}}" },
-  service_checklist_items: { group: "services", sort: 2, hidden: true, icon: "check_box", display_template: "{{text_en}}" },
-  service_steps: { group: "services", sort: 3, hidden: true, icon: "format_list_numbered", display_template: "{{number}} · {{title_en}}" },
-  service_activities: { group: "services", sort: 4, hidden: true, icon: "view_list", display_template: "{{title_en}}" },
+  // Services (promoted to top level — was a single-item folder)
+  services: { group: null, sort: 4, icon: "design_services", display_template: "{{translations.title}}" },
+  service_subservices: { group: "services", sort: 1, hidden: true, icon: "list", display_template: "{{translations.text}}" },
+  service_checklist_items: { group: "services", sort: 2, hidden: true, icon: "check_box", display_template: "{{translations.text}}" },
+  service_steps: { group: "services", sort: 3, hidden: true, icon: "format_list_numbered", display_template: "{{number}} · {{translations.title}}" },
+  service_activities: { group: "services", sort: 4, hidden: true, icon: "view_list", display_template: "{{translations.title}}" },
 
-  // Blog
-  posts: { group: "blog", sort: 1, icon: "article", display_template: "{{title}}" },
+  // Blog (promoted to top level — was a single-item folder)
+  posts: { group: null, sort: 5, icon: "article", display_template: "{{title}}" },
 
   // Team & Proof
   team_members: { group: "team_proof", sort: 1, icon: "group", display_template: "{{full_name}}" },
   testimonials: { group: "team_proof", sort: 2, icon: "format_quote", display_template: "{{author_name}} – {{author_company}}" },
   clients: { group: "team_proof", sort: 3, icon: "business", display_template: "{{name}}" },
   certifications: { group: "team_proof", sort: 4, icon: "verified", display_template: "{{title}}" },
-  company_values: { group: "team_proof", sort: 5, icon: "favorite", display_template: "{{title_en}}" },
-  approaches: { group: "team_proof", sort: 6, icon: "route", display_template: "{{title_en}}" },
+  company_values: { group: "team_proof", sort: 5, icon: "favorite", display_template: "{{translations.title}}" },
+  approaches: { group: "team_proof", sort: 6, icon: "route", display_template: "{{translations.title}}" },
 
   // System
   translations: { group: "system_data", sort: 1, icon: "translate", display_template: "{{key}} ({{language}})" },
@@ -144,6 +149,22 @@ async function main() {
   console.log("\nCollections:");
   for (const [name, cfg] of Object.entries(COLLECTIONS)) {
     await applyCollectionMeta(name, cfg);
+  }
+
+  // Remove now-empty single-item folders (their lone child was promoted above).
+  console.log("\nObsolete folders:");
+  for (const key of OBSOLETE_FOLDERS) {
+    const existing = await getCollection(key);
+    if (!existing) {
+      console.log(`= ${key} (already removed)`);
+      continue;
+    }
+    try {
+      await authRequest(`/collections/${key}`, { method: "DELETE" });
+      console.log(`- deleted folder ${key}`);
+    } catch (e) {
+      console.warn(`! could not delete ${key}: ${e.message}`);
+    }
   }
 
   await authRequest(`/utils/cache/clear`, { method: "POST" }).catch(() => {});

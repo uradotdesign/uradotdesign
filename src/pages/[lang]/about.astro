@@ -10,6 +10,7 @@ import Testimonials from "../../components/sections/Testimonials.astro";
 import { getAboutPage, getApproaches, getAssetUrl } from "../../lib/directus";
 import { getLocalizedField, type Language } from "../../lib/i18n";
 import ThemeResponsiveImage from "../../components/ThemeResponsiveImage.astro";
+import PageBlocks from "../../components/blocks/PageBlocks.astro";
 
 export const prerender = false;
 
@@ -21,6 +22,9 @@ if (!supportedLanguages.includes(lang)) {
 
 const aboutData = await getAboutPage();
 const approachesData = await getApproaches();
+
+// Additive page-builder blocks (already sorted by getAboutPage).
+const aboutBlocks = aboutData?.blocks ?? [];
 
 // Static per-language copy (defaults used when the CMS field is empty).
 const copy = {
@@ -244,6 +248,9 @@ const valuesImageDark = valuesImageDarkId
 
   <!-- Certifications -->
   <Certifications />
+
+  {/* Additive page-builder blocks (before the closing contact form) */}
+  {aboutBlocks.length > 0 && <PageBlocks blocks={aboutBlocks} lang={lang} />}
 
   <!-- Contact Form -->
   <ContactForm />

@@ -105,6 +105,7 @@ export const messages: Record<Lang, Record<string, string>> = {
     "lottie.playAll": "Play all",
     "lottie.pauseAll": "Pause all",
     "lottie.stopAll": "Stop all",
+    "character.pick": "Pick your character",
   },
   de: {
     // Navigation
@@ -197,6 +198,7 @@ export const messages: Record<Lang, Record<string, string>> = {
     "lottie.playAll": "Alle abspielen",
     "lottie.pauseAll": "Alle pausieren",
     "lottie.stopAll": "Alle stoppen",
+    "character.pick": "Wähle deinen Charakter",
   },
 };
 

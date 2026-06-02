@@ -7,11 +7,14 @@ import {
   getAssetMeta,
   isPreviewActive,
   getPreviewItemBySlug,
+  PAGE_BLOCK_FIELDS,
+  sortBlocks,
   type BlogPost,
 } from "../../../lib/directus";
 import { getLocalizedField, type Language } from "../../../lib/i18n";
 import { getUI } from "../../../lib/translations";
 import ProgressiveImage from "../../../components/ProgressiveImage.astro";
+import PageBlocks from "../../../components/blocks/PageBlocks.astro";
 
 const { lang, slug } = Astro.params;
 
@@ -31,12 +34,16 @@ const post = isPreview
       "*",
       "author.*",
       "translations.*",
+      ...PAGE_BLOCK_FIELDS,
     ])
   : await getBlogPostBySlug(slug);
 
 if (!post) {
   return Astro.redirect("/404");
 }
+
+// Additive page-builder blocks (sorted; rendered after the post content).
+const postBlocks = sortBlocks(post.blocks);
 
 const language = lang as Language;
 const ui = await getUI(lang);
@@ -230,6 +237,9 @@ const coverFocal = coverMeta
       </div>
     </div>
   </article>
+
+  {/* Additive page-builder blocks (after the post content) */}
+  {postBlocks.length > 0 && <PageBlocks blocks={postBlocks} lang={language} />}
 </BaseLayout>
 
 <style>

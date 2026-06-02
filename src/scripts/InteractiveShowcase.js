@@ -10,6 +10,18 @@ class InteractiveShowcase extends HTMLElement {
     return this.getAttribute("controls-position") || "bottom";
   }
 
+  get labelPlay() {
+    return this.getAttribute("label-play") || "Play all";
+  }
+
+  get labelPause() {
+    return this.getAttribute("label-pause") || "Pause all";
+  }
+
+  get labelStop() {
+    return this.getAttribute("label-stop") || "Stop all";
+  }
+
   connectedCallback() {
     this.render();
 
@@ -619,17 +631,17 @@ class InteractiveShowcase extends HTMLElement {
 
     // Create buttons with span for text (allows hiding text in vertical mode)
     shadowControls.innerHTML = `
-        <button data-lottie-action="pause-all" title="Pause all">
+        <button data-lottie-action="pause-all" title="${this.labelPause}">
           <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 14h2V4h-2v10ZM10.5 4v10h2V4h-2Z"/></svg>
-          <span>Pause all</span>
+          <span>${this.labelPause}</span>
         </button>
-        <button data-lottie-action="play-all" title="Play all">
+        <button data-lottie-action="play-all" title="${this.labelPlay}">
           <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4v10l8-5-8-5Z"/></svg>
-          <span>Play all</span>
+          <span>${this.labelPlay}</span>
         </button>
-        <button data-lottie-action="stop-all" title="Stop all">
+        <button data-lottie-action="stop-all" title="${this.labelStop}">
            <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4h9v10h-9V4Z"/></svg>
-           <span>Stop all</span>
+           <span>${this.labelStop}</span>
         </button>
       `;
 

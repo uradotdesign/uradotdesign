@@ -1,0 +1,80 @@
+---
+import { getAssetUrl } from '../../lib/directus';
+import { getLocalizedField, type Language } from '../../lib/i18n';
+import { getUI } from '../../lib/translations';
+
+interface Props {
+  data: Record<string, any>;
+  lang: Language;
+}
+
+const { data, lang } = Astro.props;
+const ui = await getUI(lang);
+
+const controlsPosition = data.controls_position === 'right' ? 'right' : 'bottom';
+const labelPlay = getLocalizedField(data, 'label_play', lang) || ui('lottie.playAll');
+const labelPause =
+  getLocalizedField(data, 'label_pause', lang) || ui('lottie.pauseAll');
+const labelStop = getLocalizedField(data, 'label_stop', lang) || ui('lottie.stopAll');
+
+const tabs = (Array.isArray(data.tabs) ? data.tabs : [])
+  .map((t: any) => {
+    const lotties = (Array.isArray(t.lotties) ? t.lotties : [])
+      .map((l: any) => ({
+        path: getAssetUrl(l.animation),
+        loop: l.loop !== false,
+        autoplay: l.autoplay !== false,
+      }))
+      .filter((l: { path: string | null }) => l.path);
+    return {
+      label: getLocalizedField(t, 'label', lang) || '',
+      description: getLocalizedField(t, 'description', lang) || '',
+      image: getAssetUrl(t.image),
+      showControls: t.show_controls !== false,
+      lotties,
+    };
+  })
+  .filter((t) => t.label && (t.image || t.lotties.length > 0));
+---
+
+{
+  tabs.length > 0 && (
+    <section class="py-12 md:py-20">
+      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+        <interactive-showcase
+          controls-position={controlsPosition}
+          label-play={labelPlay}
+          label-pause={labelPause}
+          label-stop={labelStop}
+        >
+          {tabs.map((t) => (
+            <div data-label={t.label}>
+              <div class="description" set:html={t.description} />
+              <div class="visual">
+                {t.lotties.length > 0 ? (
+                  <>
+                    {t.lotties.map((l: { path: string | null; loop: boolean; autoplay: boolean }) => (
+                      <div
+                        class="w-40 h-40"
+                        data-lottie-path={l.path}
+                        data-loop={String(l.loop)}
+                        data-autoplay={String(l.autoplay)}
+                      />
+                    ))}
+                    {t.showControls && <div class="controls" />}
+                  </>
+                ) : (
+                  <img src={t.image} alt={t.label} class="main-image" />
+                )}
+              </div>
+            </div>
+          ))}
+        </interactive-showcase>
+      </div>
+    </section>
+  )
+}
+
+<script>
+  import '../../scripts/InteractiveShowcase.js';
+</script>
