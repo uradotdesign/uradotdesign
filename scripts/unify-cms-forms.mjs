@@ -243,6 +243,29 @@ async function applyCollection(name) {
   printPlan(name, mode, plan);
 }
 
+/**
+ * Reverse the grouping for a collection: detach every field pointing at one of
+ * our grp_* sections, then delete the grp_* alias fields. Leaves hidden/width
+ * state untouched (use this to flatten the accordion, not to un-hide legacy).
+ */
+async function ungroupCollection(name) {
+  const fields = await getFields(name);
+  for (const f of fields) {
+    if (f.meta?.group && f.meta.group.startsWith(GROUP_PREFIX)) {
+      await patchFieldMeta(name, f.field, { group: null });
+    }
+  }
+  for (const f of fields) {
+    if (f.field.startsWith(GROUP_PREFIX)) {
+      await authRequest(
+        `/fields/${encodeURIComponent(name)}/${encodeURIComponent(f.field)}`,
+        { method: "DELETE" }
+      );
+    }
+  }
+  console.log(`• ${name}  [ungrouped]`);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   console.log(`\nUnify CMS forms -> ${process.env.DIRECTUS_URL}`);
@@ -253,6 +276,16 @@ async function main() {
     .map((c) => c.collection)
     .filter((name) => (args.only ? args.only.includes(name) : true))
     .sort();
+
+  if (args.ungroupAll || args.ungroup) {
+    const targets = args.ungroupAll
+      ? collections
+      : collections.filter((n) => args.ungroup.includes(n));
+    for (const name of targets) await ungroupCollection(name);
+    await authRequest(`/utils/cache/clear`, { method: "POST" }).catch(() => {});
+    console.log(`\nUngrouped ${targets.length} collection(s).`);
+    return;
+  }
 
   for (const name of collections) {
     if (args.dryRun) {
