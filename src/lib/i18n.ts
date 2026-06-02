@@ -20,8 +20,8 @@ export function getLocalizedField<T extends Record<string, any>>(
     return undefined;
   }
 
-  // 1. Native translations: obj.translations is an array of rows, each keyed by
-  //    languages_code (the row's value for `fieldName` is the localized string).
+  // Native translations: obj.translations is an array of rows, each keyed by
+  // languages_code (the row's value for `fieldName` is the localized string).
   const translations = (obj as Record<string, any>).translations;
   if (Array.isArray(translations) && translations.length > 0) {
     const pick = (code: Language): string | undefined => {
@@ -35,20 +35,9 @@ export function getLocalizedField<T extends Record<string, any>>(
     if (native !== undefined) {
       return native;
     }
-    // Translations present but this field is empty in all rows: fall through to legacy.
   }
 
-  // 2. Legacy `_en`/`_de` suffix fields.
-  const langField = `${fieldName}_${language}` as keyof T;
-  if (obj[langField] != null && obj[langField] !== undefined) {
-    return obj[langField] as string;
-  }
-  if (language !== "en") {
-    const enField = `${fieldName}_en` as keyof T;
-    if (obj[enField] != null && obj[enField] !== undefined) {
-      return obj[enField] as string;
-    }
-  }
+  // Fallback: a non-localized bare column with the same name.
   if (obj[fieldName as keyof T] != null && obj[fieldName as keyof T] !== undefined) {
     return obj[fieldName as keyof T] as string;
   }
@@ -57,8 +46,8 @@ export function getLocalizedField<T extends Record<string, any>>(
 }
 
 /**
- * Transform an object with language-specific fields into a localized object
- * @param obj - Object with _en and _de suffixed fields
+ * Transform an object with a native `translations[]` array into a localized object
+ * @param obj - Object carrying a native `translations[]` array
  * @param fields - Array of field names to localize
  * @param language - Language code
  * @returns Object with localized values
