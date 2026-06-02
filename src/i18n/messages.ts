@@ -99,6 +99,12 @@ export const messages: Record<Lang, Record<string, string>> = {
     "footer.copyright": "All rights reserved by {name}",
     "footer.imprint": "Imprint",
     "footer.privacy": "Privacy Statement",
+    // Before/after + lottie block chrome
+    "beforeAfter.before": "Before",
+    "beforeAfter.after": "After",
+    "lottie.playAll": "Play all",
+    "lottie.pauseAll": "Pause all",
+    "lottie.stopAll": "Stop all",
   },
   de: {
     // Navigation
@@ -185,6 +191,12 @@ export const messages: Record<Lang, Record<string, string>> = {
     "footer.copyright": "Alle Rechte vorbehalten von {name}",
     "footer.imprint": "Impressum",
     "footer.privacy": "Datenschutzerklärung",
+    // Before/after + lottie block chrome
+    "beforeAfter.before": "Vorher",
+    "beforeAfter.after": "Nachher",
+    "lottie.playAll": "Alle abspielen",
+    "lottie.pauseAll": "Alle pausieren",
+    "lottie.stopAll": "Alle stoppen",
   },
 };
 
