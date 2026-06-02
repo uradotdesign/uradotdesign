@@ -687,6 +687,11 @@ if (showWeather && weatherLocation) {
         .querySelector('header[data-scroll-threshold]')
         ?.classList.add('nav-swapping');
     };
+    // Freeze right before the swap so the header's transitions are guaranteed
+    // off before any class reconciliation can animate the CTA / adaptive recolor.
+    // (before-swap always pairs with after-swap + page-load, so the freeze can
+    // never get stranded the way a before-preparation freeze could on a
+    // cancelled navigation.)
     document.addEventListener('astro:before-swap', freezeHeaderTransitions);
 
     document.addEventListener('astro:after-swap', () => {
@@ -704,17 +709,39 @@ if (showWeather && weatherLocation) {
       updateActiveNav();
     });
 
-    // Restore header transitions only after the navigation has fully settled
-    // (scroll restoration done). Reconcile once more while still frozen, flush,
-    // then re-enable on the next frame so the reconciliation is never animated.
+    // Restore header transitions only after the navigation has fully settled.
+    // The browser can emit the post-swap scroll-restoration `scroll` event a few
+    // frames AFTER astro:page-load; if transitions are already live when it
+    // toggles `.scrolled`, the CTA/adaptive recolor animates (the "Let's talk"
+    // flash). So we keep the header frozen across a short settle window,
+    // reconcile instantly on every scroll during it, then thaw exactly once.
+    let navThawTimer = 0;
+    let navSettleScroll: (() => void) | null = null;
     document.addEventListener('astro:page-load', () => {
       const header = document.querySelector(
         'header[data-scroll-threshold]'
       ) as HTMLElement | null;
       if (!header || !header.classList.contains('nav-swapping')) return;
+
+      // Reconcile immediately while still frozen.
       applyScrollState();
-      void header.offsetWidth;
-      requestAnimationFrame(() => header.classList.remove('nav-swapping'));
+
+      if (navSettleScroll) window.removeEventListener('scroll', navSettleScroll);
+      navSettleScroll = () => applyScrollState();
+      window.addEventListener('scroll', navSettleScroll, { passive: true });
+
+      if (navThawTimer) clearTimeout(navThawTimer);
+      navThawTimer = window.setTimeout(() => {
+        if (navSettleScroll) {
+          window.removeEventListener('scroll', navSettleScroll);
+          navSettleScroll = null;
+        }
+        // Final reconcile + flush with transitions STILL off, then re-enable on
+        // the next frame so nothing that changed during the swap can animate.
+        applyScrollState();
+        void header.offsetWidth;
+        requestAnimationFrame(() => header.classList.remove('nav-swapping'));
+      }, 250);
     });
   }
 
