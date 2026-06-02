@@ -3,10 +3,8 @@ import { getHeroSection, getServices, getAssetUrl, getFileMetadata } from '../..
 import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
 import { t, getUI } from '../../lib/translations';
 
-const currentPath = Astro.url.pathname;
 const currentLang = getCurrentLanguage(Astro.url);
 const ui = await getUI(currentLang);
-const langPrefix = `/${currentLang}`;
 
 // Fetch data from Directus
 const heroData = await getHeroSection();
@@ -25,7 +23,6 @@ const headingLine1 = getLocalizedField(heroData, 'heading_line1', currentLang) |
 const headingLine2 = getLocalizedField(heroData, 'heading_line2', currentLang) || "";
 const tagline = getLocalizedField(heroData, 'tagline', currentLang) || "";
 const ctaButtonText = getLocalizedField(heroData, 'cta_button_text', currentLang) || "";
-const ctaButtonLink = heroData?.cta_button_link || "#contact";
 const showServicesGrid = heroData?.show_services_grid ?? true;
 
 const servicesTitle = await t('hero.services_title', currentLang, currentLang === 'de' ? 'DIENSTLEISTUNGEN' : 'SERVICES');

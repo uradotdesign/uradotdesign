@@ -31,7 +31,7 @@ const { sectionTitle = defaultTitle, approaches } = Astro.props;
     <!-- Approach Cards Grid -->
     <div class="grid grid-cols-1 xl:grid-cols-3 lg:gap-24 gap-4 max-w-full">
       {
-        approaches.map((approach, index) => (
+        approaches.map((approach) => (
           <div
             class={`approach-card approach-${approach.borderAnimation || "friction"}`}
           >

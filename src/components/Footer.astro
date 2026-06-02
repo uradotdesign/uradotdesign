@@ -42,14 +42,11 @@ const socialLinks = socialLinksData.map((s) => ({
   ariaLabel: getLocalizedField(s, "aria_label", currentLang) || s.aria_label,
 }));
 
-const currentYear = new Date().getFullYear();
-
 // Use settings from Directus only (no fallbacks)
 const contactEmail = siteSettings?.contact_email ?? null;
 const contactPhone = siteSettings?.contact_phone ?? null;
 const addressStreet = siteSettings?.address_street ?? null;
 const addressCity = siteSettings?.address_city ?? null;
-const addressCountry = siteSettings?.address_country ?? null;
 const companyLegalName = siteSettings?.company_legal_name ?? null;
 
 // Footer-specific settings from Directus
@@ -84,10 +81,6 @@ const defaultNewsletterSubtitle = await t(
     ? "Erhalten Sie gelegentlich Updates über das, worüber wir nachdenken und woran wir arbeiten."
     : "Get occasional updates on what we're thinking and working on."
 );
-
-const newsletterTitle = footerSettings
-  ? getLocalizedField(footerSettings, "newsletter_title", currentLang)
-  : null;
 
 const newsletterSubtitle =
   (siteSettings &&
@@ -728,28 +721,15 @@ const showTemperature = footerSettings?.show_temperature ?? true;
     }
   }
 
-  // Read location from data attribute on the footer element
+  // Read location from data attribute on the footer element. Temperature is
+  // rendered server-side; the client re-fetches to keep the value and the
+  // temperature-based color overlay fresh.
   const rootEl = document.querySelector("footer[data-weather-location]");
-  // const footerWeatherLocation =
-  //   (rootEl && rootEl.getAttribute("data-weather-location")) || null;
-
-  // Fetch weather and apply temperature-based filters using Directus-selected location
-  // (Temperature is now fetched server-side, but we might want to keep the client-side update or overlay logic)
-  // Actually, the overlay logic relies on `temp` variable.
-  // We can read the initial temp from the DOM if we want to apply the overlay immediately,
-  // or keep fetching client side for the overlay?
-  // The server-side fetch provides the initial value.
-  // We should update `updateTemperature` to read from DOM if available, or just fetch for the overlay (gradient).
-  // Let's keep the fetch for the gradient logic to ensure it's accurate client-side,
-  // BUT we can optimize to use the server value for the initial gradient if we pass it?
-  // For now, let's leave the client-side fetch for the gradient/updates, but simpler.
 
   async function updateTemperature() {
     const footerWeatherLocation = rootEl?.getAttribute("data-weather-location");
     try {
       if (!footerWeatherLocation) {
-        // const tempDisplay = document.getElementById("temp-value");
-        // if (tempDisplay) tempDisplay.textContent = "--°C";
         return;
       }
 
@@ -792,9 +772,6 @@ const showTemperature = footerSettings?.show_temperature ?? true;
       }
     } catch (error) {
       console.error("Error fetching weather:", error);
-      // Neutral display if error
-      // const tempDisplay = document.getElementById("temp-value");
-      // if (tempDisplay) tempDisplay.textContent = "--°C";
     }
   }
 
@@ -812,7 +789,7 @@ const showTemperature = footerSettings?.show_temperature ?? true;
   // Newsletter form handling (Brevo integration)
   // Note: Brevo doesn't support CORS, so we submit directly and let Brevo handle the redirect
   document.querySelectorAll(".newsletter-form").forEach((form) => {
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", () => {
       const button = form.querySelector("button[type='submit']");
 
       if (button) {

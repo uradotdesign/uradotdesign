@@ -11,7 +11,7 @@ export interface Props {
 
 const currentLang = getCurrentLanguage(Astro.url);
 const ui = await getUI(currentLang);
-const { page = "about", heading, intro } = Astro.props;
+const { heading, intro } = Astro.props;
 
 const aboutData = await getAboutPage();
 const defaultHeading = ui("expertise.heading");

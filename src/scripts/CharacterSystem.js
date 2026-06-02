@@ -154,7 +154,6 @@ class CharacterPicker extends HTMLElement {
 
   setupListeners() {
     const trigger = this.shadowRoot.querySelector(".trigger");
-    const container = this.shadowRoot.querySelector(".picker-container");
 
     trigger.addEventListener("click", (e) => {
       e.stopPropagation();

@@ -223,7 +223,7 @@ const services = servicesData.length > 0
 
         // Touch events for mobile
         let touchActive = false;
-        article.addEventListener('touchstart', (e) => {
+        article.addEventListener('touchstart', () => {
           if (!touchActive) {
             touchActive = true;
             const animData = animations.get(serviceId);
@@ -317,7 +317,7 @@ const services = servicesData.length > 0
   function initSpotlight() {
     const serviceItems = document.querySelectorAll('.service-item');
 
-    serviceItems.forEach((item, index) => {
+    serviceItems.forEach((item) => {
       const el = item as HTMLElement;
       if (initializedSpotlights.has(el)) return;
       initializedSpotlights.add(el);
@@ -330,9 +330,6 @@ const services = servicesData.length > 0
         const htmlEl = textEl as HTMLElement;
         htmlEl.style.setProperty('--spotlight-color', spotlightColor);
       });
-      
-      let mouseX = 0;
-      let mouseY = 0;
       
       // Function to update spotlight position
       const updateSpotlight = (clientX: number, clientY: number) => {

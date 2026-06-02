@@ -31,7 +31,7 @@ class InteractiveShowcase extends HTMLElement {
       this.setupLottieControls();
     } else {
       // Use MutationObserver to wait for children
-      const observer = new MutationObserver((mutations) => {
+      const observer = new MutationObserver(() => {
         if (this.children.length > 0) {
           this.initTabs();
           this.setupLottieControls();
@@ -392,7 +392,7 @@ class InteractiveShowcase extends HTMLElement {
 
     if (wrappers.length === 0 && this.items.length === 0) return;
 
-    wrappers.forEach((wrapper, index) => {
+    wrappers.forEach((wrapper) => {
       wrapper.setAttribute("data-processed", "true");
       // We hide the wrapper because we are going to extract its contents
       wrapper.style.display = "none";

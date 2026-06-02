@@ -138,7 +138,7 @@ const ui = await getUI(currentLang);
     let currentTheme: 'light' | 'dark' = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
     // Load Lottie with race condition protection
-    async function loadLottie(path: string | null, theme: 'light' | 'dark'): Promise<AnimationItem | null> {
+    async function loadLottie(path: string | null, _theme: 'light' | 'dark'): Promise<AnimationItem | null> {
       if (!path) return null;
       
       // Check if this initialization is still valid

@@ -30,7 +30,7 @@ const currentLang = getCurrentLanguage(Astro.url);
 // CSS. Never loaded in normal production responses.
 const isPreview = isPreviewActive(Astro.url);
 
-const { title, description, image, fullWidth = false } = Astro.props;
+const { title, description, image } = Astro.props;
 
 // Site Info from Directus
 const siteName = settings?.site_name || "Ura Design";
@@ -182,6 +182,7 @@ const ogLocaleAlternate = currentLang === "de" ? "en_US" : "de_DE";
     {
       settings?.plausible_enabled && settings?.plausible_domain && (
         <script
+          is:inline
           defer
           data-domain={settings.plausible_domain}
           src={
