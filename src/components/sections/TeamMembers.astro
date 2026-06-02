@@ -142,12 +142,16 @@ const teamMembers = teamMembersData.length > 0
     filter: brightness(0.6);
   }
 
-  /* Allow horizontal scroll on smaller screens */
+  /* Allow horizontal swipe/drag scroll on smaller screens */
   @media (max-width: 768px) {
     .team-cards-row {
       justify-content: flex-start;
       overflow-x: auto;
-      scroll-snap-type: x mandatory;
+      /* Proximity (not mandatory) so the snap never fights an in-progress drag */
+      scroll-snap-type: x proximity;
+      /* Hand horizontal gestures to the JS drag handler; keep vertical page scroll */
+      touch-action: pan-y;
+      cursor: grab;
       padding-left: 1rem;
       padding-right: 1rem;
       margin-left: -1rem;
@@ -164,6 +168,18 @@ const teamMembers = teamMembersData.length > 0
     .team-cards-row::-webkit-scrollbar {
       display: none;
     }
+  }
+
+  /* While dragging: disable snapping/selection for a smooth follow-the-finger feel */
+  .team-cards-row.is-dragging {
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  .team-cards-row.is-dragging .team-card {
+    cursor: grabbing;
   }
 
   /* Individual Card - container for perspective */
@@ -394,6 +410,11 @@ const teamMembers = teamMembersData.length > 0
 </style>
 
 <script>
+  // Set true while a horizontal drag is in progress so the drag gesture
+  // never registers as a card "open" click. Reset at the start of every
+  // new pointer interaction.
+  let teamDragged = false;
+
   class TeamCardFlip {
     cards: HTMLElement[];
     backdrop: HTMLElement | null;
@@ -434,6 +455,9 @@ const teamMembers = teamMembersData.length > 0
 
     handleCardClick(e: Event, card: HTMLElement) {
       e.stopPropagation();
+
+      // Ignore the click synthesized at the end of a swipe/drag.
+      if (teamDragged) return;
 
       if (this.activeCard === card) {
         // Same card clicked - toggle flip
@@ -495,11 +519,74 @@ const teamMembers = teamMembersData.length > 0
     }
   }
 
-  // Initialize (with cleanup to prevent listener stacking)
-  let teamCardFlipInstance: TeamCardFlip | null = null;
+  // Horizontal drag/swipe-to-scroll for the overlapping card row.
+  // Pointer Events cover touch, mouse and pen with one code path; we only
+  // hijack the gesture once the row is actually scrollable and the pointer
+  // has moved past a small threshold, so genuine taps still open a card.
+  function setupTeamDrag(row: HTMLElement) {
+    const DRAG_THRESHOLD = 8;
+    let active = false;
+    let startX = 0;
+    let startScroll = 0;
+    let pointerId: number | null = null;
 
+    const isScrollable = () => row.scrollWidth > row.clientWidth + 4;
+
+    row.addEventListener('pointerdown', (e) => {
+      if (e.button != null && e.button !== 0) return;
+      if (!isScrollable()) return;
+      active = true;
+      teamDragged = false;
+      startX = e.clientX;
+      startScroll = row.scrollLeft;
+      pointerId = e.pointerId;
+    });
+
+    row.addEventListener('pointermove', (e) => {
+      if (!active) return;
+      const dx = e.clientX - startX;
+      if (!teamDragged && Math.abs(dx) > DRAG_THRESHOLD) {
+        teamDragged = true;
+        row.classList.add('is-dragging');
+        try {
+          if (pointerId !== null) row.setPointerCapture(pointerId);
+        } catch {}
+      }
+      if (teamDragged) {
+        row.scrollLeft = startScroll - dx;
+        e.preventDefault();
+      }
+    });
+
+    const endDrag = () => {
+      if (!active) return;
+      active = false;
+      if (teamDragged) {
+        row.classList.remove('is-dragging');
+        try {
+          if (pointerId !== null) row.releasePointerCapture(pointerId);
+        } catch {}
+        // Clear after the synthetic click has been swallowed by handleCardClick.
+        setTimeout(() => {
+          teamDragged = false;
+        }, 0);
+      }
+      pointerId = null;
+    };
+
+    row.addEventListener('pointerup', endDrag);
+    row.addEventListener('pointercancel', endDrag);
+  }
+
+  // Initialize idempotently — the row re-renders on navigation, so a per-row
+  // guard prevents double-binding when both DOMContentLoaded and
+  // astro:page-load fire for the same DOM.
   function initTeamCards() {
-    teamCardFlipInstance = new TeamCardFlip();
+    const row = document.getElementById('team-cards-row');
+    if (!row || row.dataset.teamInit === 'true') return;
+    row.dataset.teamInit = 'true';
+    new TeamCardFlip();
+    setupTeamDrag(row);
   }
 
   if (document.readyState === 'loading') {

@@ -140,6 +140,7 @@ if (showWeather && weatherLocation) {
 ---
 
 <header 
+  transition:persist="header"
   class:list={[
     isOverlay ? 'fixed' : (stickyHeader ? 'sticky' : 'relative'),
     'hidden lg:flex top-0 left-0 right-0 z-50 items-center justify-between px-4 sm:px-6 lg:px-8 py-4 lg:py-5 font-body transition-all duration-300',
@@ -320,6 +321,7 @@ if (showWeather && weatherLocation) {
 <!-- Mobile Navigation Bar - Always fixed at top -->
 <nav 
   id="mobile-nav" 
+  transition:persist="mobile-nav"
   class="mobile-nav lg:hidden fixed top-0 left-0 right-0 z-[100]"
   aria-label={mobileNavLabel}
 >
@@ -502,220 +504,221 @@ if (showWeather && weatherLocation) {
 </div>
 
 <script>
-  // Enhanced scroll behavior for header with Directus settings
-  // Use a flag to track if we've already attached the scroll listener
-  let scrollListenerAttached = false;
-  let lastScrollHandler: ((e: Event) => void) | null = null;
+  // ============================================================
+  // Header controller — transition-safe (single module instance).
+  // The desktop <header> and mobile <nav> persist across navigations
+  // (transition:persist); the menu overlay is re-rendered. Every
+  // handler therefore resolves elements by id/selector at call time
+  // (never via stale closures), and one-time listeners are guarded
+  // with a window flag so navigations don't stack them.
+  // ============================================================
 
-  function initHeaderScroll() {
-    const header = document.querySelector('header');
-    if (!header) return;
+  let videoPaused = false;
+  let colonVisible = true;
+  let isMenuOpen = false;
 
-    const scrollThreshold = parseInt(header.dataset.scrollThreshold || '50');
-    const blurOnScroll = header.dataset.blurOnScroll === 'true';
-    const showBorder = header.dataset.showBorder === 'true';
+  // ---- Scroll-driven appearance -------------------------------
+  function applyScrollState() {
+    const y = window.scrollY || window.pageYOffset || 0;
 
-    // Add blur class if enabled (only once)
-    if (blurOnScroll && !header.classList.contains('blur-enabled')) {
-      header.classList.add('blur-enabled');
+    const header = document.querySelector(
+      'header[data-scroll-threshold]'
+    ) as HTMLElement | null;
+    if (header) {
+      const threshold = parseInt(header.dataset.scrollThreshold || '50', 10);
+      const showBorder = header.dataset.showBorder === 'true';
+      if (header.dataset.blurOnScroll === 'true') header.classList.add('blur-enabled');
+      const scrolled = y > threshold;
+      header.classList.toggle('scrolled', scrolled);
+      header.classList.toggle('show-border', scrolled && showBorder);
     }
 
-    // Apply current scroll state immediately without transition flash
-    const applyScrollState = () => {
-      const currentScroll = window.pageYOffset || window.scrollY;
-      if (currentScroll > scrollThreshold) {
-        header.classList.add('scrolled');
-        if (showBorder) header.classList.add('show-border');
-      } else {
-        header.classList.remove('scrolled');
-        header.classList.remove('show-border');
-      }
-    };
+    const mobileNav = document.getElementById('mobile-nav');
+    if (mobileNav) mobileNav.classList.toggle('is-scrolled', y >= 50);
 
-    // Apply immediately
-    applyScrollState();
+    applyMobileCtaState(y);
+  }
 
-    // Only attach scroll listener once
-    if (!scrollListenerAttached) {
-      const scrollHandler = () => {
-        applyScrollState();
-      };
-
-      window.addEventListener('scroll', scrollHandler, { passive: true });
-      lastScrollHandler = scrollHandler;
-      scrollListenerAttached = true;
-    } else {
-       // If attached, force re-check
-       applyScrollState();
+  // ---- Mobile weather <-> CTA swap ----------------------------
+  function applyMobileCtaState(scrollY?: number) {
+    if (isMenuOpen) return;
+    const weatherEl = document.getElementById('mobile-nav-weather');
+    const ctaEl = document.getElementById('mobile-nav-cta');
+    if (!weatherEl && !ctaEl) return;
+    const y = scrollY ?? (window.scrollY || 0);
+    const showCta = y >= window.innerHeight * 0.5;
+    if (weatherEl) weatherEl.style.opacity = showCta ? '0' : '1';
+    if (ctaEl) {
+      ctaEl.style.opacity = showCta ? '1' : '0';
+      ctaEl.style.pointerEvents = showCta ? 'auto' : 'none';
     }
   }
-  
-  // Update CEST time in real-time
-  let colonVisible = true;
-  let videoPaused = false;
-  
+
+  // ---- Active nav link (persisted header needs client sync) ---
+  function pathOf(href: string | null): string | null {
+    if (!href) return null;
+    if (/^(https?:)?\/\//.test(href) || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('#')) {
+      return null;
+    }
+    try {
+      return new URL(href, location.origin).pathname.replace(/\/+$/, '');
+    } catch {
+      return null;
+    }
+  }
+
+  function updateActiveNav() {
+    const current = location.pathname.replace(/\/+$/, '');
+    const matches = (linkPath: string | null) =>
+      !!linkPath && (current === linkPath || current.startsWith(linkPath + '/'));
+
+    document.querySelectorAll<HTMLAnchorElement>('header a.nav-link').forEach((a) => {
+      a.classList.toggle('is-active', matches(pathOf(a.getAttribute('href'))));
+    });
+
+    // Services dropdown trigger is active when the current path is one of its items.
+    const summary = document.querySelector('header details.group > summary.nav-link');
+    if (summary) {
+      let active = false;
+      document
+        .querySelectorAll<HTMLAnchorElement>('header .services-dropdown-menu a[href]')
+        .forEach((a) => {
+          if (matches(pathOf(a.getAttribute('href')))) active = true;
+        });
+      summary.classList.toggle('is-active', active);
+    }
+  }
+
+  // ---- Clock --------------------------------------------------
   function updateTime() {
-    const timeElement = document.getElementById('header-time');
-    const mobileTimeElement = document.getElementById('mobile-header-time');
-    
     const now = new Date();
-    const timeOptions: Intl.DateTimeFormatOptions = {
+    const formatted = new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       timeZone: 'Europe/Berlin',
-      hour12: false
-    };
-    const currentTime = new Intl.DateTimeFormat('en-US', timeOptions).format(now);
-    const [hours, minutes] = currentTime.split(':');
-    
-    // Update desktop time
-    if (timeElement) {
-      const hoursSpan = timeElement.querySelector('.time-hours');
-      const minutesSpan = timeElement.querySelector('.time-minutes');
-      if (hoursSpan) hoursSpan.textContent = hours;
-      if (minutesSpan) minutesSpan.textContent = minutes;
-      timeElement.setAttribute('datetime', now.toISOString());
-    }
-
-    // Update mobile time
-    if (mobileTimeElement) {
-      const hoursSpan = mobileTimeElement.querySelector('.time-hours');
-      const minutesSpan = mobileTimeElement.querySelector('.time-minutes');
-      if (hoursSpan) hoursSpan.textContent = hours;
-      if (minutesSpan) minutesSpan.textContent = minutes;
-      mobileTimeElement.setAttribute('datetime', now.toISOString());
-    }
+      hour12: false,
+    }).format(now);
+    const [hours, minutes] = formatted.split(':');
+    (['header-time', 'mobile-header-time'] as const).forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const h = el.querySelector('.time-hours');
+      const m = el.querySelector('.time-minutes');
+      if (h) h.textContent = hours;
+      if (m) m.textContent = minutes;
+      el.setAttribute('datetime', now.toISOString());
+    });
   }
 
-  // Toggle colon visibility for blinking effect
   function toggleColon() {
-    // If video is paused, always show colon
     if (videoPaused) {
-      document.querySelectorAll('.time-colon').forEach(colon => {
-        (colon as HTMLElement).style.visibility = 'visible';
-      });
+      document.querySelectorAll('.time-colon').forEach((c) => ((c as HTMLElement).style.visibility = 'visible'));
       return;
     }
-    
     colonVisible = !colonVisible;
-    document.querySelectorAll('.time-colon').forEach(colon => {
-      (colon as HTMLElement).style.visibility = colonVisible ? 'visible' : 'hidden';
-    });
+    document
+      .querySelectorAll('.time-colon')
+      .forEach((c) => ((c as HTMLElement).style.visibility = colonVisible ? 'visible' : 'hidden'));
   }
 
-  // Listen for video pause/play events from Hero
-  document.addEventListener('hero-video-paused', () => {
-    videoPaused = true;
-    document.querySelectorAll('.time-colon').forEach(colon => {
-      (colon as HTMLElement).style.visibility = 'visible';
-    });
-  });
-
-  document.addEventListener('hero-video-playing', () => {
-    videoPaused = false;
-  });
-
-  // Update immediately on load
-  updateTime();
-
-  // Update time every minute (no need for every second now)
-  setInterval(updateTime, 60000);
-  
-  // Blink colon every second
-  setInterval(toggleColon, 500);
-
-  // ========================================
-  // SERVICES DROPDOWN - Click outside to close
-  // ========================================
-  const servicesDropdown = document.querySelector('details.group') as HTMLDetailsElement | null;
-  
-  if (servicesDropdown) {
-    document.addEventListener('click', (e) => {
-      if (servicesDropdown.open && !servicesDropdown.contains(e.target as Node)) {
-        servicesDropdown.open = false;
+  // ---- Mobile menu --------------------------------------------
+  function setMenu(open: boolean) {
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    isMenuOpen = open;
+    overlay?.classList.toggle('is-open', open);
+    overlay?.setAttribute('aria-hidden', open ? 'false' : 'true');
+    toggle?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle?.querySelector('.hamburger-icon')?.classList.toggle('hidden', open);
+    toggle?.querySelector('.close-icon')?.classList.toggle('hidden', !open);
+    document.body.style.overflow = open ? 'hidden' : '';
+    if (open) {
+      const weatherEl = document.getElementById('mobile-nav-weather');
+      const ctaEl = document.getElementById('mobile-nav-cta');
+      if (weatherEl) weatherEl.style.opacity = '0';
+      if (ctaEl) {
+        ctaEl.style.opacity = '1';
+        ctaEl.style.pointerEvents = 'auto';
       }
-    });
+    } else {
+      applyMobileCtaState();
+    }
   }
 
-  // ========================================
-  // MOBILE NAVIGATION
-  // ========================================
-  
   function initMobileNav() {
     const toggle = document.getElementById('mobile-menu-toggle');
     const overlay = document.getElementById('mobile-menu-overlay');
-    const mobileNav = document.getElementById('mobile-nav');
-    const weatherEl = document.getElementById('mobile-nav-weather');
-    const ctaEl = document.getElementById('mobile-nav-cta');
-    
-    if (!toggle || !overlay || !mobileNav) return;
+    if (!toggle || !overlay) return;
 
-    const menuToggle = toggle;
-    const menuOverlay = overlay;
-    const nav = mobileNav;
+    // Keep the overlay at body level so it is never clipped by a stacking context.
+    if (overlay.parentElement !== document.body) document.body.appendChild(overlay);
 
-    // Move overlay to body to avoid stacking context issues
-    if (menuOverlay.parentElement !== document.body) {
-      document.body.appendChild(menuOverlay);
+    // Bind per-node so a re-rendered overlay re-binds while the persisted
+    // toggle stays bound exactly once (no listener stacking across navigations).
+    if (toggle.dataset.bound !== 'true') {
+      toggle.dataset.bound = 'true';
+      toggle.addEventListener('click', () => setMenu(!isMenuOpen));
     }
-    
-    const hamburgerIcon = menuToggle.querySelector('.hamburger-icon');
-    const closeIcon = menuToggle.querySelector('.close-icon');
-
-    let isMenuOpen = false;
-
-    function toggleMenu() {
-      isMenuOpen = !isMenuOpen;
-      
-      if (isMenuOpen) {
-        menuOverlay.classList.add('is-open');
-        menuOverlay.setAttribute('aria-hidden', 'false');
-        menuToggle.setAttribute('aria-expanded', 'true');
-        hamburgerIcon?.classList.add('hidden');
-        closeIcon?.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        
-        // Show CTA, Hide Weather when menu open
-        if (weatherEl) weatherEl.style.opacity = '0';
-        if (ctaEl) {
-           ctaEl.style.opacity = '1';
-           ctaEl.style.pointerEvents = 'auto';
-        }
-
-      } else {
-        menuOverlay.classList.remove('is-open');
-        menuOverlay.setAttribute('aria-hidden', 'true');
-        menuToggle.setAttribute('aria-expanded', 'false');
-        hamburgerIcon?.classList.remove('hidden');
-        closeIcon?.classList.add('hidden');
-        document.body.style.overflow = '';
-        
-        // Restore based on scroll position
-        requestAnimationFrame(updateNavState);
-      }
+    if (overlay.dataset.bound !== 'true') {
+      overlay.dataset.bound = 'true';
+      overlay.addEventListener('click', (e) => {
+        const t = e.target as HTMLElement;
+        if (isMenuOpen && (t === overlay || t.closest('a'))) setMenu(false);
+      });
     }
+  }
 
-    menuToggle.onclick = toggleMenu;
+  // ---- One-time global wiring ---------------------------------
+  function setupOnce() {
+    if ((window as any).__uraHeaderReady) return;
+    (window as any).__uraHeaderReady = true;
 
-    menuOverlay.onclick = (e) => {
-      const target = e.target as HTMLElement;
-      if (target === menuOverlay || target.closest('a')) {
-        if (isMenuOpen) toggleMenu();
-      }
-    };
+    let ticking = false;
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          applyScrollState();
+          ticking = false;
+        });
+      },
+      { passive: true }
+    );
 
+    setInterval(updateTime, 60000);
+    setInterval(toggleColon, 500);
+
+    document.addEventListener('hero-video-paused', () => {
+      videoPaused = true;
+      document.querySelectorAll('.time-colon').forEach((c) => ((c as HTMLElement).style.visibility = 'visible'));
+    });
+    document.addEventListener('hero-video-playing', () => {
+      videoPaused = false;
+    });
+
+    // Services dropdown: close on outside click.
+    document.addEventListener('click', (e) => {
+      const dd = document.querySelector('header details.group') as HTMLDetailsElement | null;
+      if (dd?.open && !dd.contains(e.target as Node)) dd.open = false;
+    });
+
+    // Mobile menu keyboard: Escape to close + focus trap.
     document.addEventListener('keydown', (e) => {
       if (!isMenuOpen) return;
+      const overlay = document.getElementById('mobile-menu-overlay');
+      if (!overlay) return;
       if (e.key === 'Escape') {
-        toggleMenu();
-        menuToggle.focus();
+        setMenu(false);
+        document.getElementById('mobile-menu-toggle')?.focus();
         return;
       }
       if (e.key === 'Tab') {
-        const focusable = menuOverlay.querySelectorAll<HTMLElement>(
+        const focusable = overlay.querySelectorAll<HTMLElement>(
           'a[href], button, input, [tabindex]:not([tabindex="-1"])'
         );
-        if (focusable.length === 0) return;
+        if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         if (e.shiftKey && document.activeElement === first) {
@@ -728,85 +731,32 @@ if (showWeather && weatherLocation) {
       }
     });
 
-    // Scroll Logic: Background appears on scroll, CTA swaps after hero
-    let ticking = false;
-    function updateNavState() {
-      if (isMenuOpen) return;
-
-      const scrollY = window.scrollY;
-      const bgThreshold = 50; // Background appears after 50px scroll
-      const ctaThreshold = window.innerHeight * 0.5; // CTA swaps after 50% of viewport
-      
-      // Background glass effect
-      if (scrollY >= bgThreshold) {
-        nav.classList.add('is-scrolled');
-      } else {
-        nav.classList.remove('is-scrolled');
-      }
-      
-      // Weather/CTA swap
-      if (scrollY >= ctaThreshold) {
-        if (weatherEl) weatherEl.style.opacity = '0';
-        if (ctaEl) {
-           ctaEl.style.opacity = '1';
-           ctaEl.style.pointerEvents = 'auto';
-        }
-      } else {
-        if (weatherEl) weatherEl.style.opacity = '1';
-        if (ctaEl) {
-           ctaEl.style.opacity = '0';
-           ctaEl.style.pointerEvents = 'none';
-        }
-      }
-    }
-
-    window.addEventListener('scroll', () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          updateNavState();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    }, { passive: true });
-    
-    // Initial check
-    updateNavState();
-  }
-
-  function headerPageLoadHandler() {
-    scrollListenerAttached = false;
-    initHeaderScroll();
-    setTimeout(() => {
-      if (typeof updateTime === 'function') updateTime();
-      if (typeof initMobileNav === 'function') initMobileNav();
-    }, 0);
-  }
-
-  if (!(window as any).__headerPageLoadAttached) {
-    (window as any).__headerPageLoadAttached = true;
-    document.addEventListener('astro:page-load', headerPageLoadHandler);
-  } else {
-    headerPageLoadHandler();
-  }
-
-  if (!(window as any).__headerSwapAttached) {
-    (window as any).__headerSwapAttached = true;
-
-    document.addEventListener('astro:before-swap', () => {
-      const header = document.querySelector('header');
-      if (header) {
-        header.dataset.wasScrolled = header.classList.contains('scrolled') ? 'true' : 'false';
-      }
-    });
-
+    // Astro resets scroll *before* astro:after-swap and the new view-transition
+    // snapshot is captured *after* it, so applying the new page's scroll state +
+    // active link here (synchronously, no rAF) leaves zero post-swap recolor flash.
     document.addEventListener('astro:after-swap', () => {
-      const header = document.querySelector('header');
-      if (header && header.dataset.wasScrolled === 'true') {
-        header.classList.add('scrolled');
-      }
-      requestAnimationFrame(initHeaderScroll);
+      const dd = document.querySelector('header details.group') as HTMLDetailsElement | null;
+      if (dd) dd.open = false;
+      if (isMenuOpen) setMenu(false);
+      applyScrollState();
+      updateActiveNav();
     });
+  }
+
+  // ---- Per-page init (first load + every navigation) ----------
+  function initHeader() {
+    setupOnce();
+    initMobileNav();
+    applyScrollState();
+    updateActiveNav();
+    updateTime();
+  }
+
+  document.addEventListener('astro:page-load', initHeader);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHeader, { once: true });
+  } else {
+    initHeader();
   }
 </script>
 
