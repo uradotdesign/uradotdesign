@@ -411,306 +411,47 @@ const clientMessages = {
 </section>
 
 <script>
+  import {
+    initContactFormLogic,
+    initSpotlightButtons,
+    initAvatarTooltips,
+  } from "../../scripts/contactForm.js";
+
   function initContactForm() {
-    const form = document.getElementById("contact-form") as HTMLFormElement;
+    const form = document.getElementById("contact-form") as HTMLFormElement | null;
+    if (!form) return;
     const statusDiv = document.getElementById("form-status");
-    const submitButton = form?.querySelector(
+    const submitButton = form.querySelector(
       'button[type="submit"]',
-    ) as HTMLButtonElement;
-    const buttonText = submitButton?.querySelector("#button-text");
+    ) as HTMLButtonElement | null;
+    const buttonText = submitButton?.querySelector(
+      "#button-text",
+    ) as HTMLElement | null;
+    if (!statusDiv || !submitButton || !buttonText) return;
 
-    if (!form || !statusDiv || !submitButton || !buttonText) return;
-
-    // Prevent duplicate initialization
-    if ((form as any).__contactFormInit) return;
-    (form as any).__contactFormInit = true;
-
-    // Get language from form data attribute
-    const language = form.getAttribute("data-language") || "en";
-
-    // Get localized messages
-    let msg = {
-      sending: "Sending...",
-      success: "Thank you! We'll get back to you soon.",
-      error: "Something went wrong. Please try again.",
-      requiredField: "This field is required",
-      invalidEmail: "Please enter a valid email address",
-    };
-
-    try {
-      const messagesAttr = form.getAttribute("data-messages");
-      if (messagesAttr) {
-        msg = JSON.parse(messagesAttr);
-      }
-    } catch (e) {
-      console.warn("Could not parse form messages", e);
-    }
-
-    // Track when user first interacts with the form (not when page loads)
-    let formInteractionStart: number | null = null;
-
-    const trackFirstInteraction = () => {
-      if (!formInteractionStart) {
-        formInteractionStart = Date.now();
-      }
-    };
-
-    // Listen for first interaction with any form field
-    const allFormFields = form.querySelectorAll("input, textarea");
-    allFormFields.forEach((input) => {
-      input.addEventListener("focus", trackFirstInteraction, { once: true });
-      input.addEventListener("input", trackFirstInteraction, { once: true });
-    });
-
-    // Clear error message
-    function clearError(input: HTMLInputElement | HTMLTextAreaElement) {
-      const errorMsg = input.parentElement?.querySelector(
-        ".error-message",
-      ) as HTMLElement;
-      if (errorMsg) {
-        errorMsg.innerHTML = "&nbsp;";
-        errorMsg.classList.add("invisible");
-      }
-      input.setAttribute("aria-invalid", "false");
-      input.classList.remove("border-red-500");
-    }
-
-    // Show error message
-    function showError(
-      input: HTMLInputElement | HTMLTextAreaElement,
-      message: string,
-    ) {
-      const errorMsg = input.parentElement?.querySelector(
-        ".error-message",
-      ) as HTMLElement;
-      if (errorMsg) {
-        errorMsg.textContent = message;
-        errorMsg.classList.remove("invisible");
-      }
-      input.setAttribute("aria-invalid", "true");
-      input.classList.add("border-red-500");
-    }
-
-    // Validate field
-    function validateField(
-      input: HTMLInputElement | HTMLTextAreaElement,
-    ): boolean {
-      clearError(input);
-
-      if (input.hasAttribute("required") && !input.value.trim()) {
-        showError(input, msg.requiredField);
-        return false;
-      }
-
-      if (input.type === "email" && input.value.trim()) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(input.value)) {
-          showError(input, msg.invalidEmail);
-          return false;
-        }
-      }
-
-      return true;
-    }
-
-    // Add real-time validation
-    const inputs = form.querySelectorAll("input[required], textarea[required]");
-    inputs.forEach((input) => {
-      input.addEventListener("blur", () => {
-        validateField(input as HTMLInputElement | HTMLTextAreaElement);
-      });
-      input.addEventListener("input", () => {
-        if (input.classList.contains("border-red-500")) {
-          validateField(input as HTMLInputElement | HTMLTextAreaElement);
-        }
-      });
-    });
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      // Validate all fields
-      let isValid = true;
-      inputs.forEach((input) => {
-        if (!validateField(input as HTMLInputElement | HTMLTextAreaElement)) {
-          isValid = false;
-        }
-      });
-
-      if (!isValid) {
-        // Focus first invalid field
-        const firstInvalid = form.querySelector(
-          '[aria-invalid="true"]',
-        ) as HTMLElement;
-        firstInvalid?.focus();
-        return;
-      }
-
-      // Show loading state
-      submitButton.disabled = true;
-      const originalText = buttonText.textContent;
-      buttonText.textContent = msg.sending;
-      statusDiv.classList.add("hidden");
-
-      const formData = new FormData(form);
-
-      // Get contact preferences (checkboxes)
-      const contactPreferences = Array.from(
-        form.querySelectorAll('input[name="contact_preference"]:checked'),
-      ).map((cb) => (cb as HTMLInputElement).value);
-
-      // Prepare data
-      const data = {
-        first_name: formData.get("first_name") as string,
-        last_name: formData.get("last_name") as string,
-        email: formData.get("email") as string,
-        phone: (formData.get("phone") as string) || undefined,
-        company: (formData.get("company") as string) || undefined,
-        website: (formData.get("website") as string) || undefined,
-        contact_preference: contactPreferences[0] || "email", // Take first preference
-        message: formData.get("message") as string,
-        url: formData.get("url") as string, // Honeypot field
-        language,
-        user_agent: navigator.userAgent,
-        timestamp: formInteractionStart, // When user first interacted with form
-      };
-
-      try {
-        const response = await fetch("/api/contact", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        });
-
-        const result = await response.json();
-
-        if (response.ok && result.success) {
-          // Show success message
-          statusDiv.textContent = msg.success;
-          statusDiv.className =
-            "block p-4 rounded-md bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200";
-          statusDiv.classList.remove("hidden");
-
-          // Reset form
-          form.reset();
-
-          // Scroll to success message
-          statusDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        } else {
-          throw new Error(result.error || "Submission failed");
-        }
-      } catch (error) {
-        console.error("Contact form error:", error);
-
-        // Show error message
-        statusDiv.textContent = msg.error;
-        statusDiv.className =
-          "block p-4 rounded-md bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
-        statusDiv.classList.remove("hidden");
-      } finally {
-        // Restore button
-        submitButton.disabled = false;
-        buttonText.textContent = originalText;
-      }
+    initContactFormLogic(form, {
+      statusDiv,
+      submitButton,
+      buttonText,
+      successClass:
+        "block p-4 rounded-md bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200",
+      errorClass:
+        "block p-4 rounded-md bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200",
+      scrollToStatus: true,
     });
   }
 
-  // Initialize on load and after View Transitions
+  function initContactExtras() {
+    initSpotlightButtons("[data-spotlight-button]");
+    initAvatarTooltips("[data-tooltip-target]");
+  }
+
   initContactForm();
-  document.addEventListener("astro:page-load", initContactForm);
-
-  // Spotlight effect for submit button
-  function initSpotlightButton() {
-    const buttons = document.querySelectorAll("[data-spotlight-button]");
-
-    buttons.forEach((button) => {
-      if ((button as any).__spotlightInit) return;
-      (button as any).__spotlightInit = true;
-
-      const btn = button as HTMLElement;
-
-      btn.addEventListener("mousemove", (e: MouseEvent) => {
-        const rect = btn.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        btn.style.setProperty("--mouse-x", `${x}px`);
-        btn.style.setProperty("--mouse-y", `${y}px`);
-      });
-    });
-  }
-
-  // Initialize spotlight on load and after page transitions
-  initSpotlightButton();
-  document.addEventListener("astro:page-load", initSpotlightButton);
-
-  // Mobile tooltip support for avatars
-  function initAvatarTooltips() {
-    const avatars = document.querySelectorAll("[data-tooltip-target]");
-
-    avatars.forEach((avatar) => {
-      if ((avatar as any).__tooltipInit) return;
-      (avatar as any).__tooltipInit = true;
-
-      const el = avatar as HTMLElement;
-
-      // Touch support for mobile
-      el.addEventListener(
-        "touchstart",
-        (e) => {
-          e.preventDefault();
-
-          // Remove active class from all other tooltips
-          avatars.forEach((a) => a.classList.remove("tooltip-active"));
-
-          // Toggle this tooltip
-          el.classList.add("tooltip-active");
-
-          // Remove after delay
-          setTimeout(() => {
-            el.classList.remove("tooltip-active");
-          }, 2500);
-        },
-        { passive: false },
-      );
-
-      // Click support (for accessibility)
-      el.addEventListener("click", () => {
-        avatars.forEach((a) => a.classList.remove("tooltip-active"));
-        el.classList.add("tooltip-active");
-
-        setTimeout(() => {
-          el.classList.remove("tooltip-active");
-        }, 2500);
-      });
-
-      // Keyboard support
-      el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          avatars.forEach((a) => a.classList.remove("tooltip-active"));
-          el.classList.add("tooltip-active");
-
-          setTimeout(() => {
-            el.classList.remove("tooltip-active");
-          }, 2500);
-        }
-      });
-    });
-
-    // Close tooltips when clicking elsewhere
-    document.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-tooltip-target]")) {
-        avatars.forEach((a) => a.classList.remove("tooltip-active"));
-      }
-    });
-  }
-
-  initAvatarTooltips();
-  document.addEventListener("astro:page-load", initAvatarTooltips);
+  initContactExtras();
+  document.addEventListener("astro:page-load", () => {
+    initContactForm();
+    initContactExtras();
+  });
 </script>
 
 <style>
