@@ -17,7 +17,7 @@ export const prerender = false;
 const lang = (Astro.params.lang as Language) || "en";
 const supportedLanguages: Language[] = ["en", "de"];
 if (!supportedLanguages.includes(lang)) {
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 const aboutData = await getAboutPage();

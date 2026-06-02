@@ -1,10 +1,17 @@
+import { watchTheme } from "./shadow-theme.js";
+
 class BeforeAfterToggle extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
   }
 
+  disconnectedCallback() {
+    this._unwatchTheme?.();
+  }
+
   connectedCallback() {
+    this._unwatchTheme = watchTheme(this);
     const beforeSrc = this.getAttribute("before");
     const afterSrc = this.getAttribute("after");
     const beforeAlt = this.getAttribute("before-alt") || "Before";
@@ -65,7 +72,7 @@ class BeforeAfterToggle extends HTMLElement {
           padding: 4px;
           gap: 0;
         }
-        :host-context(.dark) .switcher {
+        :host([data-theme="dark"]) .switcher {
           background: #2a2a2a;
         }
         .switcher-indicator {
@@ -80,7 +87,7 @@ class BeforeAfterToggle extends HTMLElement {
           transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           z-index: 0;
         }
-        :host-context(.dark) .switcher-indicator {
+        :host([data-theme="dark"]) .switcher-indicator {
           background: #404040;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
@@ -100,31 +107,31 @@ class BeforeAfterToggle extends HTMLElement {
           text-align: center;
           min-width: 80px;
         }
-        :host-context(.dark) .switcher-label {
+        :host([data-theme="dark"]) .switcher-label {
           color: #999;
         }
         .switcher-label.before {
           color: #000;
         }
-        :host-context(.dark) .switcher-label.before {
+        :host([data-theme="dark"]) .switcher-label.before {
           color: #fff;
         }
         .toggle-input:checked ~ .wrapper .switcher-label.before {
           color: #666;
         }
-        :host-context(.dark) .toggle-input:checked ~ .wrapper .switcher-label.before {
+        :host([data-theme="dark"]) .toggle-input:checked ~ .wrapper .switcher-label.before {
           color: #999;
         }
         .toggle-input:checked ~ .wrapper .switcher-label.after {
           color: #000;
         }
-        :host-context(.dark) .toggle-input:checked ~ .wrapper .switcher-label.after {
+        :host([data-theme="dark"]) .toggle-input:checked ~ .wrapper .switcher-label.after {
           color: #fff;
         }
         .switcher-label:hover {
           color: #333;
         }
-        :host-context(.dark) .switcher-label:hover {
+        :host([data-theme="dark"]) .switcher-label:hover {
           color: #ccc;
         }
       </style>

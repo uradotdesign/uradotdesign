@@ -1,3 +1,5 @@
+import { watchTheme } from "./shadow-theme.js";
+
 class CharacterPicker extends HTMLElement {
   constructor() {
     super();
@@ -8,7 +10,9 @@ class CharacterPicker extends HTMLElement {
 
   connectedCallback() {
     this.render();
+    this.setupItemRoles();
     this.setupListeners();
+    this._unwatchTheme = watchTheme(this);
 
     // Initial selection broadcast after a tick to ensure listener is ready
     setTimeout(() => {
@@ -19,6 +23,13 @@ class CharacterPicker extends HTMLElement {
         this.selectItem(initial, false);
       }
     }, 50);
+  }
+
+  disconnectedCallback() {
+    this._unwatchTheme?.();
+    if (this._onDocClick) {
+      document.removeEventListener("click", this._onDocClick);
+    }
   }
 
   render() {
@@ -41,6 +52,17 @@ class CharacterPicker extends HTMLElement {
           cursor: pointer;
           padding: 8px 0;
           user-select: none;
+          background: none;
+          border: none;
+          font: inherit;
+          color: inherit;
+          width: fit-content;
+        }
+
+        .trigger:focus-visible {
+          outline: 2px solid currentColor;
+          outline-offset: 4px;
+          border-radius: 4px;
         }
 
         .trigger-text {
@@ -51,7 +73,7 @@ class CharacterPicker extends HTMLElement {
           color: #141414;
         }
         
-        :host-context(html.dark) .trigger-text {
+        :host([data-theme="dark"]) .trigger-text {
             color: #ffffff;
         }
 
@@ -65,7 +87,7 @@ class CharacterPicker extends HTMLElement {
            fill: currentColor;
         }
         
-        :host-context(html.dark) .chevron path {
+        :host([data-theme="dark"]) .chevron path {
             fill: #ffffff;
         }
 
@@ -90,7 +112,7 @@ class CharacterPicker extends HTMLElement {
           margin-top: 8px;
         }
         
-        :host-context(html.dark) .dropdown {
+        :host([data-theme="dark"]) .dropdown {
             background: #1a1a1a;
             border-color: #333;
         }
@@ -108,8 +130,17 @@ class CharacterPicker extends HTMLElement {
           transition: background 0.1s;
           color: #333;
         }
+
+        ::slotted(.item:focus-visible) {
+          outline: 2px solid #141414;
+          outline-offset: -2px;
+        }
+
+        :host([data-theme="dark"]) ::slotted(.item:focus-visible) {
+          outline-color: #ffffff;
+        }
         
-        :host-context(html.dark) ::slotted(.item) {
+        :host([data-theme="dark"]) ::slotted(.item) {
             color: #eee;
         }
 
@@ -117,7 +148,7 @@ class CharacterPicker extends HTMLElement {
           background: #f3f4f6;
         }
         
-        :host-context(html.dark) ::slotted(.item:hover) {
+        :host([data-theme="dark"]) ::slotted(.item:hover) {
             background: #333;
         }
 
@@ -126,7 +157,7 @@ class CharacterPicker extends HTMLElement {
           font-weight: 600;
         }
         
-        :host-context(html.dark) ::slotted(.item.active) {
+        :host([data-theme="dark"]) ::slotted(.item.active) {
             background: #333;
         }
         
@@ -137,19 +168,30 @@ class CharacterPicker extends HTMLElement {
       </style>
 
       <div class="picker-container">
-        <div class="trigger">
+        <button class="trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
           <span class="trigger-text">
             <slot name="title">PICK YOUR CHARACTER</slot>
           </span>
-          <svg class="chevron" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg class="chevron" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        </div>
-        <div class="dropdown">
+        </button>
+        <div class="dropdown" role="listbox">
           <slot></slot>
         </div>
       </div>
     `;
+  }
+
+  setupItemRoles() {
+    this.querySelectorAll(".item").forEach((item) => {
+      item.setAttribute("role", "option");
+      item.setAttribute("tabindex", "-1");
+      item.setAttribute(
+        "aria-selected",
+        item.classList.contains("active") ? "true" : "false"
+      );
+    });
   }
 
   setupListeners() {
@@ -160,43 +202,92 @@ class CharacterPicker extends HTMLElement {
       this.toggleDropdown();
     });
 
-    // Close when clicking outside
-    document.addEventListener("click", () => {
-      if (this.isOpen) {
-        this.closeDropdown();
+    trigger.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" || e.key === "Down") {
+        e.preventDefault();
+        this.openDropdown();
+        this.focusItem(0);
       }
     });
 
-    // Handle item selection from slot
-    this.shadowRoot.addEventListener("click", (e) => {
+    // Close when clicking outside
+    this._onDocClick = () => {
+      if (this.isOpen) this.closeDropdown();
+    };
+    document.addEventListener("click", this._onDocClick);
+
+    // Handle item selection + keyboard navigation from the slotted list
+    this.addEventListener("click", (e) => {
       const item = e.target.closest(".item");
       if (item) {
         e.stopPropagation();
         this.selectItem(item);
         this.closeDropdown();
+        trigger.focus();
+      }
+    });
+
+    this.addEventListener("keydown", (e) => {
+      const items = Array.from(this.querySelectorAll(".item"));
+      const current = items.indexOf(document.activeElement);
+      if (e.key === "ArrowDown" || e.key === "Down") {
+        e.preventDefault();
+        this.focusItem(Math.min(current + 1, items.length - 1));
+      } else if (e.key === "ArrowUp" || e.key === "Up") {
+        e.preventDefault();
+        this.focusItem(Math.max(current - 1, 0));
+      } else if (e.key === "Enter" || e.key === " ") {
+        if (current > -1) {
+          e.preventDefault();
+          this.selectItem(items[current]);
+          this.closeDropdown();
+          trigger.focus();
+        }
+      } else if (e.key === "Escape") {
+        this.closeDropdown();
+        trigger.focus();
       }
     });
   }
 
+  focusItem(index) {
+    const items = this.querySelectorAll(".item");
+    const item = items[index];
+    if (item) item.focus();
+  }
+
+  openDropdown() {
+    this.isOpen = true;
+    this.shadowRoot.querySelector(".picker-container").classList.add("open");
+    this.shadowRoot
+      .querySelector(".trigger")
+      ?.setAttribute("aria-expanded", "true");
+  }
+
   toggleDropdown() {
-    this.isOpen = !this.isOpen;
-    const container = this.shadowRoot.querySelector(".picker-container");
     if (this.isOpen) {
-      container.classList.add("open");
+      this.closeDropdown();
     } else {
-      container.classList.remove("open");
+      this.openDropdown();
     }
   }
 
   closeDropdown() {
     this.isOpen = false;
     this.shadowRoot.querySelector(".picker-container").classList.remove("open");
+    this.shadowRoot
+      .querySelector(".trigger")
+      ?.setAttribute("aria-expanded", "false");
   }
 
   selectItem(item, dispatch = true) {
     const items = this.querySelectorAll(".item");
-    items.forEach((i) => i.classList.remove("active"));
+    items.forEach((i) => {
+      i.classList.remove("active");
+      i.setAttribute("aria-selected", "false");
+    });
     item.classList.add("active");
+    item.setAttribute("aria-selected", "true");
     this.selectedItem = item;
 
     const value = item.getAttribute("data-value");
@@ -225,7 +316,8 @@ class CharacterDisplay extends HTMLElement {
     this.render();
     this.groupId = this.getAttribute("group-id");
 
-    window.addEventListener("character-change", this.handleChange.bind(this));
+    this._onCharacterChange = this.handleChange.bind(this);
+    window.addEventListener("character-change", this._onCharacterChange);
 
     // Show first image by default if none visible
     setTimeout(() => {
@@ -241,10 +333,7 @@ class CharacterDisplay extends HTMLElement {
   }
 
   disconnectedCallback() {
-    window.removeEventListener(
-      "character-change",
-      this.handleChange.bind(this)
-    );
+    window.removeEventListener("character-change", this._onCharacterChange);
   }
 
   handleChange(e) {

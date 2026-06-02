@@ -20,11 +20,11 @@ const lang = (langParam as Language) || "en";
 
 const supportedLanguages: Language[] = ["en", "de"];
 if (!supportedLanguages.includes(lang)) {
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 if (!slug) {
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 const CASE_STUDY_FIELDS = [
@@ -81,7 +81,7 @@ if (isPreview) {
 // Redirect to 404 if study is not found
 if (!study) {
   console.error(`Study not found for slug: ${slug} and lang: ${lang}`);
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 // Additive page-builder blocks (sorted; never replaces the sections above).

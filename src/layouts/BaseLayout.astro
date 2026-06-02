@@ -335,16 +335,6 @@ const ogLocaleAlternate = currentLang === "de" ? "en_US" : "de_DE";
 
         (window as any)._viewTransitionsInitialized = true;
       }
-
-      // Initial run if not handled by astro:page-load yet (e.g. first load)
-      if (
-        document.readyState === "complete" ||
-        document.readyState === "interactive"
-      ) {
-        // Check if we should run it now (if not already run by event)
-        // Actually, astro:page-load runs on initial load too.
-        // But just in case logic:
-      }
     </script>
   </body>
 </html>

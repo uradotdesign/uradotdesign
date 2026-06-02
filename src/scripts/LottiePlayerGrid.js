@@ -1,3 +1,5 @@
+import { watchTheme } from "./shadow-theme.js";
+
 class LottiePlayer extends HTMLElement {
   constructor() {
     super();
@@ -7,7 +9,12 @@ class LottiePlayer extends HTMLElement {
 
   connectedCallback() {
     this.render();
+    this._unwatchTheme = watchTheme(this);
     this.initLottie();
+  }
+
+  disconnectedCallback() {
+    this._unwatchTheme?.();
   }
 
   get controlsPosition() {
@@ -56,7 +63,7 @@ class LottiePlayer extends HTMLElement {
           flex-direction: row;
         }
 
-        :host-context(html.dark) .container {
+        :host([data-theme="dark"]) .container {
           background: #141414;
           border-color: #333;
         }
@@ -101,7 +108,7 @@ class LottiePlayer extends HTMLElement {
           gap: 24px;
         }
 
-        :host-context(html.dark) .controls {
+        :host([data-theme="dark"]) .controls {
           background: #222;
           border: 1px solid #333;
         }

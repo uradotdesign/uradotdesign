@@ -29,13 +29,13 @@ const lang = (langParam as Language) || "en";
 const ui = await getUI(lang);
 
 if (!slug) {
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 // Validate Language
 const supportedLanguages: Language[] = ["en", "de"];
 if (!supportedLanguages.includes(lang)) {
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 let type: 'service' | 'page' | null = null;
@@ -70,7 +70,7 @@ if (services && services.length > 0) {
 }
 
 if (!type || !data) {
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 // --- Service Logic ---

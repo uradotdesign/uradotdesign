@@ -592,12 +592,8 @@ class InteractiveShowcase extends HTMLElement {
       if (this.lottieInstances.has(el)) return; // Already initialized
 
       const path = el.getAttribute("data-lottie-path");
-      const loop =
-        el.hasAttribute("data-loop") !== null &&
-        el.getAttribute("data-loop") !== "false";
-      const autoplay =
-        el.hasAttribute("data-autoplay") !== null &&
-        el.getAttribute("data-autoplay") !== "false";
+      const loop = el.getAttribute("data-loop") !== "false";
+      const autoplay = el.getAttribute("data-autoplay") !== "false";
 
       const anim = lottie.loadAnimation({
         container: el,

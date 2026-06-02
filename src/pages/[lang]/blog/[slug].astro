@@ -20,11 +20,11 @@ const { lang, slug } = Astro.params;
 
 const supportedLanguages = ["en", "de"];
 if (!lang || !supportedLanguages.includes(lang)) {
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 if (!slug) {
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 // Live Preview: draft-aware, cache-bypassing fetch when ?preview=<secret>.
@@ -39,7 +39,7 @@ const post = isPreview
   : await getBlogPostBySlug(slug);
 
 if (!post) {
-  return Astro.redirect("/404");
+  return Astro.rewrite("/404");
 }
 
 // Additive page-builder blocks (sorted; rendered after the post content).
