@@ -9,6 +9,8 @@ class BeforeAfterToggle extends HTMLElement {
     const afterSrc = this.getAttribute("after");
     const beforeAlt = this.getAttribute("before-alt") || "Before";
     const afterAlt = this.getAttribute("after-alt") || "After";
+    const beforeLabel = this.getAttribute("before-label") || "Before";
+    const afterLabel = this.getAttribute("after-label") || "After";
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -137,8 +139,8 @@ class BeforeAfterToggle extends HTMLElement {
         <div class="controls">
           <div class="switcher">
             <div class="switcher-indicator"></div>
-            <label for="toggle" class="switcher-label before">Before</label>
-            <label for="toggle" class="switcher-label after">After</label>
+            <label for="toggle" class="switcher-label before">${beforeLabel}</label>
+            <label for="toggle" class="switcher-label after">${afterLabel}</label>
           </div>
         </div>
       </div>

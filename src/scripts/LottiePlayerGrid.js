@@ -14,6 +14,18 @@ class LottiePlayer extends HTMLElement {
     return this.getAttribute("controls-position") || "bottom";
   }
 
+  get labelPlay() {
+    return this.getAttribute("label-play") || "Play all";
+  }
+
+  get labelPause() {
+    return this.getAttribute("label-pause") || "Pause all";
+  }
+
+  get labelStop() {
+    return this.getAttribute("label-stop") || "Stop all";
+  }
+
   render() {
     const isVertical = this.controlsPosition === "right";
 
@@ -160,17 +172,17 @@ class LottiePlayer extends HTMLElement {
         </div>
 
         <div class="controls">
-          <button class="btn-pause" title="Pause all">
+          <button class="btn-pause" title="${this.labelPause}">
             <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 14h2V4h-2v10ZM10.5 4v10h2V4h-2Z"/></svg>
-            <span>Pause all</span>
+            <span>${this.labelPause}</span>
           </button>
-          <button class="btn-play" title="Play all">
+          <button class="btn-play" title="${this.labelPlay}">
             <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4v10l8-5-8-5Z"/></svg>
-            <span>Play all</span>
+            <span>${this.labelPlay}</span>
           </button>
-          <button class="btn-stop" title="Stop all">
+          <button class="btn-stop" title="${this.labelStop}">
             <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4h9v10h-9V4Z"/></svg>
-            <span>Stop all</span>
+            <span>${this.labelStop}</span>
           </button>
         </div>
       </div>
