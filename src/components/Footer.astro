@@ -7,11 +7,12 @@ import {
   getAssetUrl,
 } from "../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
-import { t } from "../lib/translations";
+import { t, getUI } from "../lib/translations";
 import { getWeather } from "../pages/api/weather";
 
 // Get current language
 const currentLang = getCurrentLanguage(Astro.url);
+const ui = await getUI(currentLang);
 
 // Fetch social links and site settings
 const socialLinksData = await getSocialLinks();
@@ -355,7 +356,7 @@ const showTemperature = footerSettings?.show_temperature ?? true;
                   href={`/${currentLang}/about`}
                   class="underline hover:no-underline transition-colors"
                 >
-                  {currentLang === "de" ? "Über uns" : "Who we are"}
+                  {ui("nav.about")}
                 </a>
               </li>
               <li>
@@ -437,7 +438,7 @@ const showTemperature = footerSettings?.show_temperature ?? true;
                   href={`/${currentLang}/about`}
                   class="underline hover:no-underline transition-colors"
                 >
-                  {currentLang === "de" ? "Über uns" : "Who we are"}
+                  {ui("nav.about")}
                 </a>
               </li>
               <li>
@@ -578,17 +579,13 @@ const showTemperature = footerSettings?.show_temperature ?? true;
             href={`/${currentLang}/imprint`}
             class="underline hover:no-underline transition-colors"
           >
-            {currentLang === "de" ? "Impressum" : "Imprint"}
+            {ui("footer.imprint")}
           </a>
           <a
             href={`/${currentLang}/privacy`}
             class="underline hover:no-underline transition-colors"
           >
-            {
-              currentLang === "de"
-                ? "Datenschutzerklärung"
-                : "Privacy Statement"
-            }
+            {ui("footer.privacy")}
           </a>
         </div>
         {
@@ -621,17 +618,13 @@ const showTemperature = footerSettings?.show_temperature ?? true;
             href={`/${currentLang}/imprint`}
             class="underline hover:no-underline transition-colors"
           >
-            {currentLang === "de" ? "Impressum" : "Imprint"}
+            {ui("footer.imprint")}
           </a>
           <a
             href={`/${currentLang}/privacy`}
             class="underline hover:no-underline transition-colors"
           >
-            {
-              currentLang === "de"
-                ? "Datenschutzerklärung"
-                : "Privacy Statement"
-            }
+            {ui("footer.privacy")}
           </a>
         </div>
       </div>

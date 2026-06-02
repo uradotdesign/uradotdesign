@@ -1,4 +1,8 @@
 import { getTranslations, getTranslationsByNamespace } from "./directus";
+import { messages, type Lang } from "../i18n/messages";
+
+/** Resolver returned by {@link getUI}: looks up a UI string by key. */
+export type UIResolver = (key: string, vars?: Record<string, string>) => string;
 
 // Cache for translations to avoid multiple API calls
 let translationsCache: Record<string, Record<string, string>> = {};
@@ -61,6 +65,33 @@ export async function t(
     }
     return fallback || key;
   }
+}
+
+/**
+ * Hybrid UI-string resolver.
+ *
+ * Fetches the CMS `translations` map once for the language, then returns a
+ * synchronous resolver that prefers a CMS override by key and falls back to the
+ * typed code catalog (`src/i18n/messages.ts`), then English, then the key.
+ * Supports `{name}` placeholder interpolation.
+ *
+ * @param language - Language code (default: 'en')
+ */
+export async function getUI(language: string = "en"): Promise<UIResolver> {
+  const lang: Lang = language === "de" ? "de" : "en";
+
+  let cms: Record<string, string> = {};
+  try {
+    cms = await getTranslations(language);
+  } catch {
+    cms = {};
+  }
+
+  return (key: string, vars?: Record<string, string>): string => {
+    const raw = cms[key] ?? messages[lang]?.[key] ?? messages.en[key] ?? key;
+    if (!vars) return raw;
+    return raw.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
+  };
 }
 
 /**

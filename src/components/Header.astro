@@ -3,7 +3,7 @@ import ThemeToggle from './ThemeToggle.astro';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import { getCurrentLanguage, getLocalizedField } from '../lib/i18n';
 import { getWeather } from '../pages/api/weather';
-import { t } from '../lib/translations';
+import { t, getUI } from '../lib/translations';
 import {
   getSiteSettings,
   getHeaderSettings,
@@ -45,6 +45,7 @@ const showServicesMenu = headerSettings?.show_services_menu !== false;
 const defaultCtaText = await t('header.cta', currentLang, "LET'S TALK");
 const ctaText =
   getLocalizedField(headerSettings, 'cta_text', currentLang) || defaultCtaText;
+const ui = await getUI(currentLang);
 
 const homeLabel = await t('header.home_label', currentLang, currentLang === 'de' ? 'Ura Design Startseite' : 'Ura Design Home');
 const mainNavLabel = await t('header.main_nav_label', currentLang, currentLang === 'de' ? 'Hauptnavigation' : 'Main navigation');
@@ -241,7 +242,7 @@ if (showWeather && weatherLocation) {
           </li>
           <li role="none">
             <a role="menuitem" href={`${langPrefix}/works`} class:list={['nav-link focus:outline-none cursor-pointer', currentPathNorm.startsWith(`${langPrefix}/works`) ? 'is-active' : '']}>
-              WORKS
+              {ui('nav.works')}
             </a>
           </li>
         </>
@@ -417,7 +418,7 @@ if (showWeather && weatherLocation) {
           data-contact-modal="true"
           class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-full text-[10px] font-mono font-medium uppercase whitespace-nowrap"
         >
-          Let's Talk
+          {ctaText}
         </a>
       </div>
 
@@ -482,7 +483,7 @@ if (showWeather && weatherLocation) {
             </li>
             <li>
               <a href={`${langPrefix}/works`} class="text-3xl font-display font-medium hover:text-emerald-500 transition-colors">
-                Works
+                {ui('nav.works')}
               </a>
             </li>
           </>

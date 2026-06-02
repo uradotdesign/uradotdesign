@@ -1,17 +1,19 @@
 ---
 import { getCurrentLanguage } from "../lib/i18n";
+import { getUI } from "../lib/translations";
 
 const currentLang = getCurrentLanguage(Astro.url);
 const currentPath = Astro.url.pathname;
+const ui = await getUI(currentLang);
 
 // Remove language prefix if it exists
 const pathWithoutLang = currentPath.replace(/^\/(en|de)/, "") || "/";
 
-const currentLanguageName = currentLang === "en" ? "ENGLISH" : "GERMAN";
+const currentLanguageName = ui(`lang.${currentLang}`);
 
 const languages = [
-  { code: "en", name: "ENGLISH", path: `/en${pathWithoutLang}` },
-  { code: "de", name: "GERMAN", path: `/de${pathWithoutLang}` },
+  { code: "en", name: ui("lang.en"), path: `/en${pathWithoutLang}` },
+  { code: "de", name: ui("lang.de"), path: `/de${pathWithoutLang}` },
 ];
 ---
 
@@ -55,7 +57,7 @@ const languages = [
                 ? "font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800"
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800",
             ]}
-            aria-label={`Switch to ${lang.name}`}
+            aria-label={ui("a11y.switchTo", { name: lang.name })}
             aria-current={currentLang === lang.code ? "true" : undefined}
           >
             {lang.name}
