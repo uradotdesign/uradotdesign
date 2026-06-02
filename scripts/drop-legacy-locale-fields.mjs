@@ -11,6 +11,12 @@
  * PREREQUISITE: the new frontend (which no longer SELECTs `_en`/`_de`) must be
  * deployed first, otherwise live reads will 400 on the removed columns.
  *
+ * AFTER applying, run the leftover-reference cleaners so the admin stops hitting
+ * FORBIDDEN ("permission to access field ... or it does not exist") on dropped
+ * columns still named in display templates / list presets:
+ *   node --env-file=.env scripts/fix-display-templates-drop-legacy.mjs --apply
+ *   node --env-file=.env scripts/fix-presets-drop-legacy.mjs --apply
+ *
  * Usage:
  *   node --env-file=.env scripts/drop-legacy-locale-fields.mjs               # dry-run, all collections
  *   node --env-file=.env scripts/drop-legacy-locale-fields.mjs --collection=services
