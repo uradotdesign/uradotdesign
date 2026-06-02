@@ -8,24 +8,13 @@ import {
   previewSecret,
   previewToken,
 } from "./config";
+import {
+  buildPageBlockFields,
+  BLOCK_SORT_KEYS,
+  BLOCK_NESTED_SORT,
+} from "./blocks";
 
 // Define your Directus schema types
-export interface Article {
-  id: string;
-  status: "published" | "draft" | "archived";
-  title: string;
-  slug: string;
-  excerpt?: string;
-  content?: string;
-  featured_image?: string;
-  author?: Author;
-  category?: Category;
-  tags?: Tag[];
-  published_date?: string;
-  date_created?: string;
-  date_updated?: string;
-}
-
 export interface Page {
   id: string;
   status: "published" | "draft";
@@ -59,42 +48,6 @@ export interface PageBlock {
   collection: string;
   sort?: number;
   item: Record<string, any> | string | null;
-}
-
-export interface Author {
-  id: string;
-  name: string;
-  email?: string;
-  bio?: string;
-  avatar?: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-export interface Tag {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-export interface Settings {
-  id: number;
-  site_title?: string;
-  site_description?: string;
-  site_tagline?: string;
-  contact_email?: string;
-  social_twitter?: string;
-  social_github?: string;
-  social_linkedin?: string;
-  show_weather?: boolean;
-  weather_location?: string;
-  enable_newsletter?: boolean;
-  favicon?: string;
 }
 
 export interface HeroSection {
@@ -319,21 +272,6 @@ export interface Translation {
   namespace?: string;
   description?: string;
   status?: "draft" | "published";
-}
-
-export interface Project {
-  id: string;
-  title: string;
-  slug: string;
-  badge?: string;
-  thumbnail?: string;
-  excerpt?: string;
-  url?: string;
-  featured?: boolean;
-  sort_order?: number;
-  status?: "draft" | "published";
-  date_created?: string;
-  date_updated?: string;
 }
 
 export interface CaseStudy {
@@ -666,13 +604,8 @@ export interface BlogPost {
 
 // Define the schema type
 interface Schema {
-  articles: Article[];
   posts: BlogPost[];
   pages: Page[];
-  authors: Author[];
-  categories: Category[];
-  tags: Tag[];
-  settings: Settings[];
   hero_section: HeroSection[];
   services: Service[];
   service_checklist_items: ServiceChecklistItem[];
@@ -680,7 +613,6 @@ interface Schema {
   service_activities: ServiceActivity[];
   service_subservices: ServiceSubservice[];
   clients: Client[];
-  projects: Project[];
   case_studies: CaseStudy[];
   testimonials: Testimonial[];
   social_links: SocialLink[];
@@ -1084,15 +1016,6 @@ export async function getAssetMeta(
   );
 }
 
-export async function getPageBySlug(slug: string) {
-  const [page] = await fetchCollection<Page>("pages", {
-    limit: 1,
-    filter: { slug: { _eq: slug } },
-    sort: [],
-  });
-  return page || null;
-}
-
 // Page-level fields fetched for the block builder (localized wrappers + legacy).
 const PAGE_BASE_FIELDS = [
   "id",
@@ -1106,63 +1029,17 @@ const PAGE_BASE_FIELDS = [
   "translations.*",
 ];
 
-// Deep M2A field selection: one `item:<collection>.*` per block type, plus the
-// O2M children (gallery images / logos) that hold files. Centralized so the
-// field list lives in exactly one place.
-export const PAGE_BLOCK_FIELDS = [
-  "blocks.id",
-  "blocks.collection",
-  "blocks.sort",
-  "blocks.item:block_hero.*",
-  "blocks.item:block_richtext.*",
-  "blocks.item:block_image.*",
-  "blocks.item:block_two_column.*",
-  "blocks.item:block_gallery.*",
-  "blocks.item:block_gallery.images.image",
-  "blocks.item:block_gallery.images.sort",
-  "blocks.item:block_cta.*",
-  "blocks.item:block_stats.*",
-  "blocks.item:block_quote.*",
-  "blocks.item:block_faq.*",
-  "blocks.item:block_logos.*",
-  "blocks.item:block_logos.logos.image",
-  "blocks.item:block_logos.logos.sort",
-  "blocks.item:block_embed.*",
-  "blocks.item:block_custom_code.*",
-  "blocks.item:block_hero.translations.*",
-  "blocks.item:block_richtext.translations.*",
-  "blocks.item:block_image.translations.*",
-  "blocks.item:block_two_column.translations.*",
-  "blocks.item:block_gallery.translations.*",
-  "blocks.item:block_gallery.images.translations.*",
-  "blocks.item:block_cta.translations.*",
-  "blocks.item:block_stats.translations.*",
-  "blocks.item:block_quote.translations.*",
-  "blocks.item:block_faq.translations.*",
-  "blocks.item:block_logos.translations.*",
-  "blocks.item:block_embed.translations.*",
-  "blocks.item:block_before_after.*",
-  "blocks.item:block_before_after.translations.*",
-  "blocks.item:block_lottie_grid.*",
-  "blocks.item:block_lottie_grid.items.*",
-  "blocks.item:block_lottie_grid.translations.*",
-  "blocks.item:block_character_system.*",
-  "blocks.item:block_character_system.translations.*",
-  "blocks.item:block_character_system.options.*",
-  "blocks.item:block_character_system.options.translations.*",
-  "blocks.item:block_interactive_showcase.*",
-  "blocks.item:block_interactive_showcase.translations.*",
-  "blocks.item:block_interactive_showcase.tabs.*",
-  "blocks.item:block_interactive_showcase.tabs.translations.*",
-  "blocks.item:block_interactive_showcase.tabs.lotties.*",
-];
+// Deep M2A field selection, derived from the block registry so the field list
+// lives in exactly one place (src/lib/blocks.ts).
+export const PAGE_BLOCK_FIELDS = buildPageBlockFields();
 
 export const PAGE_WITH_BLOCKS_FIELDS = [...PAGE_BASE_FIELDS, ...PAGE_BLOCK_FIELDS];
 
 /**
  * Sorts a block list (and the nested O2M children each block may carry) in
  * place by their `sort` field, returning the same array (or [] when absent).
- * Shared by every collection that hosts the additive M2A page-builder.
+ * Shared by every collection that hosts the additive M2A page-builder; the
+ * nested keys come from the block registry.
  */
 export function sortBlocks(blocks?: PageBlock[] | null): PageBlock[] {
   if (!Array.isArray(blocks) || blocks.length === 0) return blocks || [];
@@ -1170,20 +1047,20 @@ export function sortBlocks(blocks?: PageBlock[] | null): PageBlock[] {
   for (const b of blocks) {
     const item = b.item;
     if (item && typeof item === "object") {
-      for (const key of ["images", "logos", "items", "options", "tabs"]) {
+      for (const key of BLOCK_SORT_KEYS) {
         const list = (item as Record<string, any>)[key];
         if (Array.isArray(list)) {
           list.sort((x, y) => (x?.sort || 0) - (y?.sort || 0));
         }
       }
-      // interactive-showcase: sort each tab's nested lottie list too.
-      const tabs = (item as Record<string, any>).tabs;
-      if (Array.isArray(tabs)) {
-        for (const tab of tabs) {
-          if (Array.isArray(tab?.lotties)) {
-            tab.lotties.sort(
-              (x: any, y: any) => (x?.sort || 0) - (y?.sort || 0)
-            );
+      // Two-level nested arrays (e.g. each interactive-showcase tab's lotties).
+      for (const { parent, child } of BLOCK_NESTED_SORT) {
+        const parents = (item as Record<string, any>)[parent];
+        if (Array.isArray(parents)) {
+          for (const p of parents) {
+            if (Array.isArray(p?.[child])) {
+              p[child].sort((x: any, y: any) => (x?.sort || 0) - (y?.sort || 0));
+            }
           }
         }
       }
@@ -1541,22 +1418,6 @@ export async function getCaseStudies(options?: {
         : ["*", "translations.*"],
     })
   );
-}
-
-export async function getCaseStudyBySlug(slug: string) {
-  return cacheConfig(`case_study:${slug}`, async () => {
-    const [caseStudy] = await fetchCollection<CaseStudy>("case_studies", {
-      limit: 1,
-      filter: { slug: { _eq: slug } },
-      fields: ["*", "sections.*", "translations.*"],
-    });
-
-    if (caseStudy && caseStudy.sections) {
-      caseStudy.sections.sort((a, b) => (a.sort || 0) - (b.sort || 0));
-    }
-
-    return caseStudy || null;
-  });
 }
 
 export async function getCaseStudyCategories() {
