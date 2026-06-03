@@ -268,13 +268,16 @@ async function main() {
     panels: [
       metric("Posts missing SEO title", 0, 0, count("posts", { ...PUB, seo_title: { _null: true } }), { icon: "title", color: C.issue }),
       metric("Posts missing SEO description", 1, 0, count("posts", { ...PUB, seo_description: { _null: true } }), { icon: "notes", color: C.issue }),
-      metric("Posts missing SEO image", 2, 0, count("posts", { ...PUB, seo_image: { _null: true } }), { icon: "image", color: C.issue }),
-      metric("Posts missing cover image", 3, 0, count("posts", { ...PUB, cover_image: { _null: true } }), { icon: "hide_image", color: C.issue }),
+      // seo_image/cover_image are M2O relations to directus_files. In GraphQL a
+      // relational field is typed as <related>_filter, which has no `_null`
+      // operator, so the null check must target the related primary key.
+      metric("Posts missing SEO image", 2, 0, count("posts", { ...PUB, seo_image: { id: { _null: true } } }), { icon: "image", color: C.issue }),
+      metric("Posts missing cover image", 3, 0, count("posts", { ...PUB, cover_image: { id: { _null: true } } }), { icon: "hide_image", color: C.issue }),
 
       metric("Pages missing SEO title", 0, 1, count("pages", { ...PUB, seo_title: { _null: true } }), { icon: "title", color: C.issue }),
       metric("Pages missing SEO description", 1, 1, count("pages", { ...PUB, seo_description: { _null: true } }), { icon: "notes", color: C.issue }),
       metric("Posts missing excerpt", 2, 1, count("posts", { ...PUB, excerpt: { _null: true } }), { icon: "short_text", color: C.draft }),
-      metric("Case studies missing SEO image", 3, 1, count("case_studies", { ...PUB, seo_image: { _null: true } }), { icon: "image", color: C.draft }),
+      metric("Case studies missing SEO image", 3, 1, count("case_studies", { ...PUB, seo_image: { id: { _null: true } } }), { icon: "image", color: C.draft }),
 
       list(
         "Posts to fix (missing SEO title)",
