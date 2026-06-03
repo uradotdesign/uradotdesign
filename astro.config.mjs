@@ -9,6 +9,14 @@ export default defineConfig({
   adapter: node({
     mode: "standalone",
   }),
+  // Built-in, internal prefetch (no third-party script): preload a page's HTML
+  // when the user hovers/focuses its link, so navigations feel instant —
+  // instant.page-style, but native to Astro and wired into <ClientRouter />.
+  // Opt a single link out with `data-astro-prefetch="false"`.
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: "hover",
+  },
   i18n: {
     defaultLocale: "en",
     locales: ["en", "de"],

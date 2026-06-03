@@ -111,7 +111,7 @@ const remainingArticles = articles.slice(1);
         <div class="max-w-[1440px] mx-auto">
           <a
             href={`/${lang}/blog/${featuredArticle.slug}`}
-            class="group grid grid-cols-1 lg:grid-cols-2 min-h-[60vh]"
+            class="post-card group grid grid-cols-1 lg:grid-cols-2 min-h-[60vh]"
           >
             {/* Image */}
             <div class="relative aspect-[4/3] lg:aspect-auto overflow-hidden bg-gray-100 dark:bg-gray-900">
@@ -122,7 +122,7 @@ const remainingArticles = articles.slice(1);
                   placeholder="blur"
                   fill
                   alt=""
-                  imgClass="transition-transform duration-700 group-hover:scale-105"
+                  imgClass="post-card-img"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   loading="eager"
                 />
@@ -147,7 +147,7 @@ const remainingArticles = articles.slice(1);
                 </div>
 
                 <h2 class="font-display text-4xl sm:text-5xl lg:text-6xl mb-6 leading-tight">
-                  {featuredArticle.title}
+                  <span class="post-card-title">{featuredArticle.title}</span>
                 </h2>
 
                 {featuredArticle.excerpt && (
@@ -321,8 +321,8 @@ const remainingArticles = articles.slice(1);
     overflow: hidden;
   }
 
-  /* Blog grid card hover: a smooth cover zoom + a title underline that grows
-     in — no lift, no shadow. */
+  /* Blog card hover (featured + grid): a smooth cover zoom + a title underline
+     that grows in — no lift, no shadow. */
 
   /* The cover <img> is rendered by the ProgressiveImage child component, so its
      classes are outside this page's style scope, and the progressive-reveal
