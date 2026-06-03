@@ -54,6 +54,7 @@ jobs:
   #   SSH_PRIVATE_KEY  private key whose public half is in the host's authorized_keys
   #   DEPLOY_PATH      repo checkout on the server (e.g. /var/www/ura-prototype/uradotdesign)
   #   SSH_PORT         optional; defaults to 22
+  #   SSH_PASSPHRASE   optional; set only if SSH_PRIVATE_KEY is passphrase-protected
   deploy:
     needs: verify
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -88,6 +89,8 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Empty when the key has no passphrase; the action ignores it then.
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT || 22 }}
           command_timeout: 20m
           script: |
