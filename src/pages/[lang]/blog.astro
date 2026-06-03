@@ -232,7 +232,7 @@ const remainingArticles = articles.slice(1);
                 {/* Image */}
                 <a
                   href={`/${lang}/blog/${article.slug}`}
-                  class="post-card-media relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-900 mb-6"
+                  class="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-900 mb-6"
                 >
                   {article.cover_image ? (
                     <ProgressiveImage
@@ -241,7 +241,7 @@ const remainingArticles = articles.slice(1);
                       placeholder="blur"
                       fill
                       alt=""
-                      imgClass="transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
+                      imgClass="transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 motion-reduce:group-hover:scale-100"
                       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       loading="lazy"
                     />
@@ -321,27 +321,12 @@ const remainingArticles = articles.slice(1);
     overflow: hidden;
   }
 
-  /* Blog grid card hover — one cohesive, smooth motion across the whole card.
-     A single shared easing curve keeps the lift, cover zoom and title underline
-     feeling like one gesture rather than separate effects. */
-  .post-card {
-    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .post-card:hover {
-    transform: translateY(-6px);
-  }
-
-  /* Soft depth lifts the cover off the page as the card rises (light mode;
-     gracefully invisible on the near-black dark background). */
-  .post-card-media {
-    transition: box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .post-card:hover .post-card-media {
-    box-shadow: 0 22px 45px -28px rgba(0, 0, 0, 0.45);
-  }
+  /* Blog grid card hover: a smooth cover zoom (on the image itself, via
+     group-hover:scale) and a title underline that grows in — no lift, no
+     shadow. */
 
   /* Title underline grows in from the left on hover (and on keyboard focus),
-     instead of the previous instant text-decoration. */
+     instead of an instant text-decoration. */
   .post-card-title {
     background-image: linear-gradient(currentColor, currentColor);
     background-position: 0 100%;
@@ -356,13 +341,8 @@ const remainingArticles = articles.slice(1);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .post-card,
-    .post-card-media,
     .post-card-title {
       transition: none;
-    }
-    .post-card:hover {
-      transform: none;
     }
   }
 </style>
