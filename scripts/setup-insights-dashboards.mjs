@@ -140,6 +140,70 @@ const list = (
   options: { collection, limit, sortField, sortDirection, displayTemplate, filter },
 });
 
+/**
+ * A bar chart that counts rows grouped by a (usually categorical) field.
+ * Data-driving keys come straight from the bar-chart runtime query builder
+ * (group:[xAxis], aggregate:{[function]:[yAxis]}). `function`/`aggregation` are
+ * both set to "count" so the value resolves regardless of which key the
+ * component's value-reader uses.
+ */
+const bar = (
+  name,
+  { x, y, w, h },
+  { collection, xAxis, yAxis = "id", filter = {}, color = C.brand },
+  { icon = "bar_chart" } = {}
+) => ({
+  name,
+  icon,
+  color,
+  type: "bar-chart",
+  position_x: x,
+  position_y: y,
+  width: w,
+  height: h,
+  options: {
+    collection,
+    xAxis,
+    yAxis,
+    function: "count",
+    aggregation: "count",
+    horizontal: false,
+    filter,
+    color,
+  },
+});
+
+/**
+ * A time-series chart counting rows bucketed by a datetime field. The builder
+ * groups by the raw xAxis when no precision is set, which is correct for date
+ * columns like posts.published_date.
+ */
+const timeSeries = (
+  name,
+  { x, y, w, h },
+  { collection, xAxis, yAxis = "id", filter = {}, color = C.brand },
+  { icon = "show_chart" } = {}
+) => ({
+  name,
+  icon,
+  color,
+  type: "time-series",
+  position_x: x,
+  position_y: y,
+  width: w,
+  height: h,
+  options: {
+    collection,
+    xAxis,
+    yAxis,
+    aggregation: "count",
+    function: "count",
+    fillType: "gradient",
+    filter,
+    color,
+  },
+});
+
 const PUB = { status: { _eq: "published" } };
 const DRAFT = { status: { _eq: "draft" } };
 
@@ -170,7 +234,7 @@ async function main() {
 
       list(
         "Latest posts",
-        { y: ROW[3], h: 13 },
+        { x: 1, y: ROW[3], w: HALF_W, h: 13 },
         {
           collection: "posts",
           limit: 8,
@@ -180,6 +244,12 @@ async function main() {
           filter: PUB,
         },
         { icon: "history", color: C.good }
+      ),
+      timeSeries(
+        "Posts published over time",
+        { x: HALF_X[1], y: ROW[3], w: HALF_W, h: 13 },
+        { collection: "posts", xAxis: "published_date", filter: PUB, color: C.good },
+        { icon: "trending_up" }
       ),
     ],
   });
@@ -227,6 +297,11 @@ async function main() {
         },
         { icon: "work", color: C.draft }
       ),
+
+      // Content-by-status breakdowns (published vs draft, per content type).
+      bar("Posts by status", { x: 1, y: 30, w: 15, h: 14 }, { collection: "posts", xAxis: "status", color: C.brand }),
+      bar("Pages by status", { x: 17, y: 30, w: 15, h: 14 }, { collection: "pages", xAxis: "status", color: C.brand }),
+      bar("Case studies by status", { x: 33, y: 30, w: 15, h: 14 }, { collection: "case_studies", xAxis: "status", color: C.brand }),
     ],
   });
 
@@ -242,11 +317,13 @@ async function main() {
       metric("With a message", 2, 0, count("contact_submissions", { message: { _nnull: true } }), { icon: "chat", color: C.neutral }),
       metric("With company", 3, 0, count("contact_submissions", { company: { _nnull: true } }), { icon: "business", color: C.neutral }),
 
-      // contact_submissions has no populated date columns; the auto-increment id
-      // is the only reliable "newest first" proxy.
+      // Existing rows mostly predate the submitted_at column; the contact API
+      // (src/pages/api/contact.ts) sets submitted_at server-side on every new
+      // submission, so the list/chart fill in correctly going forward. id desc
+      // is the reliable "newest first" proxy for the list.
       list(
         "Recent submissions",
-        { y: ROW[1], h: 18 },
+        { x: 1, y: ROW[1], w: HALF_W, h: 18 },
         {
           collection: "contact_submissions",
           limit: 15,
@@ -255,6 +332,12 @@ async function main() {
           displayTemplate: "{{first_name}} {{last_name}} — {{email}}",
         },
         { icon: "inbox", color: C.lead }
+      ),
+      timeSeries(
+        "Submissions over time",
+        { x: HALF_X[1], y: ROW[1], w: HALF_W, h: 18 },
+        { collection: "contact_submissions", xAxis: "submitted_at", color: C.lead },
+        { icon: "trending_up" }
       ),
     ],
   });
@@ -326,9 +409,24 @@ async function main() {
         { icon: "sd_storage", color: C.neutral }
       ),
 
+      metric(
+        "Largest file (bytes)",
+        0,
+        1,
+        { collection: "directus_files", function: "max", field: "filesize", filter: {} },
+        { icon: "arrow_upward", color: C.neutral }
+      ),
+      metric(
+        "Average file size (bytes)",
+        1,
+        1,
+        { collection: "directus_files", function: "avg", field: "filesize", filter: {} },
+        { icon: "drag_handle", color: C.neutral }
+      ),
+
       list(
         "Recent uploads",
-        { y: ROW[1], h: 16 },
+        { y: ROW[2], h: 16 },
         {
           collection: "directus_files",
           limit: 12,
