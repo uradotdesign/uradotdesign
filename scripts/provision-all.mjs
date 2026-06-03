@@ -5,7 +5,8 @@
  * relations, permissions, flows and dashboards are detected and skipped.
  *
  * Run order matters: base schema → page-builder blocks → i18n → preview →
- * permissions → revalidate flow → roles → dashboards.
+ * permissions → revalidate flow → roles/shares → scheduled publishing →
+ * versioning → editorial guardrails → dashboards.
  *
  * Usage:
  *   npm run provision:all
@@ -18,11 +19,15 @@
  *   npm run schema:snapshot   # write directus-snapshots/schema.yaml (commit it)
  *   npm run schema:apply      # re-apply it on another environment
  *
- * Custom panel extension deploy (for the External Tools dashboard):
+ * Custom extension deploy (panels + editorial interfaces). Extensions are NOT
+ * installed over the API — build each, copy the built folder into the Directus
+ * `extensions` volume, then restart:
  *   cd directus-extensions/panel-external-embed && npm install && npm run build
- *   # then copy the built folder into the Directus `extensions` volume, e.g.
+ *   cd directus-extensions/ura-interfaces      && npm install && npm run build
  *   docker cp directus-extensions/panel-external-embed \
  *     directus_cms:/directus/extensions/directus-extension-panel-external-embed
+ *   docker cp directus-extensions/ura-interfaces \
+ *     directus_cms:/directus/extensions/directus-extension-ura-interfaces
  *   docker compose restart directus
  */
 import { spawnSync } from "node:child_process";
@@ -46,8 +51,13 @@ const STEPS = [
   { id: "permissions", file: "reconcile-public-permissions.mjs" },
   { id: "revalidate", file: "setup-revalidate-flow.mjs", requiresSecret: true },
   { id: "editor-role", file: "setup-editor-role.mjs" },
+  { id: "editor-shares", file: "setup-editor-shares.mjs" },
+  { id: "scheduled-publishing", file: "setup-scheduled-publishing.mjs" },
+  { id: "content-versioning", file: "setup-content-versioning.mjs" },
+  { id: "validation-presets", file: "setup-validation-presets.mjs" },
   { id: "insights", file: "setup-insights-dashboards.mjs" },
   { id: "external-tools", file: "setup-external-tools-dashboard.mjs" },
+  { id: "i18n-dashboard", file: "setup-i18n-dashboard.mjs" },
 ];
 
 const args = process.argv.slice(2);

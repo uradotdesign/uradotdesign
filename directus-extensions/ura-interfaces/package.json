@@ -1,0 +1,26 @@
+{
+  "name": "directus-extension-ura-interfaces",
+  "version": "1.0.0",
+  "description": "ura.design editorial interfaces: a character-counter input, a slug helper, and a live SEO/Google snippet preview.",
+  "type": "module",
+  "keywords": ["directus", "directus-extension", "directus-custom-extension", "bundle"],
+  "directus:extension": {
+    "type": "bundle",
+    "path": { "app": "dist/app.js", "api": "dist/api.js" },
+    "entries": [
+      { "type": "interface", "name": "ura-char-count", "source": "src/char-count/index.ts" },
+      { "type": "interface", "name": "ura-slug", "source": "src/slug/index.ts" },
+      { "type": "interface", "name": "ura-seo-preview", "source": "src/seo-preview/index.ts" }
+    ],
+    "host": "^11.0.0"
+  },
+  "scripts": {
+    "build": "directus-extension build",
+    "dev": "directus-extension build -w --no-minify"
+  },
+  "devDependencies": {
+    "@directus/extensions-sdk": "^13.0.0",
+    "typescript": "^5.5.0",
+    "vue": "^3.4.0"
+  }
+}
