@@ -22,6 +22,11 @@ import { createDirectusAdmin } from "./lib/directus-admin.mjs";
 const { authRequest } = createDirectusAdmin();
 const j = JSON.stringify;
 
+// Pass --rebuild to delete and recreate dashboards that already exist (e.g. to
+// pick up corrected panel options). Without it, existing dashboards are left
+// untouched so the script stays safe to re-run.
+const REBUILD = process.argv.includes("--rebuild");
+
 async function findDashboard(name) {
   const r = await authRequest(
     `/dashboards?filter[name][_eq]=${encodeURIComponent(name)}&fields=id,name`
@@ -29,11 +34,26 @@ async function findDashboard(name) {
   return r?.data?.[0] ?? null;
 }
 
+async function deleteDashboard(id) {
+  const ps = await authRequest(
+    `/panels?filter[dashboard][_eq]=${id}&fields=id&limit=-1`
+  );
+  const ids = (ps?.data ?? []).map((p) => p.id);
+  if (ids.length) {
+    await authRequest(`/panels`, { method: "DELETE", body: j(ids) });
+  }
+  await authRequest(`/dashboards/${id}`, { method: "DELETE" });
+}
+
 async function createDashboard({ name, icon, color, note, panels }) {
   const existing = await findDashboard(name);
   if (existing) {
-    console.log(`= Dashboard exists: ${name} (${existing.id})`);
-    return existing.id;
+    if (!REBUILD) {
+      console.log(`= Dashboard exists: ${name} (${existing.id})`);
+      return existing.id;
+    }
+    await deleteDashboard(existing.id);
+    console.log(`~ Rebuilt dashboard: ${name} (removed ${existing.id})`);
   }
   const created = await authRequest("/dashboards", {
     method: "POST",
@@ -86,14 +106,16 @@ async function main() {
       metric("Case studies", 19, 1, count("case_studies", { status: { _eq: "published" } })),
       metric("Services", 1, 6, count("services", { status: { _eq: "published" } })),
       {
-        name: "Recently updated posts",
+        name: "Latest posts",
         icon: "history",
         type: "list",
         position_x: 7,
         position_y: 6,
         width: 18,
         height: 8,
-        options: { collection: "posts", limit: 8, sortField: "-date_updated" },
+        // `posts` has no date_updated/date_created column — sort by the real
+        // publish date so the list actually populates.
+        options: { collection: "posts", limit: 8, sortField: "-published_date" },
       },
     ],
   });
@@ -161,7 +183,7 @@ async function main() {
         })
       ),
       {
-        name: "Posts missing SEO title",
+        name: "Posts to fix (missing SEO title)",
         icon: "warning",
         type: "list",
         position_x: 1,
@@ -171,7 +193,8 @@ async function main() {
         options: {
           collection: "posts",
           limit: 12,
-          sortField: "-date_updated",
+          // `posts` has no date_updated column; sort by publish date instead.
+          sortField: "-published_date",
           filter: { status: { _eq: "published" }, seo_title: { _null: true } },
         },
       },

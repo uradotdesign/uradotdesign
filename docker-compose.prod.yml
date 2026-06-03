@@ -101,8 +101,10 @@ services:
 
       # Allow the admin Live Preview pane to embed the Astro frontend in an
       # iframe (frame-src otherwise falls back to the default child-src
-      # 'self' blob:, which blocks the cross-origin frontend).
-      CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC: "'self' https://${DOMAIN_NAME:-ura.design} blob:"
+      # 'self' blob:, which blocks the cross-origin frontend). Also whitelists
+      # self-hosted tools surfaced by the External Tools dashboard (Plausible).
+      # Override/extend via CSP_FRAME_SRC in .env (e.g. add HedgeDoc/Nextcloud origins).
+      CONTENT_SECURITY_POLICY_DIRECTIVES__FRAME_SRC: "${CSP_FRAME_SRC:-'self' https://ura.design https://stats.ura.design blob:}"
 
       # File Upload Settings
       FILES_MAX_UPLOAD_SIZE: "500MB"
