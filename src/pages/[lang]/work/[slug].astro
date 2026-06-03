@@ -2,6 +2,7 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import {
   getCaseStudies,
+  getRelatedCaseStudies,
   getAssetUrl,
   getAssetMeta,
   isPreviewActive,
@@ -14,6 +15,7 @@ import { getLocalizedField, type Language } from "../../../lib/i18n";
 import { getUI } from "../../../lib/translations";
 import ThemeResponsiveImage from "../../../components/ThemeResponsiveImage.astro";
 import PageBlocks from "../../../components/blocks/PageBlocks.astro";
+import RelatedCaseStudies from "../../../components/work/RelatedCaseStudies.astro";
 
 const { lang: langParam, slug } = Astro.params;
 const lang = (langParam as Language) || "en";
@@ -42,6 +44,7 @@ const CASE_STUDY_FIELDS = [
   "cover_image",
   "logo",
   "seo_image",
+  "categories.category_id.id",
   "translations.*",
   "sections.*", // Fetch all section fields
   "sections.translations.*",
@@ -128,6 +131,20 @@ const categories =
     })
     .filter((cat: string | undefined): cat is string => Boolean(cat)) || [];
 
+// Numeric category ids drive the "related work" query below.
+const categoryIds = (study.categories || [])
+  .map((catLink: any) => {
+    const cat = catLink?.category_id;
+    return typeof cat === "object" && cat !== null ? cat.id : cat;
+  })
+  .filter((id: unknown): id is number => typeof id === "number");
+
+const relatedStudies = await getRelatedCaseStudies({
+  slug: slug!,
+  categoryIds,
+  limit: 3,
+});
+
 const sectionImagesByColumn = (section: any, column: number) =>
   (Array.isArray(section?.images) ? section.images : [])
     .filter((img: any) => Number(img?.column) === column)
@@ -150,6 +167,8 @@ const caseStudyJsonLd = {
   ...((study as any).date_updated
     ? { dateModified: new Date((study as any).date_updated).toISOString() }
     : {}),
+  ...(categories.length ? { keywords: categories.join(", ") } : {}),
+  publisher: { "@id": `${Astro.site?.origin ?? "https://ura.design"}#organization` },
   url: workUrl,
   inLanguage: lang,
 };
@@ -371,6 +390,13 @@ const workBreadcrumbJsonLd = {
 
   {/* Additive page-builder blocks (after the case study sections) */}
   {caseStudyBlocks.length > 0 && <PageBlocks blocks={caseStudyBlocks} lang={lang} />}
+
+  {/* Related case studies (shared categories first, newest backfill) */}
+  <RelatedCaseStudies
+    studies={relatedStudies}
+    lang={lang}
+    heading={ui("work.related")}
+  />
 
   <!-- Inject the custom element script for Before/After toggle -->
   <script>

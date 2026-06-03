@@ -157,10 +157,13 @@ const sameAs = (socialLinks || [])
   .map((s) => s.url);
 const orgLogo =
   ogImage || new URL("/favicon.svg", Astro.site ?? siteUrl).href;
+const orgId = `${siteUrl.replace(/\/$/, "")}#organization`;
+const websiteId = `${siteUrl.replace(/\/$/, "")}#website`;
 const globalJsonLd: Record<string, any>[] = [
   {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": orgId,
     name: siteName,
     url: siteUrl,
     logo: orgLogo,
@@ -169,9 +172,11 @@ const globalJsonLd: Record<string, any>[] = [
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": websiteId,
     name: siteName,
     url: siteUrl,
     inLanguage: langCode,
+    publisher: { "@id": orgId },
   },
 ];
 const pageJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];

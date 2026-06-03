@@ -10,6 +10,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege: jobs only need to read the repo.
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -38,3 +42,75 @@ jobs:
           # harmless defaults so nothing throws during the build.
           DIRECTUS_URL: http://localhost:8055
           PUBLIC_DIRECTUS_URL: http://localhost:8055
+
+  # Continuous deployment: on a green push to main, SSH into the production host
+  # and roll the stack forward (pull -> rebuild Astro image -> recreate -> health
+  # gate). Skipped for pull requests. Requires the repository/environment secrets
+  # listed below; if they are unset the job fails fast with a clear message.
+  #
+  # Required secrets (Settings -> Secrets and variables -> Actions):
+  #   SSH_HOST         production host (e.g. ura.design)
+  #   SSH_USER         deploy user with docker + write access to DEPLOY_PATH
+  #   SSH_PRIVATE_KEY  private key whose public half is in the host's authorized_keys
+  #   DEPLOY_PATH      repo checkout on the server (e.g. /var/www/ura-prototype/uradotdesign)
+  #   SSH_PORT         optional; defaults to 22
+  deploy:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Never run two production deploys at once, and don't cancel an in-flight one.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    environment: production
+    steps:
+      - name: Preflight (ensure deploy secrets are present)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          missing=""
+          [ -z "$SSH_HOST" ] && missing="$missing SSH_HOST"
+          [ -z "$SSH_USER" ] && missing="$missing SSH_USER"
+          [ -z "$SSH_PRIVATE_KEY" ] && missing="$missing SSH_PRIVATE_KEY"
+          [ -z "$DEPLOY_PATH" ] && missing="$missing DEPLOY_PATH"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required deploy secret(s):$missing"
+            exit 1
+          fi
+          echo "All deploy secrets present."
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+
+            echo "==> Fast-forward to origin/main"
+            git fetch --prune origin main
+            # Non-destructive: abort if the server tree has diverged (drift must be
+            # resolved by hand rather than silently discarded).
+            git merge --ff-only origin/main
+
+            echo "==> Rebuild the Astro image (only service built from source)"
+            docker compose -f docker-compose.prod.yml build astro
+
+            echo "==> Recreate changed services and wait for health"
+            docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 240
+
+            echo "==> Verify endpoints"
+            curl -fsS --retry 5 --retry-delay 3 --max-time 15 http://127.0.0.1:4321/ >/dev/null && echo "Astro OK"
+            curl -fsS --max-time 15 http://127.0.0.1:8055/server/health >/dev/null && echo "Directus OK"
+
+            echo "==> Prune dangling build layers"
+            docker image prune -f >/dev/null || true
+
+            echo "==> Deployed $(git rev-parse --short HEAD)"

@@ -2,6 +2,7 @@
 import { getBlogPosts } from "../../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
 import { getUI } from "../../lib/translations";
+import { calculateReadingTime } from "../../lib/reading-time";
 
 const currentLang = getCurrentLanguage(Astro.url);
 const ui = await getUI(currentLang);
@@ -12,20 +13,25 @@ const rawArticles = await getBlogPosts({
   limit: 3,
   filter: { status: { _eq: "published" } },
   sort: ["-published_date"],
-  fields: ["id", "title", "slug", "published_date", "excerpt", "translations.*"],
+  fields: [
+    "id",
+    "title",
+    "slug",
+    "published_date",
+    "excerpt",
+    "content",
+    "translations.*",
+  ],
 });
 
 const articles = rawArticles.map((post) => ({
   ...post,
   title: getLocalizedField(post, "title", currentLang) || post.title,
   excerpt: getLocalizedField(post, "excerpt", currentLang) || post.excerpt,
+  readingTime: calculateReadingTime(
+    getLocalizedField(post, "content", currentLang) || post.content
+  ),
 }));
-
-function estimateReadingTime(excerpt: string | undefined): number {
-  if (!excerpt) return 3;
-  const words = excerpt.trim().split(/\s+/).length;
-  return Math.max(2, Math.ceil((words * 5) / 200));
-}
 ---
 
 <section
@@ -68,9 +74,11 @@ function estimateReadingTime(excerpt: string | undefined): number {
                   }
                 )}
               </time>
-              <span>
-                {estimateReadingTime(post.excerpt)} {minRead}
-              </span>
+              {post.readingTime > 0 && (
+                <span>
+                  {post.readingTime} {minRead}
+                </span>
+              )}
             </div>
           </article>
         ))

@@ -98,9 +98,30 @@ const featuredArticle = currentPage === 1 ? articles[0] : undefined;
 const remainingArticles = currentPage === 1 ? articles.slice(1) : articles;
 
 const pageHref = (p: number) => `/${lang}/blog${p <= 1 ? "" : `?page=${p}`}`;
+
+// Structured data: the Blog collection with the current page's posts listed.
+const siteOrigin = Astro.site?.origin ?? "https://ura.design";
+const blogJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  name: copy.title,
+  description: copy.description,
+  url: new URL(`/${lang}/blog`, Astro.site).href,
+  inLanguage: lang,
+  isPartOf: { "@id": `${siteOrigin}#website` },
+  publisher: { "@id": `${siteOrigin}#organization` },
+  blogPost: articles.map((a) => ({
+    "@type": "BlogPosting",
+    headline: a.title,
+    url: new URL(`/${lang}/blog/${a.slug}`, Astro.site).href,
+    ...(a.published_date
+      ? { datePublished: new Date(a.published_date).toISOString() }
+      : {}),
+  })),
+};
 ---
 
-<BaseLayout title={copy.title} description={copy.description}>
+<BaseLayout title={copy.title} description={copy.description} jsonLd={blogJsonLd}>
   {/* Hero Section */}
   <section
     class="relative flex items-end bg-[var(--color-background)] text-[var(--color-foreground)]"

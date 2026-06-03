@@ -41,12 +41,15 @@ export const messages: Record<Lang, Record<string, string>> = {
     "blog.minRead": "min read",
     "blog.eyebrow": "Journal",
     "blog.title": "Blog",
+    "blog.onThisPage": "On this page",
+    "blog.related": "Related articles",
     // Work / case study
     "work.breadcrumb": "WORKS",
     "work.backToWorks": "Back to Works",
     "work.year": "Year",
     "work.links": "Links",
     "work.logoAlt": "{name} logo",
+    "work.related": "Related work",
     // Testimonials
     "testimonials.srHeading": "Client Testimonials",
     "testimonials.slide": "slide",
@@ -134,12 +137,15 @@ export const messages: Record<Lang, Record<string, string>> = {
     "blog.minRead": "Min. Lesezeit",
     "blog.eyebrow": "Journal",
     "blog.title": "Blog",
+    "blog.onThisPage": "Auf dieser Seite",
+    "blog.related": "Ähnliche Artikel",
     // Work / case study
     "work.breadcrumb": "PROJEKT",
     "work.backToWorks": "Zurück zu Arbeiten",
     "work.year": "Jahr",
     "work.links": "Links",
     "work.logoAlt": "{name} Logo",
+    "work.related": "Ähnliche Projekte",
     // Testimonials
     "testimonials.srHeading": "Kundenstimmen",
     "testimonials.slide": "Folie",

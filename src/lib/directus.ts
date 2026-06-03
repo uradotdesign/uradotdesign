@@ -911,6 +911,162 @@ export async function getCaseStudyCategories() {
   );
 }
 
+const RELATED_POST_FIELDS = [
+  "id",
+  "title",
+  "slug",
+  "published_date",
+  "excerpt",
+  "badge",
+  "content",
+  "cover_image",
+  "translations.*",
+];
+
+/**
+ * Returns published posts related to the given one, never including itself.
+ *
+ * Same-`badge` posts are preferred (the only taxonomy posts carry); if fewer
+ * than `limit` match, the newest remaining posts backfill the list so the
+ * section is always full on a healthy blog.
+ *
+ * @param options.slug Slug of the current post (excluded from results).
+ * @param options.badge Optional badge to match for topical relevance.
+ * @param options.limit Maximum posts to return (default 3).
+ */
+export async function getRelatedBlogPosts(options: {
+  slug: string;
+  badge?: string | null;
+  limit?: number;
+}): Promise<BlogPost[]> {
+  const { slug, badge, limit = 3 } = options;
+  const base: DirectusFilter = {
+    status: { _eq: "published" },
+    slug: { _neq: slug },
+  };
+  const cacheKey = createCacheKey("posts_related", {
+    slug,
+    badge: badge ?? null,
+    limit,
+  });
+
+  return cacheConfig(cacheKey, async () => {
+    const collected: BlogPost[] = [];
+    const seen = new Set<string>([slug]);
+    const add = (posts: BlogPost[]) => {
+      for (const post of posts) {
+        if (collected.length >= limit) break;
+        if (post.slug && !seen.has(post.slug)) {
+          collected.push(post);
+          seen.add(post.slug);
+        }
+      }
+    };
+
+    if (badge) {
+      add(
+        await fetchCollection<BlogPost>("posts", {
+          filter: { ...base, badge: { _eq: badge } },
+          sort: ["-published_date"],
+          fields: RELATED_POST_FIELDS,
+          limit,
+        })
+      );
+    }
+
+    if (collected.length < limit) {
+      add(
+        await fetchCollection<BlogPost>("posts", {
+          filter: base,
+          sort: ["-published_date"],
+          fields: RELATED_POST_FIELDS,
+          limit: limit + 1,
+        })
+      );
+    }
+
+    return collected.slice(0, limit);
+  });
+}
+
+const RELATED_CASE_STUDY_FIELDS = [
+  "id",
+  "slug",
+  "client_name",
+  "year",
+  "cover_image",
+  "featured_image_light",
+  "featured_image_dark",
+  "logo",
+  "categories.category_id.translations.*",
+  "translations.*",
+];
+
+/**
+ * Returns published case studies related to the given one, excluding itself.
+ *
+ * Studies sharing at least one category are preferred; if fewer than `limit`
+ * match, the highest-priority remaining studies (by `sort_order`) backfill.
+ *
+ * @param options.slug Slug of the current case study (excluded from results).
+ * @param options.categoryIds Category ids to match for relevance.
+ * @param options.limit Maximum studies to return (default 3).
+ */
+export async function getRelatedCaseStudies(options: {
+  slug: string;
+  categoryIds?: number[];
+  limit?: number;
+}): Promise<CaseStudy[]> {
+  const { slug, categoryIds = [], limit = 3 } = options;
+  const base: DirectusFilter = {
+    status: { _eq: "published" },
+    slug: { _neq: slug },
+  };
+  const cacheKey = createCacheKey("case_studies_related", {
+    slug,
+    categoryIds,
+    limit,
+  });
+
+  return cacheConfig(cacheKey, async () => {
+    const collected: CaseStudy[] = [];
+    const seen = new Set<string>([slug]);
+    const add = (studies: CaseStudy[]) => {
+      for (const study of studies) {
+        if (collected.length >= limit) break;
+        if (study.slug && !seen.has(study.slug)) {
+          collected.push(study);
+          seen.add(study.slug);
+        }
+      }
+    };
+
+    if (categoryIds.length) {
+      add(
+        await fetchCollection<CaseStudy>("case_studies", {
+          filter: { ...base, categories: { category_id: { _in: categoryIds } } },
+          sort: ["sort_order"],
+          fields: RELATED_CASE_STUDY_FIELDS,
+          limit,
+        })
+      );
+    }
+
+    if (collected.length < limit) {
+      add(
+        await fetchCollection<CaseStudy>("case_studies", {
+          filter: base,
+          sort: ["sort_order"],
+          fields: RELATED_CASE_STUDY_FIELDS,
+          limit: limit + categoryIds.length + 1,
+        })
+      );
+    }
+
+    return collected.slice(0, limit);
+  });
+}
+
 // Testimonials helpers
 export async function getTestimonials(options?: {
   limit?: number;

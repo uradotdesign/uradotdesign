@@ -1,0 +1,77 @@
+---
+import { getLocalizedField, type Language } from "../../lib/i18n";
+import { calculateReadingTime } from "../../lib/reading-time";
+import type { BlogPost } from "../../lib/directus";
+
+interface Props {
+  posts: BlogPost[];
+  lang: Language;
+  heading: string;
+  minRead: string;
+}
+
+const { posts, lang, heading, minRead } = Astro.props;
+
+const articles = posts.map((post) => ({
+  slug: post.slug,
+  publishedDate: post.published_date,
+  badge: post.badge,
+  title: getLocalizedField(post, "title", lang) || post.title,
+  readingTime: calculateReadingTime(
+    getLocalizedField(post, "content", lang) || post.content
+  ),
+}));
+---
+
+{
+  articles.length > 0 && (
+    <section class="py-16 lg:py-24 border-t border-[var(--color-border)]">
+      <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16">
+        <div class="flex items-center gap-6 mb-12">
+          <h2 class="uppercase text-xs font-semibold tracking-wider">
+            {heading}
+          </h2>
+          <div class="flex-1 h-px bg-[var(--color-border)]" aria-hidden="true" />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+          {articles.map((post) => (
+            <article class="group flex flex-col justify-between h-full pb-8 md:pb-0 pr-0 md:pr-8 lg:pr-12">
+              <div class="space-y-4">
+                {post.badge && (
+                  <span class="inline-block text-[11px] font-medium uppercase tracking-wider opacity-60">
+                    {post.badge}
+                  </span>
+                )}
+                <h3 class="text-2xl font-medium leading-tight">
+                  <a
+                    href={`/${lang}/blog/${post.slug}`}
+                    class="hover:underline decoration-1 underline-offset-4"
+                  >
+                    {post.title}
+                  </a>
+                </h3>
+              </div>
+
+              <div class="mt-3 pt-3 border-t border-[var(--color-border)]/40 flex items-center justify-between text-xs uppercase tracking-wider opacity-70">
+                {post.publishedDate && (
+                  <time datetime={post.publishedDate}>
+                    {new Date(post.publishedDate).toLocaleDateString(
+                      lang === "de" ? "de-DE" : "en-GB",
+                      { month: "short", day: "numeric", year: "numeric" }
+                    )}
+                  </time>
+                )}
+                {post.readingTime > 0 && (
+                  <span>
+                    {post.readingTime} {minRead}
+                  </span>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

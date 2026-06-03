@@ -2,6 +2,7 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import {
   getBlogPostBySlug,
+  getRelatedBlogPosts,
   getAssetUrl,
   getAssetThumbUrl,
   getAssetMeta,
@@ -14,8 +15,11 @@ import {
 import { getLocalizedField, type Language } from "../../../lib/i18n";
 import { getUI } from "../../../lib/translations";
 import { calculateReadingTime } from "../../../lib/reading-time";
+import { buildTableOfContents } from "../../../lib/toc";
 import ProgressiveImage from "../../../components/ProgressiveImage.astro";
 import PageBlocks from "../../../components/blocks/PageBlocks.astro";
+import TableOfContents from "../../../components/blog/TableOfContents.astro";
+import RelatedPosts from "../../../components/blog/RelatedPosts.astro";
 
 const { lang, slug } = Astro.params;
 
@@ -53,6 +57,21 @@ const title = getLocalizedField(post, "title", language) || post.title;
 const content =
   getLocalizedField(post, "content", language) || post.content || "";
 const readingTime = calculateReadingTime(content);
+const wordCount = content
+  .replace(/<[^>]*>/g, " ")
+  .trim()
+  .split(/\s+/)
+  .filter(Boolean).length;
+
+// Build the on-this-page nav and inject stable heading anchors into the body.
+const { html: contentHtml, headings } = buildTableOfContents(content);
+
+// Topically related posts (same badge first, newest backfill).
+const relatedPosts = await getRelatedBlogPosts({
+  slug,
+  badge: post.badge,
+  limit: 3,
+});
 const publishedDate = post.published_date
   ? new Date(post.published_date).toLocaleDateString(
       lang === "de" ? "de-DE" : "en-GB",
@@ -92,12 +111,13 @@ const coverFocal = coverMeta
   ? `${coverMeta.focalX}% ${coverMeta.focalY}%`
   : undefined;
 
-// Structured data: Article + breadcrumb trail.
+// Structured data: BlogPosting + breadcrumb trail.
+const siteOrigin = Astro.site?.origin ?? "https://ura.design";
 const articleUrl = new URL(`/${lang}/blog/${slug}`, Astro.site).href;
 const articleImage = seoImage || coverImage;
 const articleJsonLd = {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "BlogPosting",
   headline: title,
   description: metaDescription,
   ...(articleImage ? { image: [articleImage] } : {}),
@@ -107,7 +127,19 @@ const articleJsonLd = {
   ...((post as any).date_updated
     ? { dateModified: new Date((post as any).date_updated).toISOString() }
     : {}),
-  ...(authorName ? { author: { "@type": "Person", name: authorName } } : {}),
+  ...(authorName
+    ? {
+        author: {
+          "@type": "Person",
+          name: authorName,
+          ...(authorPhoto ? { image: authorPhoto } : {}),
+        },
+      }
+    : {}),
+  publisher: { "@id": `${siteOrigin}#organization` },
+  ...(wordCount ? { wordCount } : {}),
+  ...(readingTime ? { timeRequired: `PT${readingTime}M` } : {}),
+  ...(post.badge ? { articleSection: post.badge, keywords: post.badge } : {}),
   mainEntityOfPage: articleUrl,
   inLanguage: language,
 };
@@ -271,16 +303,25 @@ const breadcrumbJsonLd = {
                 loading="eager"
                 fetchpriority="high"
               />
-            </div>
-          )
-        }
-        <div set:html={content} />
+          </div>
+        )
+      }
+        <TableOfContents headings={headings} label={ui("blog.onThisPage")} />
+        <div set:html={contentHtml} />
       </div>
     </div>
   </article>
 
   {/* Additive page-builder blocks (after the post content) */}
   {postBlocks.length > 0 && <PageBlocks blocks={postBlocks} lang={language} />}
+
+  {/* Topically related posts */}
+  <RelatedPosts
+    posts={relatedPosts}
+    lang={language}
+    heading={ui("blog.related")}
+    minRead={ui("blog.minRead")}
+  />
 </BaseLayout>
 
 <style>
@@ -297,6 +338,10 @@ const breadcrumbJsonLd = {
     font-size: 3rem;
     margin-top: 0.75em;
     margin-bottom: 0.25em;
+  }
+  /* Keep TOC-anchored headings clear of the fixed header on jump. */
+  :global(article .prose :is(h2, h3)[id]) {
+    scroll-margin-top: 6rem;
   }
   :global(article a) {
     text-decoration: underline;

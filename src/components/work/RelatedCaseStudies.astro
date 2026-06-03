@@ -1,0 +1,73 @@
+---
+import { getAssetUrl, type CaseStudy } from "../../lib/directus";
+import { getLocalizedField, type Language } from "../../lib/i18n";
+import ThemeResponsiveImage from "../ThemeResponsiveImage.astro";
+
+interface Props {
+  studies: CaseStudy[];
+  lang: Language;
+  heading: string;
+}
+
+const { studies, lang, heading } = Astro.props;
+
+const items = studies.map((study) => {
+  const cover = getAssetUrl(study.cover_image);
+  const categories = (study.categories || [])
+    .map((link: any) => getLocalizedField(link?.category_id, "title", lang))
+    .filter((c: string | undefined): c is string => Boolean(c));
+  return {
+    slug: study.slug,
+    clientName: study.client_name,
+    title: getLocalizedField(study, "title", lang) || study.client_name,
+    year: study.year,
+    categories,
+    light: cover || getAssetUrl(study.featured_image_light),
+    dark: cover || getAssetUrl(study.featured_image_dark),
+  };
+});
+---
+
+{
+  items.length > 0 && (
+    <section class="py-16 lg:py-24 px-6 sm:px-8 lg:px-12 xl:px-24 border-t border-[var(--color-border)]">
+      <div class="max-w-[1440px] mx-auto">
+        <div class="flex items-center gap-6 mb-12">
+          <h2 class="uppercase text-xs font-semibold tracking-wider">
+            {heading}
+          </h2>
+          <div class="flex-1 h-px bg-[var(--color-border)]" aria-hidden="true" />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+          {items.map((item) => (
+            <a href={`/${lang}/work/${item.slug}`} class="group block">
+              <div class="relative aspect-[4/3] overflow-hidden mb-5 bg-[var(--color-border)]/30">
+                <ThemeResponsiveImage
+                  light={item.light}
+                  dark={item.dark}
+                  alt={item.title || item.clientName || ""}
+                  fill
+                  imgClass="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              </div>
+              {item.categories.length > 0 && (
+                <div class="flex flex-wrap gap-2 mb-2 text-[11px] font-medium uppercase tracking-wider opacity-60">
+                  {item.categories.map((cat) => (
+                    <span>{cat}</span>
+                  ))}
+                </div>
+              )}
+              <h3 class="text-xl font-medium leading-tight">
+                <span class="group-hover:underline decoration-1 underline-offset-4">
+                  {item.title}
+                </span>
+              </h3>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

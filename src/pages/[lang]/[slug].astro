@@ -259,9 +259,22 @@ const pageImage = type === 'service'
   ? getAssetUrl((data as Service).seo_image) || currentService?.backgroundLight || null
   : getAssetUrl((data as Page).seo_image) || null;
 
+// Structured data: a Service or WebPage node tied to the global graph.
+const siteOrigin = Astro.site?.origin ?? "https://ura.design";
+const pageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": type === "service" ? "Service" : "WebPage",
+  name: pageTitle,
+  ...(pageDescription ? { description: pageDescription } : {}),
+  url: new URL(`/${lang}/${slug}`, Astro.site).href,
+  inLanguage: lang,
+  ...(type === "service"
+    ? { provider: { "@id": `${siteOrigin}#organization` } }
+    : { isPartOf: { "@id": `${siteOrigin}#website` } }),
+};
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription} image={pageImage || undefined}>
+<BaseLayout title={pageTitle} description={pageDescription} image={pageImage || undefined} jsonLd={pageJsonLd}>
   {type === 'service' && currentService && (
     <>
       <!-- Service Hero Section (now includes checklist) -->
