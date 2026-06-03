@@ -115,6 +115,9 @@ const coverFocal = coverMeta
 const siteOrigin = Astro.site?.origin ?? "https://ura.design";
 const articleUrl = new URL(`/${lang}/blog/${slug}`, Astro.site).href;
 const articleImage = seoImage || coverImage;
+// Social card: an explicit SEO image wins; otherwise the generated OG card.
+const ogImageUrl =
+  seoImage || new URL(`/${lang}/blog/${slug}/og.png`, Astro.site).href;
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
@@ -161,7 +164,7 @@ const breadcrumbJsonLd = {
 <BaseLayout
   title={metaTitle}
   description={metaDescription}
-  image={seoImage || coverImage || undefined}
+  image={ogImageUrl}
   imageAlt={coverAlt}
   article={{
     publishedTime: post.published_date

@@ -30,9 +30,11 @@
   "dependencies": {
     "@astrojs/node": "^10.1.2",
     "@directus/sdk": "^21.3.0",
+    "@resvg/resvg-wasm": "^2.6.2",
     "astro": "^6.4.2",
     "ioredis": "^5.11.0",
     "lottie-web": "^5.13.0",
+    "satori": "^0.26.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

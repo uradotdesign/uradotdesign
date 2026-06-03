@@ -157,6 +157,9 @@ const worksLink = `/${lang}/works`;
 // Structured data: case study (CreativeWork) + breadcrumb trail.
 const workUrl = new URL(`/${lang}/work/${slug}`, Astro.site).href;
 const workImage = seoImage || coverImage || imageLight;
+// Social card: an explicit SEO image wins; otherwise the generated OG card.
+const ogImageUrl =
+  seoImage || new URL(`/${lang}/work/${slug}/og.png`, Astro.site).href;
 const caseStudyJsonLd = {
   "@context": "https://schema.org",
   "@type": "CreativeWork",
@@ -190,7 +193,7 @@ const workBreadcrumbJsonLd = {
 <BaseLayout
   title={metaTitle}
   description={metaDescription}
-  image={seoImage || coverImage || imageLight || undefined}
+  image={ogImageUrl}
   jsonLd={[caseStudyJsonLd, workBreadcrumbJsonLd]}
 >
   {
