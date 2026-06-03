@@ -17,7 +17,7 @@ const photo = getAssetUrl(data.photo);
 
 {
   quote && (
-    <section class="py-12 md:py-20">
+    <section class="py-16 lg:py-24">
       <div class="mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 xl:px-16 text-center">
         <blockquote class="font-display text-2xl sm:text-3xl lg:text-4xl leading-snug tracking-[-0.01em]">
           <span aria-hidden="true" class="opacity-40">“</span>
@@ -31,7 +31,7 @@ const photo = getAssetUrl(data.photo);
                 src={photo}
                 alt={author || ''}
                 class="w-12 h-12 rounded-full overflow-hidden shrink-0"
-                imgClass="w-full h-full object-cover"
+                imgClass="w-full h-full object-cover grayscale"
               />
             )}
             <div class="text-left">

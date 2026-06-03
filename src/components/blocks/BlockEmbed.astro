@@ -21,7 +21,7 @@ const aspectClass = aspectMap[data.aspect as string] ?? aspectMap['16:9'];
 
 {
   html && (
-    <section class="py-12 md:py-20">
+    <section class="py-16 lg:py-24">
       <div class="mx-auto max-w-5xl px-6 sm:px-8 lg:px-12 xl:px-16">
         {title && (
           <h2 class="font-display text-2xl sm:text-3xl tracking-[-0.02em] mb-6">
@@ -29,7 +29,7 @@ const aspectClass = aspectMap[data.aspect as string] ?? aspectMap['16:9'];
           </h2>
         )}
         <div
-          class={`block-embed overflow-hidden rounded-2xl ${aspectClass}`}
+          class={`block-embed overflow-hidden ${aspectClass}`}
           set:html={html}
         />
       </div>

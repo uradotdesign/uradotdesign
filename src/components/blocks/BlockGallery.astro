@@ -22,8 +22,8 @@ const colsClass = colMap[String(data.columns)] || colMap['3'];
 
 {
   images.length > 0 && (
-    <section class="py-12 md:py-20">
-      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+    <section class="py-16 lg:py-24">
+      <div class="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 xl:px-16">
         {heading && (
           <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] mb-10">
             {heading}
@@ -35,7 +35,7 @@ const colsClass = colMap[String(data.columns)] || colMap['3'];
             const caption = getLocalizedField(img, 'caption', lang);
             return (
               src && (
-                <figure class="overflow-hidden rounded-2xl">
+                <figure class="overflow-hidden">
                   <ProgressiveImage
                     src={src}
                     alt={caption || ''}

@@ -15,11 +15,11 @@ const buttonLabel = getLocalizedField(data, 'button_label', lang);
 const style = (data.style as string) || 'default';
 const panelClass =
   style === 'dark'
-    ? 'bg-gray-900 text-white'
+    ? 'bg-[#0c111d] text-white'
     : style === 'accent'
       ? 'bg-[var(--color-foreground)] text-[var(--color-background)]'
       : style === 'gradient'
-        ? 'bg-gradient-to-br from-[var(--color-foreground)] to-[#FD5825] text-white'
+        ? 'bg-gradient-to-br from-[var(--color-foreground)] to-[var(--color-brand)] text-white'
         : style === 'minimal'
           ? ''
           : 'border border-[var(--color-border)]';
@@ -29,10 +29,10 @@ const buttonVariant =
 
 {
   (heading || buttonLabel) && (
-    <section class="py-12 md:py-20">
-      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+    <section class="py-16 lg:py-24">
+      <div class="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 xl:px-16">
         <div
-          class={`rounded-3xl px-8 py-14 md:px-16 md:py-20 text-center ${panelClass}`}
+          class={`px-8 py-14 md:px-16 md:py-20 text-center ${panelClass}`}
         >
           {heading && (
             <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] max-w-3xl mx-auto">

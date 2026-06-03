@@ -20,9 +20,9 @@ const hasImage = Boolean(light || dark);
 
 {
   hasImage && (
-    <section class="py-12 md:py-20">
+    <section class="py-16 lg:py-24">
       <div
-        class={full ? 'w-full' : 'mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16'}
+        class={full ? 'w-full' : 'mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 xl:px-16'}
       >
         <figure class={full ? '' : 'mx-auto max-w-5xl'}>
           <ThemeResponsiveImage
@@ -30,7 +30,7 @@ const hasImage = Boolean(light || dark);
             dark={dark}
             alt={meta?.alt || caption || ''}
             objectPosition={focal}
-            class="block w-full overflow-hidden rounded-2xl"
+            class="block w-full overflow-hidden"
             imgClass="w-full h-auto"
           />
           {

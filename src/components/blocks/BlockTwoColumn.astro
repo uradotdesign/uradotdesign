@@ -23,8 +23,8 @@ const focal = meta ? `${meta.focalX}% ${meta.focalY}%` : undefined;
 const mediaLeft = data.media_side === 'left';
 ---
 
-<section class="py-12 md:py-20">
-  <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+<section class="py-16 lg:py-24">
+  <div class="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 xl:px-16">
     <div
       class={`grid items-center gap-10 lg:gap-16 ${hasImage ? 'md:grid-cols-2' : ''}`}
     >
@@ -36,7 +36,7 @@ const mediaLeft = data.media_side === 'left';
               dark={dark}
               alt={meta?.alt || heading || ''}
               objectPosition={focal}
-              class="block w-full overflow-hidden rounded-2xl"
+              class="block w-full overflow-hidden"
               imgClass="w-full h-auto"
             />
           </div>

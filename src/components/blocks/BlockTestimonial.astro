@@ -29,8 +29,8 @@ const items = rawItems
 
 {
   items.length > 0 && (
-    <section class="py-12 md:py-20">
-      <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 xl:px-16">
+    <section class="py-16 lg:py-24">
+      <div class="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12 xl:px-16">
         {heading && (
           <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-[-0.02em] mb-12 text-center">
             {heading}
@@ -46,7 +46,7 @@ const items = rawItems
         >
           {items.map((it) => (
             <figure
-              class={`flex flex-col rounded-3xl border border-[var(--color-border)] p-6 md:p-8 ${
+              class={`flex flex-col border border-[var(--color-border)] p-6 md:p-8 ${
                 layout === 'carousel'
                   ? 'snap-start shrink-0 w-[85%] sm:w-[420px]'
                   : ''
@@ -74,7 +74,7 @@ const items = rawItems
                       height="44"
                       loading="lazy"
                       decoding="async"
-                      class="h-11 w-11 rounded-full object-cover"
+                      class="h-11 w-11 rounded-full object-cover grayscale"
                     />
                   )}
                   <div class="leading-tight">

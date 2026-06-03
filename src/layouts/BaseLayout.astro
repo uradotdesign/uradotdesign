@@ -9,6 +9,7 @@ import {
 } from "../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
 import { t, getUI } from "../lib/translations";
+import { publicDirectusUrl } from "../lib/config";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import SkipLinks from "../components/SkipLinks.astro";
@@ -34,6 +35,14 @@ const currentLang = getCurrentLanguage(Astro.url);
 const isPreview = isPreviewActive(Astro.url);
 
 const { title, description, image, jsonLd } = Astro.props;
+
+// Origin that serves CMS media (Directus). Preconnecting lets the first
+// image/video start its DNS+TLS handshake immediately, before the asset URL is
+// even discovered in the body.
+let assetOrigin = "";
+try {
+  assetOrigin = new URL(publicDirectusUrl).origin;
+} catch {}
 
 // Site Info from Directus
 const siteName = settings?.site_name || "Ura Design";
@@ -169,6 +178,35 @@ const serializeJsonLd = (obj: Record<string, any>) =>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    {/* Open the connection to the CMS asset origin as early as possible. */}
+    {
+      assetOrigin && (
+        <>
+          <link rel="preconnect" href={assetOrigin} />
+          <link rel="dns-prefetch" href={assetOrigin} />
+        </>
+      )
+    }
+
+    {/* Preload the two render-critical fonts (Geist body + Instrument Serif
+        display heading) as WOFF2 so the first paint already has them. Fonts are
+        always fetched in CORS mode, hence crossorigin. */}
+    <link
+      rel="preload"
+      href="/fonts/Geist-VariableFont_wght.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preload"
+      href="/fonts/InstrumentSerif-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+
     <link rel="icon" type={faviconType} href={faviconUrl} />
     <ClientRouter fallback="animate" />
 
