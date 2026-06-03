@@ -20,7 +20,19 @@ export interface Props {
   title?: string;
   description?: string;
   image?: string;
+  /** Alt text for the social share image (falls back to the page title). */
+  imageAlt?: string;
   fullWidth?: boolean;
+  /** When true, emit `<meta name="robots" content="noindex,follow">`. */
+  noindex?: boolean;
+  /** Open Graph article metadata for blog posts / case studies. */
+  article?: {
+    publishedTime?: string;
+    modifiedTime?: string;
+    author?: string;
+    section?: string;
+    tags?: string[];
+  };
   /** Page-specific structured data (JSON-LD) appended after the global schema. */
   jsonLd?: Record<string, any> | Record<string, any>[];
 }
@@ -34,7 +46,11 @@ const currentLang = getCurrentLanguage(Astro.url);
 // CSS. Never loaded in normal production responses.
 const isPreview = isPreviewActive(Astro.url);
 
-const { title, description, image, jsonLd } = Astro.props;
+const { title, description, image, imageAlt, jsonLd, article } = Astro.props;
+
+// Preview renders draft content and must never be indexed; pages may also opt
+// out explicitly (e.g. 404).
+const noindex = Astro.props.noindex || isPreview;
 
 // Origin that serves CMS media (Directus). Preconnecting lets the first
 // image/video start its DNS+TLS handshake immediately, before the asset URL is
@@ -228,6 +244,16 @@ const serializeJsonLd = (obj: Record<string, any>) =>
       ))
     }
     <link rel="alternate" hreflang="x-default" href={alternates[0].href} />
+
+    {/* Blog feed autodiscovery (per active language). */}
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={`${siteName} — Blog`}
+      href={new URL(`/${currentLang}/rss.xml`, Astro.site ?? siteUrl).href}
+    />
+
+    {noindex && <meta name="robots" content="noindex,follow" />}
     <title>{siteTitle}</title>
     <meta name="description" content={siteDescription} />
 
@@ -240,19 +266,44 @@ const serializeJsonLd = (obj: Record<string, any>) =>
     <meta property="og:locale" content={ogLocale} />
     <meta property="og:locale:alternate" content={ogLocaleAlternate} />
     {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:alt" content={imageAlt || title || siteName} />}
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content={twitterCard} />
-    <meta property="twitter:url" content={canonicalUrl} />
-    <meta property="twitter:title" content={siteTitle} />
-    <meta property="twitter:description" content={siteDescription} />
-    {twitterSite && <meta property="twitter:site" content={twitterSite} />}
+    {/* Article metadata (blog posts / case studies). */}
     {
-      twitterCreator && (
-        <meta property="twitter:creator" content={twitterCreator} />
+      article && (
+        <>
+          {article.publishedTime && (
+            <meta property="article:published_time" content={article.publishedTime} />
+          )}
+          {article.modifiedTime && (
+            <meta property="article:modified_time" content={article.modifiedTime} />
+          )}
+          {article.author && (
+            <meta property="article:author" content={article.author} />
+          )}
+          {article.section && (
+            <meta property="article:section" content={article.section} />
+          )}
+          {(article.tags || []).map((tag) => (
+            <meta property="article:tag" content={tag} />
+          ))}
+        </>
       )
     }
-    {twitterImage && <meta property="twitter:image" content={twitterImage} />}
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content={twitterCard} />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={siteTitle} />
+    <meta name="twitter:description" content={siteDescription} />
+    {twitterSite && <meta name="twitter:site" content={twitterSite} />}
+    {
+      twitterCreator && (
+        <meta name="twitter:creator" content={twitterCreator} />
+      )
+    }
+    {twitterImage && <meta name="twitter:image" content={twitterImage} />}
+    {twitterImage && <meta name="twitter:image:alt" content={imageAlt || title || siteName} />}
 
     <!-- Structured Data (JSON-LD) -->
     {

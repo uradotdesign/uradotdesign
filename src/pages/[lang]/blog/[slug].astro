@@ -13,6 +13,7 @@ import {
 } from "../../../lib/directus";
 import { getLocalizedField, type Language } from "../../../lib/i18n";
 import { getUI } from "../../../lib/translations";
+import { calculateReadingTime } from "../../../lib/reading-time";
 import ProgressiveImage from "../../../components/ProgressiveImage.astro";
 import PageBlocks from "../../../components/blocks/PageBlocks.astro";
 
@@ -47,14 +48,6 @@ const postBlocks = sortBlocks(post.blocks);
 
 const language = lang as Language;
 const ui = await getUI(lang);
-
-// Helper to calculate reading time
-function calculateReadingTime(text: string): number {
-  if (!text) return 0;
-  const wordsPerMinute = 200;
-  const words = text.trim().split(/\s+/).length;
-  return Math.ceil(words / wordsPerMinute);
-}
 
 const title = getLocalizedField(post, "title", language) || post.title;
 const content =
@@ -137,6 +130,18 @@ const breadcrumbJsonLd = {
   title={metaTitle}
   description={metaDescription}
   image={seoImage || coverImage || undefined}
+  imageAlt={coverAlt}
+  article={{
+    publishedTime: post.published_date
+      ? new Date(post.published_date).toISOString()
+      : undefined,
+    modifiedTime: (post as any).date_updated
+      ? new Date((post as any).date_updated).toISOString()
+      : undefined,
+    author: authorName || undefined,
+    section: post.badge || undefined,
+    tags: post.badge ? [post.badge] : undefined,
+  }}
   jsonLd={[articleJsonLd, breadcrumbJsonLd]}
 >
   {
@@ -163,6 +168,7 @@ const breadcrumbJsonLd = {
               alt={coverAlt}
               objectPosition={coverFocal}
               loading="eager"
+              fetchpriority="high"
             />
             {/* Overlay */}
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-[1]" />
@@ -263,6 +269,7 @@ const breadcrumbJsonLd = {
                 alt={coverAlt}
                 objectPosition={coverFocal}
                 loading="eager"
+                fetchpriority="high"
               />
             </div>
           )

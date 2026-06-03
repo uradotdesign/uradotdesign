@@ -63,10 +63,18 @@ const COLLECTIONS = [
 
 async function buildTriggerCollections() {
   const all = (await authRequest("/collections?limit=-1&fields=collection"))?.data ?? [];
-  const translationCols = all
-    .map((c) => c.collection)
-    .filter((name) => /_translations$/.test(name));
-  return Array.from(new Set([...COLLECTIONS, ...translationCols]));
+  const names = all.map((c) => c.collection).filter(Boolean);
+  // Auto-include every block collection, every block M2A junction, and every
+  // translation junction that exists in the live schema. This keeps the trigger
+  // scope in sync with the block registry without editing this list each time a
+  // new block (and its `*_blocks`/`block_*_items`/`*_translations`) is added.
+  const derived = names.filter(
+    (name) =>
+      /^block_/.test(name) ||
+      /_blocks$/.test(name) ||
+      /_translations$/.test(name)
+  );
+  return Array.from(new Set([...COLLECTIONS, ...derived]));
 }
 
 const requestOptions = {

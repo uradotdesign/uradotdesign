@@ -55,6 +55,9 @@ function prefixesFor(collection: string | null): string[] | null {
   if (SCOPED[collection]) return SCOPED[collection];
   // Block collections + their children embed into every content type.
   if (collection.startsWith("block_")) return CONTENT_PREFIXES;
+  // M2A junctions that attach blocks to a host collection (pages_blocks,
+  // posts_blocks, case_studies_blocks, …) also change rendered content.
+  if (collection.endsWith("_blocks")) return CONTENT_PREFIXES;
   // Service relation child collections.
   if (collection.startsWith("service_")) return ["services:*", "service_relations*"];
   // Translation junctions of content collections affect content output.
@@ -97,12 +100,30 @@ export const POST: APIRoute = async ({ request }) => {
     // Body is optional; an empty/invalid body still triggers a full clear.
   }
 
+  const started = Date.now();
   const prefixes = prefixesFor(collection);
-  if (prefixes === null) {
-    await invalidateCache(`${NS}*`);
-  } else {
-    await Promise.all(prefixes.map((p) => invalidateCache(`${NS}${p}`)));
+
+  try {
+    if (prefixes === null) {
+      await invalidateCache(`${NS}*`);
+    } else {
+      await Promise.all(prefixes.map((p) => invalidateCache(`${NS}${p}`)));
+    }
+  } catch (error) {
+    // invalidateCache swallows its own Redis errors, so reaching here is rare;
+    // log loudly and still return 200 so the Directus Flow isn't marked failed
+    // (the config-cache TTL is the self-healing fallback).
+    console.error(
+      `[revalidate] invalidation error for collection=${collection ?? "<all>"}:`,
+      error
+    );
   }
+
+  console.log(
+    `[revalidate] collection=${collection ?? "<all>"} scoped=${
+      prefixes !== null
+    } prefixes=${prefixes ? prefixes.length : "all"} ${Date.now() - started}ms`
+  );
 
   return json(
     { revalidated: true, collection, scoped: prefixes !== null },

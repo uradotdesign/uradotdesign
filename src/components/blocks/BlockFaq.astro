@@ -16,6 +16,29 @@ const items = rawItems
     answer: getLocalizedField(it, 'answer', lang),
   }))
   .filter((it) => it.question);
+
+// FAQPage structured data — only Q&A pairs that have an answer qualify.
+const faqEntities = items
+  .map((it) => ({
+    '@type': 'Question',
+    name: it.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: (it.answer || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    },
+  }))
+  .filter((q) => q.acceptedAnswer.text);
+
+const faqJsonLd =
+  faqEntities.length > 0
+    ? { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqEntities }
+    : null;
+// Escape `<` so the serialized JSON can't break out of the <script> element.
+const serializeJsonLd = (obj: Record<string, any>) =>
+  JSON.stringify(obj).replace(/</g, '\\u003c');
 ---
 
 {
@@ -53,6 +76,13 @@ const items = rawItems
           ))}
         </div>
       </div>
+      {faqJsonLd && (
+        <script
+          is:inline
+          type="application/ld+json"
+          set:html={serializeJsonLd(faqJsonLd)}
+        />
+      )}
     </section>
   )
 }

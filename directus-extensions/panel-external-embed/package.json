@@ -1,0 +1,23 @@
+{
+  "name": "directus-extension-panel-external-embed",
+  "version": "1.0.0",
+  "description": "Insights panel that embeds an external dashboard or document (Plausible, HedgeDoc, public ClickUp views, …) via a configurable iframe, with an open-in-new-tab fallback for tools that refuse framing.",
+  "type": "module",
+  "keywords": ["directus", "directus-extension", "directus-custom-extension", "panel"],
+  "directus:extension": {
+    "type": "panel",
+    "path": "dist/index.js",
+    "source": "src/index.ts",
+    "host": "^11.0.0"
+  },
+  "scripts": {
+    "build": "directus-extension build",
+    "dev": "directus-extension build -w --no-minify",
+    "link": "directus-extension link"
+  },
+  "devDependencies": {
+    "@directus/extensions-sdk": "^13.0.0",
+    "typescript": "^5.5.0",
+    "vue": "^3.4.0"
+  }
+}

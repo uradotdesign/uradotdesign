@@ -48,30 +48,6 @@ export function getLocalizedField<T extends Record<string, any>>(
 }
 
 /**
- * Transform an object with localized fields into a localized object
- * @param obj - Object with a native `translations[]` array
- * @param fields - Array of field names to localize
- * @param language - Language code
- * @returns Object with localized values
- */
-export function localizeObject<T extends Record<string, any>>(
-  obj: T,
-  fields: string[],
-  language: Language = "en"
-): Record<string, any> {
-  const localized: Record<string, any> = { ...obj };
-
-  for (const field of fields) {
-    const value = getLocalizedField(obj, field, language);
-    if (value !== undefined) {
-      localized[field] = value;
-    }
-  }
-
-  return localized;
-}
-
-/**
  * Get current language from URL or cookie
  * @param url - Current URL
  * @returns Language code
@@ -91,13 +67,4 @@ export function getCurrentLanguage(url: URL): Language {
 
   // Default to English
   return "en";
-}
-
-/**
- * Get language from Astro request
- * @param request - Astro request object
- * @returns Language code
- */
-export function getLanguageFromRequest(request: Request): Language {
-  return getCurrentLanguage(new URL(request.url));
 }

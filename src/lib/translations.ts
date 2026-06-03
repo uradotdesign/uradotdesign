@@ -1,12 +1,12 @@
-import { getTranslations, getTranslationsByNamespace } from "./directus";
+import { getTranslations } from "./directus";
 import { messages, type Lang } from "../i18n/messages";
 
 /** Resolver returned by {@link getUI}: looks up a UI string by key. */
 export type UIResolver = (key: string, vars?: Record<string, string>) => string;
 
-// Translation content is cached in Redis by getTranslations/getTranslationsByNamespace
-// (and busted by the revalidate webhook), so no module-level content cache is
-// kept here — that previously served up to 5-minute-stale UI strings.
+// Translation content is cached in Redis by getTranslations (and busted by the
+// revalidate webhook), so no module-level content cache is kept here — that
+// previously served up to 5-minute-stale UI strings.
 
 // Flag to track if translations collection exists (skip fetching if it doesn't)
 let translationsCollectionExists: boolean | null = null;
@@ -77,76 +77,6 @@ export async function getUI(language: string = "en"): Promise<UIResolver> {
     if (!vars) return raw;
     return raw.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
   };
-}
-
-/**
- * Get all translations for a namespace
- * @param namespace - Namespace (e.g., "navigation", "footer")
- * @param language - Language code (default: 'en')
- */
-export async function getNamespaceTranslations(
-  namespace: string,
-  language: string = "en"
-): Promise<Record<string, any>> {
-  if (translationsCollectionExists === false) {
-    if (Date.now() - collectionCheckTime < COLLECTION_RETRY_INTERVAL) {
-      return {};
-    }
-    translationsCollectionExists = null;
-  }
-
-  try {
-    const translations = await getTranslationsByNamespace(language, namespace);
-    if (Object.keys(translations).length === 0 && translationsCollectionExists === null) {
-      translationsCollectionExists = false;
-      collectionCheckTime = Date.now();
-    } else {
-      translationsCollectionExists = true;
-    }
-
-    return translations;
-  } catch (error: any) {
-    if (error?.response?.status === 403 || error?.status === 403) {
-      translationsCollectionExists = false;
-      collectionCheckTime = Date.now();
-    }
-    return {};
-  }
-}
-
-/**
- * Get nested translation value from object
- * @param obj - Translation object
- * @param path - Dot-notation path (e.g., "menu.services")
- * @param fallback - Fallback value
- */
-export function getNestedValue(
-  obj: Record<string, any>,
-  path: string,
-  fallback?: string
-): string {
-  const parts = path.split(".");
-  let current = obj;
-  
-  for (const part of parts) {
-    if (current && typeof current === "object" && part in current) {
-      current = current[part];
-    } else {
-      return fallback || path;
-    }
-  }
-  
-  return typeof current === "string" ? current : fallback || path;
-}
-
-/**
- * Resets the "translations collection exists" guard so the next lookup
- * re-checks the CMS (e.g. after the collection is created). Translation content
- * itself lives in Redis and is busted by the revalidate webhook.
- */
-export function clearTranslationCache() {
-  translationsCollectionExists = null;
-  collectionCheckTime = 0;
 }
 
 // Export type for translations

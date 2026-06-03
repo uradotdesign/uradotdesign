@@ -61,6 +61,10 @@ services:
     volumes:
       - directus_uploads:/directus/uploads
       - directus_extensions:/directus/extensions
+      # Version-controlled schema snapshots (source of truth). `npm run
+      # schema:snapshot` writes schema.yaml here so it can be committed; `npm run
+      # schema:apply` re-applies it. Additive mount — does not touch uploads/extensions.
+      - ./directus-snapshots:/directus/snapshots
     environment:
       KEY: ${KEY}
       SECRET: ${SECRET}
@@ -102,6 +106,17 @@ services:
 
       # File Upload Settings
       FILES_MAX_UPLOAD_SIZE: "500MB"
+
+      # Abuse protection. Steady-state traffic is served from the Redis config
+      # cache + Astro HTML micro-cache, so few uncached calls reach Directus.
+      # Rate limiting is opt-in (set RATE_LIMITER_ENABLED=true in .env once cache
+      # hit-rates are confirmed) to guarantee a non-breaking deploy; the query
+      # ceiling is always safe — it only rejects abusive oversized queries.
+      RATE_LIMITER_ENABLED: ${RATE_LIMITER_ENABLED:-false}
+      RATE_LIMITER_STORE: "redis"
+      RATE_LIMITER_POINTS: ${RATE_LIMITER_POINTS:-100}
+      RATE_LIMITER_DURATION: ${RATE_LIMITER_DURATION:-1}
+      QUERY_LIMIT_MAX: ${QUERY_LIMIT_MAX:-5000}
 
       # Email / SMTP
       EMAIL_FROM: ${EMAIL_FROM:-noreply@ura.design}

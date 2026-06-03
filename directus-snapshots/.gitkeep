@@ -1,0 +1,3 @@
+# Directus schema snapshots live here (schema.yaml), written by
+# `npm run schema:snapshot` and re-applied with `npm run schema:apply`.
+# Commit schema.yaml to keep the CMS schema reproducible across environments.

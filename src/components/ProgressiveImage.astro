@@ -20,6 +20,7 @@ interface Props {
   class?: string;
   imgClass?: string;
   loading?: 'lazy' | 'eager';
+  fetchpriority?: 'high' | 'low' | 'auto';
   decoding?: 'async' | 'sync' | 'auto';
   width?: number;
   height?: number;
@@ -40,6 +41,7 @@ const {
   class: className = '',
   imgClass = '',
   loading = 'lazy',
+  fetchpriority,
   decoding = 'async',
   width,
   height,
@@ -112,6 +114,7 @@ const wrapperStyle =
         class={imgClassFull}
         data-progressive-img={isProgressive || undefined}
         loading={loading}
+        fetchpriority={fetchpriority}
         decoding={decoding}
         width={width}
         height={height}

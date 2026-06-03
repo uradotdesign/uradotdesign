@@ -19,7 +19,13 @@
     "directus:start": "docker-compose up -d",
     "directus:stop": "docker-compose down",
     "directus:logs": "docker-compose logs -f directus",
-    "schema:sync": "node scripts/sync-directus-schema-complete.mjs"
+    "schema:sync": "node scripts/sync-directus-schema-complete.mjs",
+    "schema:snapshot": "docker exec directus_cms npx directus schema snapshot --yes /directus/snapshots/schema.yaml",
+    "schema:apply": "docker exec directus_cms npx directus schema apply --yes /directus/snapshots/schema.yaml",
+    "provision:all": "node --env-file=.env scripts/provision-all.mjs",
+    "provision:editor-role": "node --env-file=.env scripts/setup-editor-role.mjs",
+    "provision:insights": "node --env-file=.env scripts/setup-insights-dashboards.mjs",
+    "provision:external-tools": "node --env-file=.env scripts/setup-external-tools-dashboard.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^10.1.2",

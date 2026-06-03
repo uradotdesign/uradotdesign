@@ -1,7 +1,13 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getBlogPosts, getAssetUrl, getAssetThumbUrl } from "../../lib/directus";
+import {
+  getBlogPosts,
+  getBlogPostCount,
+  getAssetUrl,
+  getAssetThumbUrl,
+} from "../../lib/directus";
 import { getLocalizedField, type Language } from "../../lib/i18n";
+import { calculateReadingTime } from "../../lib/reading-time";
 import ProgressiveImage from "../../components/ProgressiveImage.astro";
 
 export const prerender = false;
@@ -28,6 +34,8 @@ const copy = {
     minReadLong: "min read",
     minReadShort: "min read",
     dateLocale: "en-US",
+    prev: "Previous",
+    next: "Next",
   },
   de: {
     eyebrow: "Journal",
@@ -43,12 +51,38 @@ const copy = {
     minReadLong: "Min. Lesezeit",
     minReadShort: "Min.",
     dateLocale: "de-DE",
+    prev: "Zurück",
+    next: "Weiter",
   },
 }[lang];
 
+// Pagination. Page 1 shows the featured post plus a grid; later pages show a
+// full grid. The per-page fetch is bounded so payload/render time stays flat as
+// the blog grows (instead of pulling every post's content on every request).
+const POSTS_PER_PAGE = 9;
+const PAGE_ONE_TOTAL = POSTS_PER_PAGE + 1; // featured + grid
+
+const filter = { status: { _eq: "published" } };
+const total = await getBlogPostCount(filter);
+const totalPages =
+  total <= PAGE_ONE_TOTAL
+    ? 1
+    : 1 + Math.ceil((total - PAGE_ONE_TOTAL) / POSTS_PER_PAGE);
+
+const requestedPage = parseInt(Astro.url.searchParams.get("page") || "1", 10);
+const currentPage =
+  Number.isFinite(requestedPage) && requestedPage > 0
+    ? Math.min(requestedPage, Math.max(1, totalPages))
+    : 1;
+
+const offset = currentPage === 1 ? 0 : PAGE_ONE_TOTAL + (currentPage - 2) * POSTS_PER_PAGE;
+const limit = currentPage === 1 ? PAGE_ONE_TOTAL : POSTS_PER_PAGE;
+
 const rawArticles = await getBlogPosts({
-  filter: { status: { _eq: "published" } },
+  filter,
   sort: ["-published_date"],
+  offset,
+  limit,
   fields: ["id", "title", "slug", "excerpt", "content", "cover_image", "published_date", "badge", "author.full_name", "author.photo", "translations.*"],
 });
 
@@ -59,16 +93,11 @@ const articles = rawArticles.map((a) => ({
   content: getLocalizedField(a, "content", lang) || a.content,
 }));
 
-function calculateReadingTime(text: string): number {
-  if (!text) return 0;
-  const wordsPerMinute = 200;
-  const words = text.trim().split(/\s+/).length;
-  return Math.ceil(words / wordsPerMinute);
-}
+// Featured post only leads the first page; later pages are grid-only.
+const featuredArticle = currentPage === 1 ? articles[0] : undefined;
+const remainingArticles = currentPage === 1 ? articles.slice(1) : articles;
 
-// Get featured article (first one)
-const featuredArticle = articles[0];
-const remainingArticles = articles.slice(1);
+const pageHref = (p: number) => `/${lang}/blog${p <= 1 ? "" : `?page=${p}`}`;
 ---
 
 <BaseLayout title={copy.title} description={copy.description}>
@@ -125,6 +154,7 @@ const remainingArticles = articles.slice(1);
                   imgClass="post-card-img"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   loading="eager"
+                  fetchpriority="high"
                 />
               ) : (
                 <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900" />
@@ -215,7 +245,7 @@ const remainingArticles = articles.slice(1);
         <div class="flex-1 h-px bg-[var(--color-border)]" aria-hidden="true">
         </div>
         <span class="text-xs font-mono opacity-60"
-          >{articles.length} {copy.postsLabel}</span
+          >{total} {copy.postsLabel}</span
         >
       </div>
 
@@ -307,6 +337,49 @@ const remainingArticles = articles.slice(1);
               </article>
             ))}
           </div>
+        )
+      }
+
+      {
+        totalPages > 1 && (
+          <nav
+            class="flex items-center justify-between gap-4 mt-16 pt-8 border-t border-[var(--color-border)]"
+            aria-label={copy.allArticles}
+          >
+            {currentPage > 1 ? (
+              <a
+                href={pageHref(currentPage - 1)}
+                rel="prev"
+                class="inline-flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-70"
+              >
+                <span aria-hidden="true">&larr;</span>
+                {copy.prev}
+              </a>
+            ) : (
+              <span class="opacity-30 text-sm font-medium select-none" aria-hidden="true">
+                &larr; {copy.prev}
+              </span>
+            )}
+
+            <span class="text-xs font-mono opacity-60">
+              {currentPage} / {totalPages}
+            </span>
+
+            {currentPage < totalPages ? (
+              <a
+                href={pageHref(currentPage + 1)}
+                rel="next"
+                class="inline-flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-70"
+              >
+                {copy.next}
+                <span aria-hidden="true">&rarr;</span>
+              </a>
+            ) : (
+              <span class="opacity-30 text-sm font-medium select-none" aria-hidden="true">
+                {copy.next} &rarr;
+              </span>
+            )}
+          </nav>
         )
       }
     </div>

@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "exclude": ["dist", "scripts"]
+  "exclude": ["dist", "scripts", "test", "directus-extensions"]
 }
 

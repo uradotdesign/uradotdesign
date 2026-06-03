@@ -1,5 +1,6 @@
 import { defineMiddleware } from 'astro:middleware';
 import { previewSecret, publicDirectusUrl } from './lib/config';
+import { runWithRequestCache } from './lib/request-cache';
 
 /**
  * Baseline security headers applied to every response.
@@ -44,7 +45,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const isPreview =
     Boolean(previewSecret) && url.searchParams.get('preview') === previewSecret;
 
-  const response = await next();
+  // Share one in-memory memoization store across every Directus getter invoked
+  // while rendering this request (layout + header + footer + page).
+  const response = await runWithRequestCache(() => next());
 
   for (const [name, value] of Object.entries(BASE_SECURITY_HEADERS)) {
     response.headers.set(name, value);

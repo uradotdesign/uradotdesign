@@ -13,6 +13,7 @@ import {
   BLOCK_SORT_KEYS,
   BLOCK_NESTED_SORT,
 } from "./blocks";
+import { requestMemo } from "./request-cache";
 
 // Directus schema types live in ./directus-types and are re-exported here so
 // existing `from "../lib/directus"` imports keep working unchanged.
@@ -91,23 +92,27 @@ async function cacheConfig<T>(
   fetcher: () => Promise<T>,
   ttl = CONFIG_CACHE_TTL
 ): Promise<T> {
-  if (!CONFIG_CACHE_ENABLED) {
-    return fetcher();
-  }
-
-  try {
-    if (!rememberConfig) {
-      const mod = await import("./redis");
-      rememberConfig = mod.remember;
+  // Coalesce repeated identical calls within a single SSR render before they
+  // ever reach Redis (header/footer/layout often request the same data).
+  return requestMemo(`directus:config:${key}`, async () => {
+    if (!CONFIG_CACHE_ENABLED) {
+      return fetcher();
     }
-    return await rememberConfig(key, fetcher, {
-      ttl,
-      namespace: "directus:config",
-    });
-  } catch (error) {
-    console.warn("Directus config cache unavailable:", error);
-    return fetcher();
-  }
+
+    try {
+      if (!rememberConfig) {
+        const mod = await import("./redis");
+        rememberConfig = mod.remember;
+      }
+      return await rememberConfig(key, fetcher, {
+        ttl,
+        namespace: "directus:config",
+      });
+    } catch (error) {
+      console.warn("Directus config cache unavailable:", error);
+      return fetcher();
+    }
+  }) as Promise<T>;
 }
 
 function normalizeCacheValue(value: unknown): unknown {
@@ -274,6 +279,8 @@ type CollectionFetchOptions = {
   filter?: DirectusFilter;
   sort?: string[];
   limit?: number;
+  offset?: number;
+  page?: number;
   statusField?: string | null;
   statusValue?: string | boolean | null;
 };
@@ -287,6 +294,8 @@ async function fetchCollection<T>(
     filter = {},
     sort = ["sort_order"],
     limit,
+    offset,
+    page,
     statusField = "status",
     statusValue = "published",
   } = options;
@@ -303,6 +312,12 @@ async function fetchCollection<T>(
   const query: Record<string, unknown> = { fields, filter: finalFilter, sort };
   if (limit !== undefined) {
     query.limit = limit;
+  }
+  if (offset !== undefined) {
+    query.offset = offset;
+  }
+  if (page !== undefined) {
+    query.page = page;
   }
 
   try {
@@ -694,12 +709,14 @@ export async function getServiceRelations(serviceId: number) {
 // Blog Posts helpers
 export async function getBlogPosts(options?: {
   limit?: number;
+  offset?: number;
   filter?: DirectusFilter;
   sort?: string[];
   fields?: string[];
 }) {
   const cacheKey = createCacheKey("posts", {
     limit: options?.limit ?? null,
+    offset: options?.offset ?? null,
     filter: options?.filter ?? null,
     sort: options?.sort ?? ["-published_date"],
     fields: options?.fields ?? null,
@@ -708,11 +725,33 @@ export async function getBlogPosts(options?: {
   return cacheConfig(cacheKey, () =>
     fetchCollection<BlogPost>("posts", {
       limit: options?.limit,
+      offset: options?.offset,
       filter: options?.filter,
       sort: options?.sort ?? ["-published_date"],
       fields: options?.fields,
     })
   );
+}
+
+/**
+ * Counts published (or filtered) blog posts for pagination. Fetches only `id`
+ * so the payload stays tiny, and caches the result like other config reads.
+ */
+export async function getBlogPostCount(
+  filter: DirectusFilter = { status: { _eq: "published" } }
+): Promise<number> {
+  const cacheKey = createCacheKey("posts_count", { filter });
+  return cacheConfig(cacheKey, async () => {
+    // A finite, generous cap keeps the count correct while staying under any
+    // QUERY_LIMIT_MAX ceiling (an agency blog never approaches this).
+    const rows = await fetchCollection<{ id: number }>("posts", {
+      filter,
+      fields: ["id"],
+      sort: ["id"],
+      limit: 5000,
+    });
+    return rows.length;
+  });
 }
 
 export async function getBlogPostBySlug(slug: string) {
@@ -918,38 +957,6 @@ export async function getTranslations(language: string = "en") {
     const translationsMap: Record<string, string> = {};
     translations.forEach((t: any) => {
       translationsMap[t.key] = t.value;
-    });
-
-    return translationsMap;
-  });
-}
-
-export async function getTranslationsByNamespace(
-  language: string = "en",
-  namespace: string = "common"
-) {
-  return cacheConfig(`translations:${language}:${namespace}`, async () => {
-    const translations = await fetchCollection<Translation>("translations", {
-      filter: {
-        language: { _eq: language },
-        namespace: { _eq: namespace },
-      },
-      sort: ["key"],
-    });
-
-    const translationsMap: Record<string, any> = {};
-    translations.forEach((t: any) => {
-      const parts = t.key.split(".");
-      let current = translationsMap;
-
-      for (let i = 0; i < parts.length - 1; i++) {
-        if (!current[parts[i]]) {
-          current[parts[i]] = {};
-        }
-        current = current[parts[i]];
-      }
-
-      current[parts[parts.length - 1]] = t.value;
     });
 
     return translationsMap;
