@@ -228,7 +228,7 @@ const remainingArticles = articles.slice(1);
         ) : (
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
             {remainingArticles.map((article) => (
-              <article class="group post-card flex flex-col">
+              <article class="post-card flex flex-col">
                 {/* Image */}
                 <a
                   href={`/${lang}/blog/${article.slug}`}
@@ -241,7 +241,7 @@ const remainingArticles = articles.slice(1);
                       placeholder="blur"
                       fill
                       alt=""
-                      imgClass="transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 motion-reduce:group-hover:scale-100"
+                      imgClass="post-card-img"
                       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       loading="lazy"
                     />
@@ -321,9 +321,22 @@ const remainingArticles = articles.slice(1);
     overflow: hidden;
   }
 
-  /* Blog grid card hover: a smooth cover zoom (on the image itself, via
-     group-hover:scale) and a title underline that grows in — no lift, no
-     shadow. */
+  /* Blog grid card hover: a smooth cover zoom + a title underline that grows
+     in — no lift, no shadow. */
+
+  /* The cover <img> is rendered by the ProgressiveImage child component, so its
+     classes are outside this page's style scope, and the progressive-reveal
+     rule in globals.css (@layer components) otherwise overrides Tailwind's
+     transition utilities — which made the zoom snap instantly. Defining the
+     zoom here, as an UNLAYERED :global() rule, reliably wins the cascade over
+     every @layer. We keep the reveal's opacity transition and add transform. */
+  .post-card :global(.post-card-img) {
+    transition: opacity 0.35s ease,
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .post-card:hover :global(.post-card-img) {
+    transform: scale(1.05);
+  }
 
   /* Title underline grows in from the left on hover (and on keyboard focus),
      instead of an instant text-decoration. */
@@ -341,6 +354,12 @@ const remainingArticles = articles.slice(1);
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .post-card :global(.post-card-img) {
+      transition: none;
+    }
+    .post-card:hover :global(.post-card-img) {
+      transform: none;
+    }
     .post-card-title {
       transition: none;
     }
