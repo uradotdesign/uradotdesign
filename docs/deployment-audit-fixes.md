@@ -2,6 +2,11 @@
 
 Scope: D01–D13 from [the follow-up audit](audit-deployment-followup-2026-09-10.md). All proposed product features were declined and are excluded.
 
+The [subsequent measured maintenance](deep-maintenance-2026-09-10.md) strengthens
+D03 with coordinated snapshots, hashes and complete archived services, and D08
+with exact flow IDs and a persistent inspection cursor. It also records browser,
+contrast, mobile-network and isolated traffic measurements.
+
 ## Changes
 
 - **D01:** the renewed certificate includes apex and www; HTTP and HTTPS www preserve path/query while redirecting to the apex. The version-controlled Nginx configuration is `ops/nginx/ura.design.conf`.
