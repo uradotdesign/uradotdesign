@@ -94,10 +94,11 @@ CMS. Existing server dependency folders and unrelated extensions are preserved.
 
 Astro 7 explicitly keeps `compressHTML: true` to preserve prior whitespace
 behavior. TypeScript stays on 6 until Astro/Volar support the TypeScript 7 API.
-The extension SDK has four residual development dependency findings through
-Unhead (one moderate, three low); there is no compatible v1 patch. Do not force
-a major Unhead override or downgrade the SDK solely to silence the audit.
-The root website dependency audit has no reported vulnerabilities.
+The initial upgrade retained four Unhead development dependency findings.
+The later compatibility-tested 2.1.17 peer override resolves them in both Ura
+extensions without changing their deployed JavaScript bundles. All three npm
+audits now pass; CI also checks SDK exports, head-link behavior and bundle
+boundaries. See [the exact scope and upgrade notes](directus-ui-patch.md).
 
 PostgreSQL 18.6 and Redis 8.2.9 are security updates within the existing version
 families. Production has only `plpgsql`, B-tree indexes and no replication slots;
@@ -168,6 +169,8 @@ The later [editorial audit record](audit-2026-09-10.md) supersedes the earlier
 collection/route counts above: 125 data collections plus five folders and 48
 sitemap routes. It includes role separation, native forms and dashboards,
 reproducible provisioning, schedules, contact preferences, CMS CSS compilation,
-accessibility and localized metadata. The Lottie eval warning is resolved; the
-four shared extension-tool advisories remain. Use the current
+accessibility and localized metadata. The Lottie eval warning and four shared
+extension-tool advisories are resolved. The native Create New picker is corrected
+in the guarded `Dockerfile.directus` image; review that patch on each CMS upgrade.
+Use the current
 [provisioning and recovery guide](cms-provisioning.md) for future installations.

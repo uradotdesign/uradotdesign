@@ -1,0 +1,5 @@
+FROM directus/directus:12.3.1
+USER root
+COPY scripts/patch-directus-picker.mjs /tmp/ura/patch-directus-picker.mjs
+RUN node /tmp/ura/patch-directus-picker.mjs
+USER node

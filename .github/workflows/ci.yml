@@ -38,6 +38,15 @@ jobs:
       - name: Build Directus extensions from lockfiles
         run: npm run build:extensions
 
+      - name: Audit all dependency trees
+        run: |
+          npm audit --audit-level=low
+          npm --prefix directus-extensions/ura-interfaces audit --audit-level=low
+          npm --prefix directus-extensions/panel-external-embed audit --audit-level=low
+
+      - name: Build and verify the pinned Directus UI correction
+        run: docker build -f Dockerfile.directus -t ura-directus:12.3.1-ura.1 .
+
       - name: Build (includes astro check)
         run: npm run build
         env:
@@ -109,7 +118,8 @@ jobs:
             git merge --ff-only "${{ github.sha }}"
             test "$(git rev-parse HEAD)" = "${{ github.sha }}"
 
-            echo "==> Rebuild the Astro image (only service built from source)"
+            echo "==> Build the verified Directus image and current Astro content"
+            docker compose -f docker-compose.prod.yml build directus
             bash scripts/prepare-cms-css.sh directus_cms
             docker compose -f docker-compose.prod.yml build --build-arg CMS_CLASSES_SHA256="$(sha256sum .cms-build/classes.html | cut -d ' ' -f1)" astro
 

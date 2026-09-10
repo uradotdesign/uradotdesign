@@ -34,7 +34,7 @@ Singleton settings and collections without versioning save directly. Shared sett
 
 Edit related items inside their parent drawer. Save the drawer, then save or publish the parent. Page blocks render in list order. Drag the handle to reorder; the builder shows up to 100 rows together so an ordinary page can be sorted. **Add Existing** reuses the same content: later edits affect every page using that block. Use **Create New** for independent content. Custom code and embed blocks require Trusted Designer access.
 
-Directus 12.3.1 can still show trusted block types in an Editor's Create New menu. They are explicitly marked **Trusted Designer**; ordinary Editors cannot publish new executable blocks. The API enforces this restriction even if Studio opens a drawer.
+**Create New** shows only block types your role may create. Trusted Designers also see the code and embed types. Existing trusted blocks remain visible for context; ordinary Editors cannot modify their executable content. The API enforces this restriction, including through saved versions. Reload an already open Studio tab after the picker update.
 
 Upload or choose assets through the file picker. Give files descriptive titles and fill the content field’s image description/alt text where available. Light and dark media are separate choices. Check both themes when replacing an image or video. Reduced-motion visitors get still hero media by default and can choose to play it.
 

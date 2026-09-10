@@ -21,6 +21,7 @@
     "link": "directus-extension link"
   },
   "overrides": {
+    "@unhead/vue": "2.1.17",
     "@directus/utils": {
       "joi": "^18.2.8",
       "js-yaml": "^4.3.2"

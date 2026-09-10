@@ -72,7 +72,10 @@ services:
 
   # 2. Directus CMS
   directus:
-    image: directus/directus:12.3.1
+    image: ura-directus:12.3.1-ura.1
+    build:
+      context: .
+      dockerfile: Dockerfile.directus
     container_name: directus_cms
     restart: unless-stopped
     ports:

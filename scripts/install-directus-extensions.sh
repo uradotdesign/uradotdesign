@@ -12,6 +12,7 @@ trap cleanup EXIT
 docker inspect "$cms_container" >/dev/null
 docker run --rm --memory=768m \
   -v "$repo_dir/directus-extensions:/source:ro" \
+  -v "$repo_dir/scripts/verify-extension-toolchain.mjs:/verify-toolchain.mjs:ro" \
   -v "$build_dir:/build" -w /build node:24-alpine sh -ec '
     for extension in panel-external-embed ura-interfaces; do
       mkdir "$extension"
@@ -20,6 +21,7 @@ docker run --rm --memory=768m \
       npm --prefix "$extension" ci --no-audit --no-fund
       npm --prefix "$extension" run build
     done
+    node /verify-toolchain.mjs /build
   '
 
 for extension in panel-external-embed ura-interfaces; do
