@@ -40,7 +40,11 @@ test('real HTML cache invalidates on publishing and never shares cookie response
   try {
     assert.equal(await (await renderCachedHtml(request,render)).text(),'<p>1</p>');
     assert.equal(await (await renderCachedHtml(request,render)).text(),'<p>1</p>');
+    const weatherKey = randomUUID();
+    await cache.remember(weatherKey, async () => 'weather', {namespace:'weather:test'});
     await cache.invalidateCache('directus:config:*');
+    assert.equal(await cache.remember(weatherKey, async () => 'unexpected', {namespace:'weather:test'}),'weather');
+    await cache.getRedisClient().del(`cache-v2:weather:test:${weatherKey}`);
     assert.equal(await (await renderCachedHtml(request,render)).text(),'<p>2</p>');
     const privateRequest = new Request(request.url + '-private');
     let cookies = 0;

@@ -17,12 +17,12 @@ class FakeRedis {
   }
   async get(key: string) {
     if (state.getFails) throw new Error("Redis read unavailable");
-    if (key === 'ura:cache-generation') return state.generation ?? null;
+    if (key.startsWith('ura:cache-generation')) return state.generation ?? null;
     return state.values.get(key) ?? null;
   }
   async set(key: string, value: string, nx?: string) {
     if (state.writeFails) throw new Error('Redis write unavailable');
-    if (key === 'ura:cache-generation' && (!nx || !state.generation)) state.generation = value;
+    if (key.startsWith('ura:cache-generation') && (!nx || !state.generation)) state.generation = value;
     return 'OK';
   }
   async setex(key: string, _ttl: number, value: string) {

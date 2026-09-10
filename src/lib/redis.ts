@@ -51,12 +51,16 @@ redis.call('SETEX', KEYS[2], ARGV[2], ARGV[3])
 return 1
 `;
 
-async function generation(client: Redis): Promise<string> {
-  const current = await client.get(CACHE_GENERATION_KEY);
+function generationKey(namespace?: string) {
+  return namespace?.startsWith('directus:') ? CACHE_GENERATION_KEY : `${CACHE_GENERATION_KEY}:${namespace || 'default'}`;
+}
+
+async function generation(client: Redis, key = CACHE_GENERATION_KEY): Promise<string> {
+  const current = await client.get(key);
   if (current) return current;
   // Random values avoid reusing a generation after eviction or a Redis restart.
-  await client.set(CACHE_GENERATION_KEY, randomUUID(), "NX");
-  const created = await client.get(CACHE_GENERATION_KEY);
+  await client.set(key, randomUUID(), "NX");
+  const created = await client.get(key);
   if (!created) throw new Error("Cache generation unavailable");
   return created;
 }
@@ -82,9 +86,10 @@ export async function remember<T>(
   const finalKey = `cache-v2:${namespacedKey(key, options.namespace)}`;
 
   const client = getRedisClient();
+  const fenceKey = generationKey(options.namespace);
   let version: string | null = null;
   try {
-    version = await generation(client);
+    version = await generation(client, fenceKey);
     const cached = await client.get(finalKey);
     if (cached) {
       const entry = JSON.parse(cached);
@@ -105,7 +110,7 @@ export async function remember<T>(
       const data = await fetchFn();
       if (version && data !== null && data !== undefined && (options.cacheIf?.(data) ?? true)) {
         try {
-          await client.eval(CACHE_WRITE_SCRIPT, 2, CACHE_GENERATION_KEY, finalKey,
+          await client.eval(CACHE_WRITE_SCRIPT, 2, fenceKey, finalKey,
             version, ttl, JSON.stringify({ generation: version, data }));
         } catch (error) {
           // A cache write failure must not repeat a successful upstream call.
@@ -127,7 +132,7 @@ export async function invalidateCache(pattern: string): Promise<void> {
     const client = getRedisClient();
     // Advance before deleting. Pending readers cannot repopulate old data,
     // and readers on every application instance stop joining old requests.
-    await client.set(CACHE_GENERATION_KEY, randomUUID());
+    await client.set(generationKey(pattern.replace(/:\*$/, '')), randomUUID());
     let cursor = "0";
     let totalDeleted = 0;
 
