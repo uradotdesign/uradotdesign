@@ -11,10 +11,12 @@ if [ ! -f /etc/ura/backup.agekey ]; then
   age-keygen -o /etc/ura/backup.agekey 2>/dev/null
 fi
 work=$(mktemp -d "$root/.work.XXXXXXXX")
+partial=''
 restore_container="ura-backup-verify-$$"
 cleanup() {
   docker rm -f "$restore_container" >/dev/null 2>&1 || true
   case "$work" in /var/backups/ura/.work.*) rm -rf -- "$work" ;; esac
+  case "$partial" in /var/backups/ura/ura-*.tar.age.partial) rm -f -- "$partial" ;; esac
 }
 trap cleanup EXIT
 
@@ -62,9 +64,10 @@ done < "$work/files.txt"
 if [ "${1:-}" != --verify ]; then
   stamp=$(date -u +%Y%m%dT%H%M%SZ)
   recipient=$(age-keygen -y /etc/ura/backup.agekey)
-  tar --exclude=./restoredb -C "$work" -cf - . | age -r "$recipient" -o "$root/ura-$stamp.tar.age.partial"
-  mv "$root/ura-$stamp.tar.age.partial" "$root/ura-$stamp.tar.age"
-  age -d -i /etc/ura/backup.agekey "$root/ura-$stamp.tar.age" | tar -tf - >/dev/null
+  partial="$root/ura-$stamp.tar.age.partial"
+  tar --exclude=./restoredb -C "$work" -cf - . | age -r "$recipient" -o "$partial"
+  age -d -i /etc/ura/backup.agekey "$partial" | tar -tf - >/dev/null
+  mv "$partial" "$root/ura-$stamp.tar.age"
   # Retain the newest 14 successful backups. Legacy/manual checkpoints are untouched.
   find "$root" -maxdepth 1 -name 'ura-*.tar.age' -type f | sort -r | tail -n +15 | while IFS= read -r expired; do rm -- "$expired"; done
   date -u +%s > "$root/last-success"
