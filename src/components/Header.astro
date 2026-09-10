@@ -1,4 +1,5 @@
 ---
+import { prepareLinks, resolveCmsLink, isEnabled } from '../lib/global-content';
 import ThemeToggle from './ThemeToggle.astro';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import WeatherIcon from './WeatherIcon.astro';
@@ -47,12 +48,14 @@ const defaultCtaText = await t('header.cta', currentLang, "LET'S TALK");
 const ctaText =
   getLocalizedField(headerSettings, 'cta_text', currentLang) || defaultCtaText;
 const ui = await getUI(currentLang);
+const cta = resolveCmsLink(headerSettings?.cta_url ?? '#contact-modal', currentLang, headerSettings?.cta_open_in_new_tab);
+const showCta = isEnabled(headerSettings?.show_cta) && cta;
+const showThemeToggle = isEnabled(headerSettings?.show_theme_toggle);
 
 const homeLabel = await t('header.home_label', currentLang, currentLang === 'de' ? 'Ura Design Startseite' : 'Ura Design Home');
 const mainNavLabel = await t('header.main_nav_label', currentLang, currentLang === 'de' ? 'Hauptnavigation' : 'Main navigation');
-const servicesLabel = await t('header.services', currentLang, currentLang === 'de' ? 'DIENSTLEISTUNGEN' : 'SERVICES');
+const servicesLabel = getLocalizedField(headerSettings, 'services_label', currentLang) || await t('header.services', currentLang, currentLang === 'de' ? 'DIENSTLEISTUNGEN' : 'SERVICES');
 const servicesMenuLabel = await t('header.services_menu_label', currentLang, currentLang === 'de' ? 'Dienstleistungen Menü' : 'Services menu');
-const whoWeAreLabel = await t('header.who_we_are', currentLang, currentLang === 'de' ? 'WER WIR SIND' : 'WHO WE ARE');
 const weatherLabel = await t('header.weather_label', currentLang, currentLang === 'de' ? 'Aktuelles Wetter und Zeit' : 'Current weather and time');
 const mobileNavLabel = await t('header.mobile_nav_label', currentLang, currentLang === 'de' ? 'Mobile Navigation' : 'Mobile navigation');
 const openMenuLabel = await t('header.open_menu', currentLang, currentLang === 'de' ? 'Menü öffnen' : 'Open menu');
@@ -76,7 +79,7 @@ const currentPathNorm = normalizePath(currentPath);
 const isServicesActive = currentPathNorm.startsWith(`${langPrefix}/services`);
 const isActiveLink = (href?: string) => {
   if (!href) return false;
-  if (/^(https?:)?\/\//.test(href) || href.startsWith('mailto:') || href.startsWith('tel:')) return false;
+  if (/^(https?:)?\/\//.test(href) || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('#')) return false;
   const linkPath = normalizePath(href);
   return currentPathNorm === linkPath || currentPathNorm.startsWith(`${linkPath}/`);
 };
@@ -88,31 +91,8 @@ const processedServices = services?.filter(s => s.show_in_hero !== false).map(se
   link: `/${currentLang}/${(service as any).slug}`
 })) || [];
 
-// Process navigation links (already fetched above, filtered for enabled in fetcher)
-const navLinks = navigationLinks?.map(link => {
-  let url = link.url || '#';
-  
-  // Auto-localize internal links if they don't start with http/mailto/tel/#
-  if (url !== '#' && !url.startsWith('http') && !url.startsWith('mailto:') && !url.startsWith('tel:') && !url.startsWith('#')) {
-    // Remove leading slash
-    const path = url.replace(/^\//, '');
-    // Avoid double-prefixing if path already starts with lang prefix
-    // This allows users to enter "about" or "/about" and get "/en/about" or "/de/about"
-    if (!path.startsWith(`${currentLang}/`) && path !== currentLang) {
-      url = `/${currentLang}/${path}`;
-    } else {
-      url = `/${path}`;
-    }
-  }
-
-  return {
-    label: getLocalizedField(link, 'label', currentLang) || '',
-    url,
-    newTab: toBoolean(link.open_in_new_tab),
-    isCta: toBoolean(link.is_cta),
-    ctaStyle: link.cta_style || 'primary',
-  };
-}) || [];
+// Empty and disabled menus are intentional editor choices.
+const navLinks = prepareLinks(navigationLinks, currentLang);
 
 // Fetch weather data - ONLY if enabled in Directus and location is set
 let weather: { temperature: number; icon: string; condition: string } | null = null;
@@ -221,53 +201,45 @@ if (showWeather && weatherLocation) {
       </li>
       )}
 
-      {navLinks.length > 0 ? (
-        navLinks.filter(link => !link.isCta).map((link) => (
+      {navLinks.map((link) => (
           <li role="none">
             <a
               role="menuitem"
-              href={link.url}
+              href={link.href}
               target={link.newTab ? '_blank' : undefined}
               rel={link.newTab ? 'noopener noreferrer' : undefined}
-              class:list={['nav-link focus:outline-none cursor-pointer', isActiveLink(link.url) ? 'is-active' : '']}
+              data-contact-modal={link.contactModal ? 'true' : undefined}
+              class:list={['nav-link focus:outline-none cursor-pointer', isActiveLink(link.href) ? 'is-active' : '']}
             >
               {link.label?.toUpperCase?.() || link.label}
             </a>
           </li>
-        ))
-      ) : (
-        <>
-          <li role="none">
-            <a role="menuitem" href={`${langPrefix}/about`} class:list={['nav-link focus:outline-none cursor-pointer', currentPathNorm.startsWith(`${langPrefix}/about`) ? 'is-active' : '']}>
-              {whoWeAreLabel}
-            </a>
-          </li>
-          <li role="none">
-            <a role="menuitem" href={`${langPrefix}/works`} class:list={['nav-link focus:outline-none cursor-pointer', currentPathNorm.startsWith(`${langPrefix}/works`) ? 'is-active' : '']}>
-              {ui('nav.works')}
-            </a>
-          </li>
-        </>
-      )}
+        ))}
     </ul>
 
     <!-- Let's Talk CTA - Right after nav items -->
+    {showCta && (
     <a 
-      href="#contact-modal"
-      data-contact-modal="true"
+      href={cta?.href}
+      data-contact-modal={cta?.contactModal ? "true" : undefined}
+      target={cta?.newTab ? "_blank" : undefined}
+      rel={cta?.newTab ? "noopener noreferrer" : undefined}
       class={['header-cta-button hidden lg:inline-flex items-center uppercase px-6 py-2.5 rounded-full font-medium font-mono text-sm transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer', isOverlay ? 'adaptive-color bg-white/30 hover:bg-white dark:bg-white/30 dark:hover:bg-white/40 text-gray-900 focus-visible:ring-white/30' : 'bg-white/20 hover:bg-white/30 text-foreground backdrop-blur-sm focus-visible:ring-foreground/30'].join(' ')}
     >
       {ctaText}
     </a>
+    )}
 
+    {(showThemeToggle || showLanguageSwitcher) && <>
     <!-- Vertical divider -->
     <div class={['hidden lg:block w-px h-4 header-divider', overlay ? 'adaptive-color' : 'bg-current'].join(' ')}></div>
     
     <!-- Theme & Language -->
     <div class={['hidden lg:flex items-center gap-4', isOverlay ? 'adaptive-color' : ''].join(' ')}>
-      <ThemeToggle />
+      {showThemeToggle && <ThemeToggle />}
       {showLanguageSwitcher && <LanguageSwitcher />}
     </div>
+    </>}
   </nav>
 
   <!-- Right Side: Weather & Time (Desktop only) -->
@@ -358,13 +330,17 @@ if (showWeather && weatherLocation) {
 
       <!-- CTA Button (Visible when scrolled) -->
       <div id="mobile-nav-cta" class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-end transition-opacity duration-300 opacity-0 pointer-events-none">
+        {showCta && (
         <a 
-          href="#contact-modal"
-          data-contact-modal="true"
+          href={cta?.href}
+          data-contact-modal={cta?.contactModal ? "true" : undefined}
+          target={cta?.newTab ? "_blank" : undefined}
+          rel={cta?.newTab ? "noopener noreferrer" : undefined}
           class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-full text-[10px] font-mono font-medium uppercase whitespace-nowrap"
         >
           {ctaText}
         </a>
+        )}
       </div>
 
     </div>
@@ -407,42 +383,31 @@ if (showWeather && weatherLocation) {
             </details>
           </li>
         )}
-        {navLinks.filter(link => !link.isCta).map((link) => (
+        {navLinks.map((link) => (
           <li>
             <a 
-              href={link.url}
+              href={link.href}
               target={link.newTab ? '_blank' : undefined}
               rel={link.newTab ? 'noopener noreferrer' : undefined}
+              data-contact-modal={link.contactModal ? 'true' : undefined}
               class="text-3xl font-display font-medium hover:text-emerald-500 transition-colors"
             >
               {link.label}
             </a>
           </li>
         ))}
-        {navLinks.length === 0 && (
-          <>
-            <li>
-              <a href={`${langPrefix}/about`} class="text-3xl font-display font-medium hover:text-emerald-500 transition-colors">
-                {whoWeAreLabel}
-              </a>
-            </li>
-            <li>
-              <a href={`${langPrefix}/works`} class="text-3xl font-display font-medium hover:text-emerald-500 transition-colors">
-                {ui('nav.works')}
-              </a>
-            </li>
-          </>
-        )}
       </ul>
     </nav>
 
     <!-- Bottom Section: Theme & Language -->
+    {(showThemeToggle || showLanguageSwitcher) && (
     <div class="flex items-center justify-between pt-8 border-t border-current opacity-80">
       <div class="flex items-center gap-4">
-        <ThemeToggle />
+        {showThemeToggle && <ThemeToggle />}
         {showLanguageSwitcher && <LanguageSwitcher />}
       </div>
     </div>
+    )}
   </div>
 </div>
 
@@ -489,7 +454,7 @@ if (showWeather && weatherLocation) {
     const ctaEl = document.getElementById('mobile-nav-cta');
     if (!weatherEl && !ctaEl) return;
     const y = scrollY ?? (window.scrollY || 0);
-    const showCta = y >= window.innerHeight * 0.5;
+    const showCta = Boolean(ctaEl?.querySelector('a')) && y >= window.innerHeight * 0.5;
     if (weatherEl) weatherEl.style.opacity = showCta ? '0' : '1';
     if (ctaEl) {
       ctaEl.style.opacity = showCta ? '1' : '0';

@@ -9,47 +9,58 @@ import {
 import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
 import { t, getUI } from "../lib/translations";
 import { getWeather } from "../pages/api/weather";
+import {
+  FOOTER_SECTIONS,
+  visibleSections,
+  prepareLinks,
+  resolveCmsLink,
+  isEnabled,
+} from "../lib/global-content";
+import { GLOBAL_COPY, NEWSLETTER_ACTION } from "../lib/global-defaults.mjs";
+import NewsletterForm from "./NewsletterForm.astro";
 
-// Get current language
 const currentLang = getCurrentLanguage(Astro.url);
-const ui = await getUI(currentLang);
-
-// Fetch social links and site settings
-const socialLinksData = await getSocialLinks();
-const siteSettings = await getSiteSettings();
-const footerSettings = await getFooterSettings();
-
-// Read weather location from header settings (Directus controls)
-const headerSettings = await getHeaderSettings();
+const [ui, socialLinksData, siteSettings, footerSettings, headerSettings] =
+  await Promise.all([
+    getUI(currentLang),
+    getSocialLinks(),
+    getSiteSettings(),
+    getFooterSettings(),
+    getHeaderSettings(),
+  ]);
+const localized = (field: string) =>
+  getLocalizedField(footerSettings, field, currentLang);
+const defaults = GLOBAL_COPY[currentLang];
 const weatherLocation = headerSettings?.weather_location || null;
-
-// Fetch weather data server-side
+const showTemperature = isEnabled(footerSettings?.show_temperature);
 let weatherTemp = null;
-if (footerSettings?.show_temperature && weatherLocation) {
+if (showTemperature && weatherLocation) {
   try {
-    const weatherData = await getWeather(weatherLocation);
-    if (weatherData) {
-      weatherTemp = Math.round(weatherData.temperature);
-    }
-  } catch (e) {
-    console.error("Footer weather fetch failed:", e);
+    const data = await getWeather(weatherLocation);
+    if (data) weatherTemp = Math.round(data.temperature);
+  } catch (error) {
+    console.error("Footer weather fetch failed:", error);
   }
 }
-
-const socialLinks = socialLinksData.map((s) => ({
-  platform: s.platform,
-  url: s.url,
-  ariaLabel: getLocalizedField(s, "aria_label", currentLang) || s.aria_label,
-}));
-
-// Use settings from Directus only (no fallbacks)
-const contactEmail = siteSettings?.contact_email ?? null;
-const contactPhone = siteSettings?.contact_phone ?? null;
-const addressStreet = siteSettings?.address_street ?? null;
-const addressCity = siteSettings?.address_city ?? null;
-const companyLegalName = siteSettings?.company_legal_name ?? null;
-
-// Footer-specific settings from Directus
+const socialLinks = socialLinksData.flatMap((social) => {
+  const destination = resolveCmsLink(social.url, currentLang, true);
+  return destination
+    ? [
+        {
+          ...destination,
+          platform: social.platform,
+          ariaLabel:
+            getLocalizedField(social, "aria_label", currentLang) ||
+            social.aria_label,
+        },
+      ]
+    : [];
+});
+const contactEmail = siteSettings?.contact_email;
+const contactPhone = siteSettings?.contact_phone;
+const addressStreet = siteSettings?.address_street;
+const addressCity = siteSettings?.address_city;
+const companyLegalName = siteSettings?.company_legal_name;
 const footerLogo = footerSettings?.logo
   ? getAssetUrl(footerSettings.logo)
   : null;
@@ -59,77 +70,120 @@ const bgImageLight = footerSettings?.background_image_light
 const bgImageDark = footerSettings?.background_image_dark
   ? getAssetUrl(footerSettings.background_image_dark)
   : null;
-const bgColorLight = footerSettings?.background_color_light || null;
-const bgColorDark = footerSettings?.background_color_dark || null;
-
-// Localized footer text
-const ctaHeading = await t(
-  "footer.cta_heading",
+const bgColorLight = footerSettings?.background_color_light;
+const bgColorDark = footerSettings?.background_color_dark;
+const ctaHeading =
+  localized("cta_heading") ||
+  (await t("footer.cta_heading", currentLang, defaults.cta_heading));
+const ctaLinkText =
+  localized("cta_text") ||
+  (await t("footer.cta_link_text", currentLang, defaults.cta_text));
+const cta = resolveCmsLink(
+  footerSettings?.cta_url ?? "#contact-modal",
   currentLang,
-  currentLang === "de" ? "Eine Idee?" : "Got an idea?"
+  footerSettings?.cta_open_in_new_tab
 );
-const ctaLinkText = await t(
-  "footer.cta_link_text",
-  currentLang,
-  currentLang === "de" ? "Lass uns sprechen" : "Let's talk"
-);
-
-const defaultNewsletterSubtitle = await t(
-  "footer.newsletter_subtitle",
-  currentLang,
-  currentLang === "de"
-    ? "Erhalten Sie gelegentlich Updates über das, worüber wir nachdenken und woran wir arbeiten."
-    : "Get occasional updates on what we're thinking and working on."
-);
-
+const showCta = isEnabled(footerSettings?.show_cta) && cta;
 const newsletterSubtitle =
-  (siteSettings &&
-    getLocalizedField(siteSettings, "newsletter_subtitle", currentLang)) ||
-  defaultNewsletterSubtitle;
-
-const defaultNewsletterButtonText = await t(
-  "footer.newsletter_button_text",
-  currentLang,
-  currentLang === "de" ? "ZUM NEWSLETTER ANMELDEN" : "SIGN UP TO OUR NEWSLETTER"
-);
-
-const newsletterButtonText =
-  (footerSettings &&
-    getLocalizedField(footerSettings, "newsletter_button_text", currentLang)) ||
-  defaultNewsletterButtonText;
-
-const companySectionTitle =
-  (footerSettings &&
-    getLocalizedField(footerSettings, "company_section_title", currentLang)) ||
-  (await t("footer.company", currentLang, "COMPANY"));
-
-const socialsSectionTitle =
-  (footerSettings &&
-    getLocalizedField(footerSettings, "socials_section_title", currentLang)) ||
-  (await t("footer.socials", currentLang, "SOCIALS"));
-
-const contactSectionTitle =
-  (footerSettings &&
-    getLocalizedField(footerSettings, "contact_section_title", currentLang)) ||
+  localized("newsletter_title") ||
+  getLocalizedField(siteSettings, "newsletter_subtitle", currentLang) ||
   (await t(
-    "footer.contact",
+    "footer.newsletter_subtitle",
     currentLang,
-    currentLang === "de" ? "SO ERREICHEN SIE UNS" : "HOW TO REACH US"
+    currentLang === "de"
+      ? "Erhalten Sie gelegentlich Updates über das, worüber wir nachdenken und woran wir arbeiten."
+      : "Get occasional updates on what we're thinking and working on."
   ));
-
-const copyrightText = footerSettings
-  ? getLocalizedField(footerSettings, "copyright_text", currentLang)
+const newsletterButtonText =
+  localized("newsletter_button_text") ||
+  (await t(
+    "footer.newsletter_button_text",
+    currentLang,
+    currentLang === "de"
+      ? "ZUM NEWSLETTER ANMELDEN"
+      : "SIGN UP TO OUR NEWSLETTER"
+  ));
+const newsletterDestination = resolveCmsLink(
+  footerSettings?.newsletter_action_url ?? NEWSLETTER_ACTION,
+  currentLang
+);
+const newsletterAction = newsletterDestination?.href.startsWith("https://")
+  ? newsletterDestination.href
   : null;
-
-// Show/hide sections
-const showNewsletter = footerSettings?.show_newsletter ?? true;
-
-const showTemperature = footerSettings?.show_temperature ?? true;
+const showNewsletter =
+  isEnabled(footerSettings?.show_newsletter) && newsletterAction;
+const newsletterProps = {
+  action: newsletterAction || "",
+  language: currentLang,
+  subtitle: newsletterSubtitle,
+  emailLabel:
+    localized("newsletter_email_label") || defaults.newsletter_email_label,
+  consent: localized("newsletter_consent") || defaults.newsletter_consent,
+  buttonText: newsletterButtonText,
+  sendingText:
+    localized("newsletter_sending_text") || defaults.newsletter_sending_text,
+};
+// Fall back only before migration; a deliberately empty CMS list stays empty.
+const fallbackLinks = [
+  { id: "about", section: "company", url: "/about", label: ui("nav.about") },
+  { id: "blog", section: "company", url: "/blog", label: ui("nav.blog") },
+  {
+    id: "imprint",
+    section: "legal",
+    url: "/imprint",
+    label: ui("footer.imprint"),
+  },
+  {
+    id: "privacy",
+    section: "legal",
+    url: "/privacy",
+    label: ui("footer.privacy"),
+  },
+];
+const rawLinks = footerSettings?.links_initialized
+  ? footerSettings.links || []
+  : fallbackLinks;
+const companyLinks = prepareLinks(
+  rawLinks.filter((link) => link.section === "company"),
+  currentLang
+);
+const legalLinks = prepareLinks(
+  rawLinks.filter((link) => link.section === "legal"),
+  currentLang
+);
+const titles = {
+  company:
+    localized("company_section_title") ||
+    (await t("footer.company", currentLang, "COMPANY")),
+  socials:
+    localized("socials_section_title") ||
+    (await t("footer.socials", currentLang, "SOCIALS")),
+  contact:
+    localized("contact_section_title") ||
+    (await t(
+      "footer.contact",
+      currentLang,
+      currentLang === "de" ? "SO ERREICHEN SIE UNS" : "HOW TO REACH US"
+    )),
+};
+const hasContent = {
+  company: companyLinks.length > 0,
+  socials: socialLinks.length > 0,
+  contact: Boolean(
+    contactEmail || contactPhone || addressStreet || addressCity
+  ),
+};
+const sections = visibleSections(
+  footerSettings?.sections,
+  FOOTER_SECTIONS,
+  footerSettings?.links_initialized
+).filter((section) => hasContent[section]);
+const copyrightText = localized("copyright_text");
 ---
 
 <footer
   class="relative overflow-hidden"
-  data-weather-location={weatherLocation || ""}
+  data-weather-location={showTemperature ? weatherLocation : undefined}
   data-bg-color-light={bgColorLight}
   data-bg-color-dark={bgColorDark}
   data-bg-image-light={bgImageLight}
@@ -140,34 +194,34 @@ const showTemperature = footerSettings?.show_temperature ?? true;
     <!-- Light theme background -->
     <div
       class="footer-bg-light absolute inset-0"
-      style={bgImageLight
-        ? `background-image: url('${bgImageLight}'); background-size: cover; background-position: bottom;`
-        : ""}
-    >
-      {
-        bgImageLight && (
-          <div
-            class="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[#fafafa] via-[#fafafaE6] to-transparent"
-            aria-hidden="true"
-          />
-        )
+      style={
+        bgImageLight
+          ? `background-image: url('${bgImageLight}'); background-size: cover; background-position: bottom;`
+          : ""
       }
+    >
+      {bgImageLight && (
+        <div
+          class="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[#fafafa] via-[#fafafaE6] to-transparent"
+          aria-hidden="true"
+        />
+      )}
     </div>
     <!-- Dark theme background -->
     <div
       class="footer-bg-dark absolute inset-0"
-      style={bgImageDark
-        ? `background-image: url('${bgImageDark}'); background-size: cover; background-position: bottom;`
-        : ""}
-    >
-      {
-        bgImageDark && (
-          <div
-            class="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[#0c111d] via-[#0c111de6] to-transparent"
-            aria-hidden="true"
-          />
-        )
+      style={
+        bgImageDark
+          ? `background-image: url('${bgImageDark}'); background-size: cover; background-position: bottom;`
+          : ""
       }
+    >
+      {bgImageDark && (
+        <div
+          class="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[#0c111d] via-[#0c111de6] to-transparent"
+          aria-hidden="true"
+        />
+      )}
     </div>
   </div>
 
@@ -175,454 +229,217 @@ const showTemperature = footerSettings?.show_temperature ?? true;
   <div
     id="temp-overlay"
     class="absolute inset-0 transition-all duration-1000 pointer-events-none mix-blend-overlay"
-  >
-  </div>
+  ></div>
 
-  <div
-    class="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pt-40 lg:pt-48 pb-16 lg:pb-20"
-  >
+  <div class="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pt-40 lg:pt-48 pb-16 lg:pb-20">
     <!-- Top Section: Logo and Temperature -->
     <div class="flex justify-between items-center mb-16">
       <!-- Logo -->
-      {
-        footerLogo && (
-          <img
-            src={footerLogo}
-            alt={siteSettings?.site_name || ui("footer.logoAlt")}
-            class="h-10 w-auto"
-            loading="lazy"
-            decoding="async"
-          />
-        )
-      }
+      {footerLogo && (
+        <img
+          src={footerLogo}
+          alt={siteSettings?.site_name || ui("footer.logoAlt")}
+          class="h-10 w-auto"
+          loading="lazy"
+          decoding="async"
+        />
+      )}
       <!-- Temperature -->
-      {
-        showTemperature && weatherLocation && (
-          <div
-            id="temperature-display"
-            class="text-xs sm:text-sm font-mono tracking-widest uppercase"
-          >
-            {weatherLocation.toUpperCase()}:{" "}
-            <span id="temp-value">
-              {weatherTemp !== null ? `${weatherTemp}°C` : "--°C"}
-            </span>
-          </div>
-        )
-      }
-    </div>
-
-    <!-- Mobile: CTA at the top -->
-    <div class="space-y-2 mb-12 lg:hidden">
-      <p class="text-3xl sm:text-4xl font-normal">
-        {ctaHeading}
-      </p>
-      <a
-        href="#contact-modal"
-        data-contact-modal="true"
-        class="group inline-flex items-center gap-3 text-3xl sm:text-4xl font-normal text-emerald-400 hover:text-emerald-300"
-      >
-        <span class="footer-arrow-icon flex-shrink-0">
-          <svg
-            class="w-8 h-8 sm:w-10 sm:h-10"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            stroke-width="2.5"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M7 17L17 7M17 7H7M17 7V17"></path>
-          </svg>
-        </span>
-        <span class="underline underline-offset-4">{ctaLinkText}</span>
-      </a>
-    </div>
-
-    <!-- Main Content Grid -->
-    <div
-      class="grid grid-cols-1 lg:grid-cols-[1.25fr_3fr] gap-12 lg:gap-32 mb-16"
-    >
-      <!-- Column 1: CTA + Newsletter (Desktop only) -->
-      <div class="space-y-2 hidden lg:block">
-        <p class="text-4xl lg:text-5xl font-normal">
-          {ctaHeading}
-        </p>
-        <a
-          href="#contact-modal"
-          data-contact-modal="true"
-          class="group relative inline-flex items-center text-4xl lg:text-5xl font-normal text-emerald-400 hover:text-emerald-300"
+      {showTemperature && weatherLocation && (
+        <div
+          id="temperature-display"
+          class="text-xs sm:text-sm font-mono tracking-widest uppercase"
         >
-          <span class="footer-arrow-icon absolute -left-14 lg:-left-16 flex-shrink-0">
+          {weatherLocation.toUpperCase()}:{" "}
+          <span id="temp-value">
+            {weatherTemp !== null ? `${weatherTemp}°C` : "--°C"}
+          </span>
+        </div>
+      )}
+    </div>
+
+    {showCta && cta && (
+      <div class="space-y-2 mb-12 lg:hidden">
+        <p class="text-3xl sm:text-4xl font-normal">{ctaHeading}</p>
+        <a
+          href={cta.href}
+          data-contact-modal={cta.contactModal ? "true" : undefined}
+          target={cta.newTab ? "_blank" : undefined}
+          rel={cta.newTab ? "noopener noreferrer" : undefined}
+          class="group inline-flex items-center gap-3 text-3xl sm:text-4xl font-normal text-emerald-400 hover:text-emerald-300"
+        >
+          <span class="footer-arrow-icon flex-shrink-0">
             <svg
-              class="w-10 h-10 lg:w-12 lg:h-12"
+              class="w-8 h-8 sm:w-10 sm:h-10"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
               stroke-width="2.5"
+              aria-hidden="true"
             >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                d="M7 17L17 7M17 7H7M17 7V17"></path>
+                d="M7 17L17 7M17 7H7M17 7V17"
+              />
             </svg>
           </span>
           <span class="underline underline-offset-4">{ctaLinkText}</span>
         </a>
-        {
-          showNewsletter && (
-            <div class="space-y-4 pt-8">
-              {newsletterSubtitle && (
-                <p class="text-sm opacity-80 max-w-sm">{newsletterSubtitle}</p>
-              )}
-              <form 
-                class="newsletter-form space-y-6"
-                method="POST"
-                action="https://eab0068f.sibforms.com/serve/MUIFABAJjLy8Pzg7D4CiU0PfcyRmtex9-NyTuMMarHq9C_byw9Z2NEPHF7nR-jkL-hr5NgVIEa_HG_CsstcAbSEt1der_Gfw91_SCXA1swRSOX003ZMflxoOg1VXjBE68T5sxT314TtVfMOzTkIMk5Ar7NkKxwa6fAUEvwe2TFPXKmzkR3-ifnznlYJzI3GE4IjabeazQDFwGUQiPw=="
-                data-type="subscription"
+      </div>
+    )}
+    <div
+      class:list={[
+        "grid grid-cols-1 gap-12 lg:gap-32 mb-16",
+        (showCta || showNewsletter) &&
+          sections.length > 0 &&
+          "lg:grid-cols-[1.25fr_3fr]",
+      ]}
+    >
+      {(showCta || showNewsletter) && (
+        <div class="space-y-2 hidden lg:block">
+          {showCta && cta && (
+            <>
+              <p class="text-4xl lg:text-5xl font-normal">{ctaHeading}</p>
+              <a
+                href={cta.href}
+                data-contact-modal={cta.contactModal ? "true" : undefined}
+                target={cta.newTab ? "_blank" : undefined}
+                rel={cta.newTab ? "noopener noreferrer" : undefined}
+                class="group relative inline-flex items-center text-4xl lg:text-5xl font-normal text-emerald-400 hover:text-emerald-300"
               >
-                <div class="space-y-4">
-                  <input
-                    type="email"
-                    name="EMAIL"
-                    id="EMAIL-desktop"
-                    placeholder={currentLang === "de" ? "E-Mail-Adresse" : "Email address"}
-                    autocomplete="off"
-                    class="newsletter-input w-full px-0 py-2 bg-transparent border-b border-current/30 text-sm placeholder-current/50 focus:outline-none focus:border-emerald-400 transition-colors"
-                    required
-                  />
-                  <label class="flex items-start gap-2 text-xs opacity-70 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="OPT_IN"
-                      value="1"
-                      required
-                      class="mt-0.5 accent-emerald-400"
+                <span class="footer-arrow-icon absolute -left-14 lg:-left-16 flex-shrink-0">
+                  <svg
+                    class="w-10 h-10 lg:w-12 lg:h-12"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    stroke-width="2.5"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M7 17L17 7M17 7H7M17 7V17"
                     />
-                    <span>{currentLang === "de" ? "Ich stimme zu, den Newsletter zu erhalten und akzeptiere die Datenschutzerklärung." : "I agree to receive the newsletter and accept the privacy policy."}</span>
-                  </label>
-                </div>
-                <!-- Honeypot field for spam protection -->
-                <input type="text" name="email_address_check" value="" class="hidden" tabindex="-1" autocomplete="off" />
-                <input type="hidden" name="locale" value={currentLang} />
-                <button
-                  type="submit"
-                  class="group inline-flex items-center gap-2 pl-6 pr-2 py-2 bg-white text-gray-900 uppercase rounded-full text-sm font-medium hover:bg-gray-100 transition-all"
-                >
-                  <span>{newsletterButtonText}</span>
-                  <span class="newsletter-btn-arrow flex items-center justify-center w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full">
-                    <svg
-                      class="w-4 h-4 text-gray-900"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      stroke-width="2.5"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M7 17L17 7M17 7H7M17 7V17"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </form>
-            </div>
-          )
-        }
-      </div>
-
-      <!-- Columns 2-4: Desktop 3-column grid, Mobile 2-column sections -->
-      <div>
-        <!-- Desktop: 3-column grid -->
-        <div class="hidden sm:grid sm:grid-cols-3 gap-8">
-          <!-- Column 2: Company -->
-          <div>
-            <h3
-              class="text-sm font-semibold font-mono uppercase tracking-wider mb-4"
-            >
-              {companySectionTitle}
-            </h3>
-            <ul class="space-y-2 text-base">
-              <li>
-                <a
-                  href={`/${currentLang}/about`}
-                  class="underline hover:no-underline transition-colors"
-                >
-                  {ui("nav.about")}
-                </a>
-              </li>
-              <li>
-                <a
-                  href={`/${currentLang}/blog`}
-                  class="underline hover:no-underline transition-colors"
-                >
-                  {ui("nav.blog")}
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Column 3: Socials -->
-          {
-            socialLinks.length > 0 && (
-              <div>
-                <h3 class="text-sm font-semibold font-mono uppercase tracking-wider mb-4">
-                  {socialsSectionTitle}
-                </h3>
-                <ul class="space-y-2 text-base">
-                  {socialLinks.map((social) => (
-                    <li>
-                      <a
-                        href={social.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={social.ariaLabel}
-                        class="underline hover:no-underline transition-colors"
-                      >
-                        {social.platform}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )
-          }
-
-          <!-- Column 4: Contact -->
-          {
-            (contactEmail || addressStreet || addressCity || contactPhone) && (
-              <div>
-                <h3 class="text-sm font-semibold font-mono uppercase tracking-wider mb-4">
-                  {contactSectionTitle}
-                </h3>
-                <div class="space-y-2 text-base">
-                  {contactEmail && (
-                    <p>
-                      <a
-                        href={`mailto:${contactEmail}`}
-                        class="underline hover:no-underline transition-colors"
-                      >
-                        {contactEmail}
-                      </a>
-                    </p>
-                  )}
-                  {addressStreet && <p>{addressStreet}</p>}
-                  {addressCity && <p>{addressCity}</p>}
-                  {contactPhone && <p>{contactPhone}</p>}
-                </div>
-              </div>
-            )
-          }
-        </div>
-
-        <!-- Mobile: 2-column layout (title left, items right) -->
-        <div class="flex flex-col gap-10 sm:hidden">
-          <!-- Company Section -->
-          <div class="grid grid-cols-[auto_1fr] gap-x-8">
-            <h3
-              class="text-xs font-semibold font-mono uppercase tracking-wider hyphenate"
-            >
-              {companySectionTitle}
-            </h3>
-            <ul class="space-y-3 text-base">
-              <li>
-                <a
-                  href={`/${currentLang}/about`}
-                  class="underline hover:no-underline transition-colors"
-                >
-                  {ui("nav.about")}
-                </a>
-              </li>
-              <li>
-                <a
-                  href={`/${currentLang}/blog`}
-                  class="underline hover:no-underline transition-colors"
-                >
-                  {ui("nav.blog")}
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Socials Section -->
-          {
-            socialLinks.length > 0 && (
-              <div class="grid grid-cols-[auto_1fr] gap-x-8">
-                <h3 class="text-xs font-semibold font-mono uppercase tracking-wider hyphenate">
-                  {socialsSectionTitle}
-                </h3>
-                <ul class="space-y-3 text-base">
-                  {socialLinks.map((social) => (
-                    <li>
-                      <a
-                        href={social.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={social.ariaLabel}
-                        class="underline hover:no-underline transition-colors"
-                      >
-                        {social.platform}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )
-          }
-
-          <!-- Contact Section -->
-          {
-            (contactEmail || addressStreet || addressCity || contactPhone) && (
-              <div class="grid grid-cols-[auto_1fr] gap-x-8">
-                <h3 class="text-xs font-semibold font-mono uppercase tracking-wider hyphenate">
-                  {contactSectionTitle}
-                </h3>
-                <div class="space-y-3 text-base">
-                  {contactEmail && (
-                    <p>
-                      <a
-                        href={`mailto:${contactEmail}`}
-                        class="underline hover:no-underline transition-colors"
-                      >
-                        {contactEmail}
-                      </a>
-                    </p>
-                  )}
-                  {addressStreet && <p>{addressStreet}</p>}
-                  {addressCity && <p>{addressCity}</p>}
-                  {contactPhone && <p>{contactPhone}</p>}
-                </div>
-              </div>
-            )
-          }
-        </div>
-      </div>
-    </div>
-
-    <!-- Newsletter Section (Mobile only - below the 3 sections) -->
-    {
-      showNewsletter && (
-        <div class="sm:hidden mb-16">
-          {newsletterSubtitle && (
-            <p class="text-sm opacity-80 mb-6">{newsletterSubtitle}</p>
+                  </svg>
+                </span>
+                <span class="underline underline-offset-4">{ctaLinkText}</span>
+              </a>
+            </>
           )}
-          <form 
-            class="newsletter-form space-y-6"
-            method="POST"
-            action="https://eab0068f.sibforms.com/serve/MUIFABAJjLy8Pzg7D4CiU0PfcyRmtex9-NyTuMMarHq9C_byw9Z2NEPHF7nR-jkL-hr5NgVIEa_HG_CsstcAbSEt1der_Gfw91_SCXA1swRSOX003ZMflxoOg1VXjBE68T5sxT314TtVfMOzTkIMk5Ar7NkKxwa6fAUEvwe2TFPXKmzkR3-ifnznlYJzI3GE4IjabeazQDFwGUQiPw=="
-            data-type="subscription"
-          >
-            <div class="space-y-4">
-              <input
-                type="email"
-                name="EMAIL"
-                id="EMAIL-mobile"
-                placeholder={currentLang === "de" ? "E-Mail-Adresse" : "Email address"}
-                autocomplete="off"
-                class="newsletter-input w-full px-0 py-2 bg-transparent border-b border-current/30 text-sm placeholder-current/50 focus:outline-none focus:border-emerald-400 transition-colors"
-                required
-              />
-              <label class="flex items-start gap-2 text-xs opacity-70 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="OPT_IN"
-                  value="1"
-                  required
-                  class="mt-0.5 accent-emerald-400"
-                />
-                <span>{currentLang === "de" ? "Ich stimme zu, den Newsletter zu erhalten und akzeptiere die Datenschutzerklärung." : "I agree to receive the newsletter and accept the privacy policy."}</span>
-              </label>
+          {showNewsletter && (
+            <div class="pt-8">
+              <NewsletterForm id="EMAIL-desktop" {...newsletterProps} />
             </div>
-            <!-- Honeypot field for spam protection -->
-            <input type="text" name="email_address_check" value="" class="hidden" tabindex="-1" autocomplete="off" />
-            <input type="hidden" name="locale" value={currentLang} />
-            <button
-              type="submit"
-              class="group inline-flex items-center gap-2 pl-6 pr-2 py-2 bg-white text-gray-900 uppercase rounded-full text-sm font-medium hover:bg-gray-100 transition-all"
+          )}
+        </div>
+      )}
+      {sections.length > 0 && (
+        <div
+          class="flex flex-col gap-10 sm:grid sm:gap-8"
+          style={`--footer-columns: ${sections.length}`}
+          data-footer-sections
+        >
+          {sections.map((section) => (
+            <div
+              class="grid grid-cols-[auto_1fr] gap-x-8 sm:block"
+              data-footer-section={section}
             >
-              <span>{newsletterButtonText}</span>
-              <span class="newsletter-btn-arrow flex items-center justify-center w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full">
-                <svg
-                  class="w-4 h-4 text-gray-900"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  stroke-width="2.5"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M7 17L17 7M17 7H7M17 7V17"
-                  />
-                </svg>
-              </span>
-            </button>
-          </form>
+              <h3 class="text-xs sm:text-sm font-semibold font-mono uppercase tracking-wider hyphenate sm:mb-4">
+                {titles[section]}
+              </h3>
+              {section === "company" && (
+                <ul class="space-y-3 sm:space-y-2 text-base">
+                  {companyLinks.map((link) => (
+                    <li>
+                      <a
+                        href={link.href}
+                        target={link.newTab ? "_blank" : undefined}
+                        rel={link.newTab ? "noopener noreferrer" : undefined}
+                        data-contact-modal={
+                          link.contactModal ? "true" : undefined
+                        }
+                        class="underline hover:no-underline transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {section === "socials" && (
+                <ul class="space-y-3 sm:space-y-2 text-base">
+                  {socialLinks.map((link) => (
+                    <li>
+                      <a
+                        href={link.href}
+                        target={link.newTab ? "_blank" : undefined}
+                        rel={link.newTab ? "noopener noreferrer" : undefined}
+                        aria-label={link.ariaLabel}
+                        class="underline hover:no-underline transition-colors"
+                      >
+                        {link.platform}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {section === "contact" && (
+                <div class="space-y-3 sm:space-y-2 text-base">
+                  {contactEmail && (
+                    <p>
+                      <a
+                        href={`mailto:${contactEmail}`}
+                        class="underline hover:no-underline transition-colors"
+                      >
+                        {contactEmail}
+                      </a>
+                    </p>
+                  )}
+                  {addressStreet && <p>{addressStreet}</p>}
+                  {addressCity && <p>{addressCity}</p>}
+                  {contactPhone && <p>{contactPhone}</p>}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-      )
-    }
-
-    <!-- Bottom Bar -->
-    <div class="pt-8">
-      <!-- Mobile: Links first, then copyright below -->
-      <div class="flex flex-col gap-4 sm:hidden">
-        <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-          <a
-            href={`/${currentLang}/imprint`}
-            class="underline hover:no-underline transition-colors"
-          >
-            {ui("footer.imprint")}
-          </a>
-          <a
-            href={`/${currentLang}/privacy`}
-            class="underline hover:no-underline transition-colors"
-          >
-            {ui("footer.privacy")}
-          </a>
-        </div>
-        {
-          (copyrightText || companyLegalName) && (
-            <p
-              class="text-sm"
-              set:html={
-                copyrightText ||
-                ui("footer.copyright", { name: companyLegalName ?? "" })
-              }
-            />
-          )
-        }
+      )}
+    </div>
+    {showNewsletter && (
+      <div class="lg:hidden mb-16">
+        <NewsletterForm id="EMAIL-mobile" {...newsletterProps} />
       </div>
-
-      <!-- Desktop: Same as before (copyright left, links right) -->
-      <div
-        class="hidden sm:flex sm:items-center sm:justify-between gap-4 text-sm"
-      >
-        {
-          (copyrightText || companyLegalName) && (
-            <p
-              set:html={
-                copyrightText ||
-                ui("footer.copyright", { name: companyLegalName ?? "" })
-              }
-            />
-          )
-        }
-        <div class="flex flex-wrap gap-x-6 gap-y-2">
-          <a
-            href={`/${currentLang}/imprint`}
-            class="underline hover:no-underline transition-colors"
-          >
-            {ui("footer.imprint")}
-          </a>
-          <a
-            href={`/${currentLang}/privacy`}
-            class="underline hover:no-underline transition-colors"
-          >
-            {ui("footer.privacy")}
-          </a>
+    )}
+    <div class="pt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm">
+      {(copyrightText || companyLegalName) && (
+        <p
+          class="order-2 sm:order-1"
+          set:html={
+            copyrightText ||
+            ui("footer.copyright", { name: companyLegalName ?? "" })
+          }
+        />
+      )}
+      {legalLinks.length > 0 && (
+        <div
+          class="order-1 sm:order-2 flex flex-wrap gap-x-6 gap-y-2"
+          data-footer-legal
+        >
+          {legalLinks.map((link) => (
+            <a
+              href={link.href}
+              target={link.newTab ? "_blank" : undefined}
+              rel={link.newTab ? "noopener noreferrer" : undefined}
+              data-contact-modal={link.contactModal ? "true" : undefined}
+              class="underline hover:no-underline transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   </div>
 </footer>
@@ -695,38 +512,21 @@ const showTemperature = footerSettings?.show_temperature ?? true;
   .group:hover .newsletter-btn-arrow {
     transform: rotate(45deg);
   }
+  @media (min-width: 640px) {
+    [data-footer-sections] {
+      grid-template-columns: repeat(var(--footer-columns), minmax(0, 1fr));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .footer-arrow-icon {
+      transition: none;
+    }
+  }
 </style>
 
 <script>
-  // Apply background colors from Directus
-  const footer = document.querySelector("footer");
-  if (footer) {
-    const bgColorLight = footer.getAttribute("data-bg-color-light");
-    const bgColorDark = footer.getAttribute("data-bg-color-dark");
-
-    // Set CSS variables for background colors if provided
-    if (bgColorLight && bgColorLight !== "null") {
-      document.documentElement.style.setProperty(
-        "--footer-bg-color-light",
-        bgColorLight
-      );
-      footer.classList.add("has-bg-color");
-    }
-    if (bgColorDark && bgColorDark !== "null") {
-      document.documentElement.style.setProperty(
-        "--footer-bg-color-dark",
-        bgColorDark
-      );
-      footer.classList.add("has-bg-color");
-    }
-  }
-
-  // Read location from data attribute on the footer element. Temperature is
-  // rendered server-side; the client re-fetches to keep the value and the
-  // temperature-based color overlay fresh.
-  const rootEl = document.querySelector("footer[data-weather-location]");
-
   async function updateTemperature() {
+    const rootEl = document.querySelector("footer[data-weather-location]");
     const footerWeatherLocation = rootEl?.getAttribute("data-weather-location");
     try {
       if (!footerWeatherLocation) {
@@ -739,6 +539,7 @@ const showTemperature = footerSettings?.show_temperature ?? true;
       if (!response.ok) throw new Error("Weather fetch failed");
 
       const data = await response.json();
+      if (!rootEl?.isConnected || !Number.isFinite(data.temperature)) return;
       const temp = Math.round(data.temperature);
 
       // Update temperature display
@@ -775,30 +576,19 @@ const showTemperature = footerSettings?.show_temperature ?? true;
     }
   }
 
-  // Update on page load and after Astro transitions
   function initFooter() {
+    const footer = document.querySelector<HTMLElement>("footer");
+    if (!footer) return;
+    for (const theme of ["light", "dark"]) {
+      const color = footer.getAttribute(`data-bg-color-${theme}`);
+      if (color) {
+        footer.style.setProperty(`--footer-bg-color-${theme}`, color);
+        footer.classList.add("has-bg-color");
+      }
+    }
     updateTemperature();
   }
-
-  document.addEventListener("DOMContentLoaded", initFooter);
+  initFooter();
   document.addEventListener("astro:page-load", initFooter);
-
-  // Optionally update every 15 minutes
   setInterval(updateTemperature, 900000);
-
-  // Newsletter form handling (Brevo integration)
-  // Note: Brevo doesn't support CORS, so we submit directly and let Brevo handle the redirect
-  document.querySelectorAll(".newsletter-form").forEach((form) => {
-    form.addEventListener("submit", () => {
-      const button = form.querySelector("button[type='submit']");
-
-      if (button) {
-        button.innerHTML = `<span class="animate-pulse">${document.documentElement.lang === 'de' ? 'Anmelden...' : 'Subscribing...'}</span>`;
-        (button as HTMLButtonElement).disabled = true;
-      }
-
-      // Form submits normally to Brevo, which handles the redirect
-      // Configure redirect URL in Brevo dashboard
-    });
-  });
 </script>

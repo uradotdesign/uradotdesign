@@ -14,6 +14,8 @@ test("child content and form writes move to the server without hiding public ass
     "posts_blocks",
     "case_study_sections",
     "service_steps",
+    "footer_links",
+    "footer_links_translations",
   ]) {
     assert.equal(needsWebsiteIdentity(collection, "read"), true, collection);
   }

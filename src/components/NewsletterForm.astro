@@ -1,0 +1,139 @@
+---
+interface Props {
+  id: string;
+  action: string;
+  language: string;
+  subtitle: string;
+  emailLabel: string;
+  consent: string;
+  buttonText: string;
+  sendingText: string;
+}
+const {
+  id,
+  action,
+  language,
+  subtitle,
+  emailLabel,
+  consent,
+  buttonText,
+  sendingText,
+} = Astro.props;
+---
+
+<div class="space-y-4">
+  {subtitle && <p class="text-sm opacity-80 max-w-sm">{subtitle}</p>}
+  <form
+    class="newsletter-form space-y-6"
+    method="POST"
+    action={action}
+    data-sending-text={sendingText}
+  >
+    <div class="space-y-4">
+      <label for={id} class="sr-only">
+        {emailLabel}
+      </label>
+      <input
+        type="email"
+        name="EMAIL"
+        id={id}
+        placeholder={emailLabel}
+        autocomplete="email"
+        class="newsletter-input w-full px-0 py-2 bg-transparent border-b border-current/30 text-sm placeholder-current/50 focus:outline-none focus:border-emerald-400 transition-colors"
+        required
+      />
+      <label class="flex items-start gap-2 text-xs opacity-70 cursor-pointer">
+        <input
+          type="checkbox"
+          name="OPT_IN"
+          value="1"
+          required
+          class="mt-0.5 accent-emerald-400"
+        />
+        <span>{consent}</span>
+      </label>
+    </div>
+    <input
+      type="text"
+      name="email_address_check"
+      value=""
+      class="hidden"
+      tabindex="-1"
+      autocomplete="off"
+      aria-hidden="true"
+    />
+    <input type="hidden" name="locale" value={language} />
+    <button
+      type="submit"
+      class="group inline-flex items-center gap-2 pl-6 pr-2 py-2 bg-white text-gray-900 uppercase rounded-full text-sm font-medium hover:bg-gray-100 transition-all"
+    >
+      <span data-button-label data-original-text={buttonText}>
+        {buttonText}
+      </span>
+      <span class="newsletter-btn-arrow flex items-center justify-center w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full">
+        <svg
+          class="w-4 h-4 text-gray-900"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          stroke-width="2.5"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M7 17L17 7M17 7H7M17 7V17"
+          />
+        </svg>
+      </span>
+    </button>
+  </form>
+</div>
+<style>
+  .newsletter-input {
+    color: inherit;
+  }
+  .newsletter-input::placeholder {
+    color: currentColor;
+    opacity: 0.5;
+  }
+  .newsletter-btn-arrow {
+    transition: transform 0.3s ease-in-out;
+  }
+  .group:hover .newsletter-btn-arrow {
+    transform: rotate(45deg);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .newsletter-btn-arrow {
+      transition: none;
+    }
+  }
+</style>
+<script>
+  // Delegate so newly rendered forms work after an Astro navigation too.
+  document.addEventListener("submit", (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches(".newsletter-form"))
+      return;
+    const button = form.querySelector<HTMLButtonElement>("button[type=submit]");
+    const label = form.querySelector<HTMLElement>("[data-button-label]");
+    if (!button || !label) return;
+    label.textContent = form.dataset.sendingText || label.textContent;
+    button.disabled = true;
+  });
+  // Restoring the provider redirect's previous page must allow another attempt.
+  window.addEventListener("pageshow", () => {
+    document
+      .querySelectorAll<HTMLFormElement>(".newsletter-form")
+      .forEach((form) => {
+        const button = form.querySelector<HTMLButtonElement>(
+          "button[type=submit]"
+        );
+        const label = form.querySelector<HTMLElement>("[data-button-label]");
+        if (button && label) {
+          label.textContent = label.dataset.originalText || label.textContent;
+          button.disabled = false;
+        }
+      });
+  });
+</script>

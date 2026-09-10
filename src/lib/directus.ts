@@ -891,6 +891,7 @@ export async function getNavigationLinks(options?: {
       limit: options?.limit,
       filter: options?.filter,
       statusField: null,
+      sort: ["sort_order", "id"],
       fields: ["*", "translations.*"],
     })
   );
@@ -1283,8 +1284,9 @@ export async function getAccessibilitySettings() {
 
 // Footer Settings helpers - HTTP ONLY (same approach as getSiteSettings)
 export async function getFooterSettings(): Promise<FooterSettings | null> {
-  return cacheConfig("footer_settings", () =>
-    fetchSingletonHTTP<FooterSettings>("footer_settings", "*,translations.*")
+  // Previous releases cached only relation IDs. Use a fresh key for expanded links.
+  return cacheConfig("footer_settings:global-controls-v1", () =>
+    fetchSingletonHTTP<FooterSettings>("footer_settings", "*,translations.*,links.*,links.translations.*")
   );
 }
 

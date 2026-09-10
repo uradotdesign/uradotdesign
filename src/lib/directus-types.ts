@@ -191,7 +191,10 @@ export interface SiteSettings {
   // Theme & Appearance
   primary_color?: string;
   default_theme?: string;
-  translations?: Array<{ languages_code?: string; site_tagline?: string; site_description?: string; newsletter_subtitle?: string }>;
+  home_sections?: Array<{ section: string; enabled?: boolean }>;
+  global_controls_initialized?: boolean;
+  show_contact_team?: boolean;
+  translations?: Array<{ languages_code?: string; site_tagline?: string; site_description?: string; newsletter_subtitle?: string; contact_label?: string; contact_heading?: string; contact_response_time?: string; contact_button_text?: string }>;
 }
 
 export interface Translation {
@@ -330,6 +333,12 @@ export interface ContactSubmission {
 
 export interface HeaderSettings {
   id: number;
+  overlay_mode?: boolean;
+  show_services_menu?: boolean;
+  show_cta?: boolean;
+  cta_url?: string;
+  cta_open_in_new_tab?: boolean;
+  show_theme_toggle?: boolean;
   show_weather?: boolean;
   weather_location?: string;
   sticky_header?: boolean;
@@ -341,7 +350,7 @@ export interface HeaderSettings {
   status?: "draft" | "published";
   date_created?: string;
   date_updated?: string;
-  translations?: Array<{ languages_code?: string; cta_text?: string }>;
+  translations?: Array<{ languages_code?: string; cta_text?: string; services_label?: string }>;
 }
 
 export interface AccessibilitySettings {
@@ -359,6 +368,13 @@ export interface AccessibilitySettings {
 
 export interface FooterSettings {
   id: number;
+  links?: FooterLink[];
+  links_initialized?: boolean;
+  sections?: Array<{ section: string; enabled?: boolean }>;
+  show_cta?: boolean;
+  cta_url?: string;
+  cta_open_in_new_tab?: boolean;
+  newsletter_action_url?: string;
   logo?: string;
   background_image_light?: string;
   background_image_dark?: string;
@@ -369,11 +385,11 @@ export interface FooterSettings {
   status?: "draft" | "published";
   date_created?: string;
   date_updated?: string;
-  translations?: Array<{ languages_code?: string; cta_text?: string; newsletter_title?: string; newsletter_button_text?: string; company_section_title?: string; socials_section_title?: string; contact_section_title?: string; copyright_text?: string }>;
+  translations?: Array<{ languages_code?: string; cta_heading?: string; cta_text?: string; newsletter_title?: string; newsletter_button_text?: string; newsletter_email_label?: string; newsletter_consent?: string; newsletter_sending_text?: string; company_section_title?: string; socials_section_title?: string; contact_section_title?: string; copyright_text?: string }>;
 }
 
 export interface NavigationLink {
-  id: string;
+  id: string | number;
   label?: string;
   url?: string;
   open_in_new_tab?: boolean | number | string;
@@ -382,6 +398,11 @@ export interface NavigationLink {
   sort_order?: number;
   is_cta?: boolean | number | string;
   cta_style?: string;
+}
+
+export interface FooterLink extends NavigationLink {
+  section?: "company" | "legal";
+  footer_settings_id?: number;
 }
 
 export interface Certification {
