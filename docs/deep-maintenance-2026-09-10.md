@@ -96,6 +96,13 @@ unchanged. A completed inspection advances it even if it found a flow failure;
 the health caller must deliver that failed result. Retaining revision/activity
 history longer than the largest monitoring gap remains necessary.
 
+The production content update exposed a stale revalidation destination pointing
+at the retired Compose `astro` container. It is now explicitly configured as
+`https://ura.design/api/revalidate`, following Nginx across blue/green releases.
+Provisioning derives this endpoint from `SITE_URL` unless `REVALIDATE_URL` is
+explicitly provided; bare Compose remains the development fallback. The secret
+and request settings were retained, and an actual content event verified success.
+
 Run `python3 ops/ura-recovery-test.py /var/backups/ura/ura-TIMESTAMP.tar.age`
 as root to rebuild archived services on a separate network with separate files.
 Every restored flow is disabled before Directus starts; SMTP settings are removed.
