@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
-import { getRedisClient } from "../../lib/redis.ts";
-import { getClientIp } from "../../lib/http.ts";
+import { getClientIp, incrementRateLimit } from "../../lib/http.ts";
 import {
   directusUrl as DIRECTUS_URL,
   directusToken as DIRECTUS_TOKEN,
@@ -105,12 +104,8 @@ export const POST: APIRoute = async ({ request }) => {
     // SPAM PROTECTION 3: Rate limiting (Redis, with in-memory fallback).
     let rateLimited = false;
     try {
-      const redis = getRedisClient();
       const key = `rate_limit:contact:${clientIP}`;
-      const currentCount = await redis.incr(key);
-      if (currentCount === 1) {
-        await redis.expire(key, RATE_LIMIT_WINDOW_SECONDS);
-      }
+      const currentCount = await incrementRateLimit(key, RATE_LIMIT_WINDOW_SECONDS);
       if (currentCount > MAX_SUBMISSIONS_PER_WINDOW) {
         rateLimited = true;
       }

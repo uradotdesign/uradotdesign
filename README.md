@@ -389,9 +389,11 @@ curl "http://localhost:3000/api/weather?location=Berlin"
 The site uses Redis for caching:
 
 - **CMS data:** Cached for 1 hour (configurable via `DIRECTUS_CONFIG_CACHE_TTL`)
-- **Weather data:** Cached for 15 minutes (configurable via `WEATHER_CACHE_TTL`)
+- **Weather data:** Cached for 15 minutes. `WEATHER_CACHE_TTL` is read at runtime and accepts whole seconds from 60 to 86400; invalid values use 900. Missing credentials or provider failures show unavailable weather, never sample measurements. The API returns an uncached 503 in that case.
 
 Cache is automatically invalidated when content changes in Directus.
+
+Rate-limit increments and expiration run atomically in Redis. To run the Redis integration test locally, set `REDIS_TEST_URL` to an isolated Redis instance before `npm test`. CI supplies its own ephemeral Redis service. The integration test checks concurrent requests, fixed-window expiration and recovery of older counters without a TTL.
 
 ---
 

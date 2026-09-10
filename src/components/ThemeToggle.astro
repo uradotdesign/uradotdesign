@@ -116,6 +116,7 @@ const labelNight = ui('theme.night');
     document.querySelectorAll(".theme-option").forEach((btn) => {
       const el = btn as HTMLElement;
       const isActive = el.dataset.theme === theme;
+      el.setAttribute("aria-pressed", String(isActive));
 
       if (isActive) {
         el.classList.add(...activeClasses);
@@ -141,8 +142,9 @@ const labelNight = ui('theme.night');
 
   function init() {
     // Initial State
-    const saved = localStorage.getItem("theme") || "light";
-    updateUI(saved);
+    // The head bootstrap already applies the CMS default and saved preference.
+    // Preserve that choice even when browser storage is unavailable.
+    updateUI(document.documentElement.classList.contains("dark") ? "dark" : "light");
 
     // Attach listeners (prevent duplicates with custom property)
     document.querySelectorAll(".theme-option").forEach((btn) => {
@@ -154,7 +156,10 @@ const labelNight = ui('theme.night');
         if (theme) {
           setTheme(theme);
           const details = target.closest("details");
-          if (details) details.open = false;
+          if (details) {
+            details.open = false;
+            details.querySelector("summary")?.focus();
+          }
         }
       });
       (btn as any).__themeListener = true;

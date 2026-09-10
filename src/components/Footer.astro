@@ -9,7 +9,7 @@ import {
 } from "../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
 import { t, getUI } from "../lib/translations";
-import { getWeather } from "../pages/api/weather";
+import { getWeather } from "../lib/weather";
 import {
   FOOTER_SECTIONS,
   visibleSections,
@@ -536,7 +536,7 @@ const copyrightText = localized("copyright_text");
       }
 
       const response = await fetch(
-        `/api/weather?location=${encodeURIComponent(footerWeatherLocation)}`
+        `/api/weather?v=2&location=${encodeURIComponent(footerWeatherLocation)}`
       );
       if (!response.ok) throw new Error("Weather fetch failed");
 
