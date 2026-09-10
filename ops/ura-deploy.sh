@@ -3,6 +3,7 @@
 set -euo pipefail
 umask 077
 sha=${1:?verified revision required}
+public_origin=${URA_SMOKE_ORIGIN:-https://ura.design}
 [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || exit 64
 repo=/var/www/ura-prototype/uradotdesign
 state=/var/lib/ura-deploy
@@ -78,7 +79,7 @@ switched=true
 nginx -t
 systemctl reload nginx
 for path in en de; do
-  curl -fsS --retry 3 --retry-all-errors --max-time 15 "https://ura.design/$path" >/dev/null
+  curl -fsS --retry 3 --retry-all-errors --max-time 15 "$public_origin/$path" >/dev/null
 done
 printf '%s\n' "$port" > "$state/active-port"
 printf '%s\n' "$sha" > "$state/active-revision"
