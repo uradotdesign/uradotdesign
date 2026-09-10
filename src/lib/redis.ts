@@ -128,6 +128,9 @@ export async function remember<T>(
 }
 
 export async function invalidateCache(pattern: string): Promise<void> {
+  if (!/^[a-zA-Z0-9:_-]+:\*$/.test(pattern)) {
+    throw new Error('Cache invalidation requires a complete namespace prefix');
+  }
   try {
     const client = getRedisClient();
     // Advance before deleting. Pending readers cannot repopulate old data,
@@ -136,11 +139,13 @@ export async function invalidateCache(pattern: string): Promise<void> {
     let cursor = "0";
     let totalDeleted = 0;
 
-    do {
+    for (const storedPattern of [pattern, `cache-v2:${pattern}`]) {
+      cursor = '0';
+      do {
       const [nextCursor, keys] = await client.scan(
         cursor,
         "MATCH",
-        pattern,
+        storedPattern,
         "COUNT",
         100
       );
@@ -149,7 +154,8 @@ export async function invalidateCache(pattern: string): Promise<void> {
         await client.del(...keys);
         totalDeleted += keys.length;
       }
-    } while (cursor !== "0");
+      } while (cursor !== "0");
+    }
 
     if (totalDeleted > 0) {
       console.log(
