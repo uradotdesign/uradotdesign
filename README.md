@@ -147,7 +147,9 @@ and checks English/German content routes. See [the maintenance runbook](docs/ope
 for backups, the website credential rollout, rollback, and Directus 12 licensing.
 
 Directus 12.3.1 uses the issued Open Innovation Grant via the private server
-environment. TypeScript remains on 6 because Astro's checker requires its
+environment. Compose builds a small, checksum-guarded correction to its native
+block picker; see [Directus image and toolchain upgrades](docs/directus-ui-patch.md).
+TypeScript remains on 6 because Astro's checker requires its
 JavaScript API; TypeScript 7 is not a compatible drop-in for this toolchain yet.
 
 ### Option 1: Docker Compose (Recommended)

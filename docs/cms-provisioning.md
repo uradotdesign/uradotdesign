@@ -12,7 +12,7 @@ Production runs on the Hetzner VPS reached as `root@ura.design`. The checkout is
 | PostgreSQL custom-format dump | Content and all Directus system configuration at that time | Uploaded file bytes, Docker environment |
 | Uploads and private environment backup | File bytes, runtime credentials and deployment configuration | A replacement for the database dump |
 
-The schema is for Directus 12.3.1 on PostgreSQL. The production and development Compose files use the same tested Directus/PostgreSQL/Redis versions; Node uses major 24. Custom interfaces/panels build from their own lockfiles. The extension SDK still has four shared Unhead development advisories (one moderate, three low); no compatible v1 patch is available. This is not a zero-advisory toolchain.
+The schema is for Directus 12.3.1 on PostgreSQL. The production and development Compose files use the same tested Directus/PostgreSQL/Redis versions; Node uses major 24. Directus builds from `Dockerfile.directus` with a guarded native picker correction. Custom interfaces/panels build from their own lockfiles and pass runtime compatibility checks. All three dependency audits report zero findings at this revision. Read [the UI patch and toolchain upgrade notes](directus-ui-patch.md) before upgrading the CMS or extension SDK.
 
 ## Fresh installation
 
