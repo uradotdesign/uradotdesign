@@ -68,7 +68,7 @@ docker run -d --name "$candidate" --restart unless-stopped --memory 512m --cpus 
 for path in en de sitemap.xml en/rss.xml en/og.png; do
   curl -fsS --retry 20 --retry-all-errors --retry-delay 2 --max-time 15 "http://127.0.0.1:$port/$path" >/dev/null
 done
-docker exec "$candidate" node --input-type=module -e 'const r=await fetch("http://127.0.0.1:4321/api/revalidate",{method:"POST",headers:{"x-revalidate-secret":process.env.REVALIDATE_SECRET}});if(!r.ok)process.exit(1)'
+docker exec "$candidate" node --input-type=module -e 'const r=await fetch("http://127.0.0.1:4321/api/revalidate",{method:"POST",headers:{"x-revalidate-secret":process.env.REVALIDATE_SECRET,"Content-Type":"application/json"},body:"{}"});if(!r.ok){console.error("Candidate revalidation failed:",r.status);process.exit(1)}'
 # Retain fingerprinted assets so already-open pages survive a deployment.
 install -d -m 755 /var/lib/ura-assets
 docker cp "$candidate:/app/dist/client/_astro/." /var/lib/ura-assets/

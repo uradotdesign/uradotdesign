@@ -3,7 +3,7 @@
 set -euo pipefail
 umask 077
 exec 9>/run/lock/ura-backup.lock
-flock -n 9 || exit 0
+flock -w 900 9 || { echo 'Another backup did not finish within 15 minutes' >&2; exit 1; }
 repo=/var/www/ura-prototype/uradotdesign
 root=/var/backups/ura
 install -d -m 700 "$root" /etc/ura
