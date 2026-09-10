@@ -35,12 +35,15 @@ if (!slug) {
 // Live Preview: draft-aware, cache-bypassing fetch when ?preview=<secret>.
 const isPreview = isPreviewActive(Astro.url);
 const post = isPreview
-  ? await getPreviewItemBySlug<BlogPost>("posts", slug, [
-      "*",
-      "author.*",
-      "translations.*",
-      ...PAGE_BLOCK_FIELDS,
-    ])
+  ? await getPreviewItemBySlug<BlogPost>(
+      "posts",
+      slug,
+      ["*", "author.*", "translations.*", ...PAGE_BLOCK_FIELDS],
+      {
+        id: Astro.url.searchParams.get("id"),
+        version: Astro.url.searchParams.get("version"),
+      }
+    )
   : await getBlogPostBySlug(slug);
 
 if (!post) {

@@ -54,36 +54,40 @@ export async function remember<T>(
   const ttl = options.ttl ?? 900;
   const finalKey = namespacedKey(key, options.namespace);
 
+  const client = getRedisClient();
   try {
-    const client = getRedisClient();
-
     const cached = await client.get(finalKey);
     if (cached) {
       return JSON.parse(cached) as T;
     }
-
-    // Singleflight: coalesce concurrent misses for the same key
-    const existing = inflight.get(finalKey);
-    if (existing) return existing as Promise<T>;
-
-    const promise = (async () => {
-      try {
-        const data = await fetchFn();
-        if (data !== null && data !== undefined) {
-          await client.setex(finalKey, ttl, JSON.stringify(data));
-        }
-        return data;
-      } finally {
-        inflight.delete(finalKey);
-      }
-    })();
-
-    inflight.set(finalKey, promise);
-    return await promise;
   } catch (error) {
-    console.error("Redis error, fetching without cache:", error);
-    return await fetchFn();
+    console.warn("Cache read unavailable:", error);
   }
+
+  // Coalesce misses even when Redis is unavailable. Fetch failures propagate
+  // without being cached or retried under the guise of a Redis failure.
+  const existing = inflight.get(finalKey);
+  if (existing) return existing as Promise<T>;
+
+  const promise = (async () => {
+    try {
+      const data = await fetchFn();
+      if (data !== null && data !== undefined) {
+        try {
+          await client.setex(finalKey, ttl, JSON.stringify(data));
+        } catch (error) {
+          // A cache write failure must not repeat a successful upstream call.
+          console.warn("Cache write unavailable:", error);
+        }
+      }
+      return data;
+    } finally {
+      inflight.delete(finalKey);
+    }
+  })();
+
+  inflight.set(finalKey, promise);
+  return promise;
 }
 
 export async function invalidateCache(pattern: string): Promise<void> {
@@ -114,5 +118,6 @@ export async function invalidateCache(pattern: string): Promise<void> {
     }
   } catch (error) {
     console.error("Error invalidating cache:", error);
+    throw error;
   }
 }

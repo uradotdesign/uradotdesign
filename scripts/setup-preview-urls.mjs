@@ -18,9 +18,9 @@ const SECRET = process.env.PREVIEW_SECRET;
 const SITE = process.env.PREVIEW_SITE_URL || "https://ura.design";
 
 const TARGETS = {
-  case_studies: `${SITE}/en/work/{{slug}}?preview=${SECRET}`,
-  posts: `${SITE}/en/blog/{{slug}}?preview=${SECRET}`,
-  pages: `${SITE}/en/{{slug}}?preview=${SECRET}`,
+  case_studies: `${SITE}/en/work/{{slug}}?preview=${encodeURIComponent(SECRET || "")}&id={{id}}&version={{$version}}`,
+  posts: `${SITE}/en/blog/{{slug}}?preview=${encodeURIComponent(SECRET || "")}&id={{id}}&version={{$version}}`,
+  pages: `${SITE}/en/{{slug}}?preview=${encodeURIComponent(SECRET || "")}&id={{id}}&version={{$version}}`,
 };
 
 async function main() {
@@ -43,7 +43,9 @@ async function main() {
       method: "PATCH",
       body: j({ meta: { preview_url: url } }),
     });
-    console.log(`= preview_url on ${collection}:\n    ${url}`);
+    console.log(
+      `= Version-aware preview URL set on ${collection} (secret hidden)`
+    );
   }
 
   console.log("\nDone.\n");

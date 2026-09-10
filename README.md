@@ -1,23 +1,23 @@
 # Ura Design Website
 
-A modern, multilingual website built with **Astro 6** (SSR) and **Directus CMS**, featuring Redis caching, PostgreSQL database, and Docker deployment.
+A multilingual website built with **Astro 7** (SSR) and **Directus CMS**, featuring Redis caching, PostgreSQL database, and Docker deployment.
 
 ## Tech Stack
 
 | Component | Technology                |
 | --------- | ------------------------- |
-| Frontend  | Astro 6.4.2 (SSR mode)    |
-| Styling   | TailwindCSS 4.3.0         |
-| CMS       | Directus 11.17.4          |
-| Database  | PostgreSQL 18 (alpine)    |
-| Cache     | Redis 8.2.3 (alpine)      |
+| Frontend  | Astro 7.3.2 (SSR mode)    |
+| Styling   | TailwindCSS 4.3.3         |
+| CMS       | Directus 12.3.1          |
+| Database  | PostgreSQL 18.6 (alpine)  |
+| Cache     | Redis 8.2.9 (alpine)      |
 | Language  | TypeScript 6.0.3          |
-| SDK       | @directus/sdk 21.3.0      |
+| SDK       | @directus/sdk 25.0.1      |
 | i18n      | English (en), German (de) |
 
 ## Prerequisites
 
-- **Node.js** >= 18.20.8
+- **Node.js 24** (CI and Docker); minimum 22.12.0
 - **Docker** & **Docker Compose**
 - **Git**
 
@@ -133,6 +133,16 @@ The site will be available at: **http://localhost:3000**
 ---
 
 ## Production Deployment
+
+The Hetzner VPS is accessed with `ssh root@ura.design`. The checkout is
+`/var/www/ura-prototype/uradotdesign`, Compose project `uradotdesign`.
+GitHub Actions verifies each main commit, deploys that exact commit over SSH,
+and checks English/German content routes. See [the maintenance runbook](docs/operations.md)
+for backups, the website credential rollout, rollback, and Directus 12 licensing.
+
+Directus 12.3.1 uses the issued Open Innovation Grant via the private server
+environment. TypeScript remains on 6 because Astro's checker requires its
+JavaScript API; TypeScript 7 is not a compatible drop-in for this toolchain yet.
 
 ### Option 1: Docker Compose (Recommended)
 

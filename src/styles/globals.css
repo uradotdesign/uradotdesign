@@ -323,11 +323,11 @@ body {
     color var(--transition-base);
 }
 
-:global(.font-display) {
+.font-display {
   font-family: var(--font-display);
 }
 
-:global(.font-mono) {
+.font-mono {
   font-family: var(--font-mono);
 }
 

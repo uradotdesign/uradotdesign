@@ -99,6 +99,24 @@ async function main() {
     `= Read permissions: ${collections.length} collections (${added} added)`
   );
 
+  // Versioned reads also require the saved delta. Restrict this system-table
+  // permission to the three collections exposed by our preview routes.
+  if (!existingRead.has("directus_versions")) {
+    await authRequest("/permissions", {
+      method: "POST",
+      body: j({
+        policy: policyId,
+        collection: "directus_versions",
+        action: "read",
+        fields: ["*"],
+        permissions: {
+          collection: { _in: ["pages", "posts", "case_studies"] },
+        },
+      }),
+    });
+    console.log("+ Granted read-only access to saved preview versions");
+  }
+
   // 3. The preview user + static token. --------------------------------------
   // Don't request the `token` field: Directus masks it ("**********"), and we
   // must never write that mask back (see header note).

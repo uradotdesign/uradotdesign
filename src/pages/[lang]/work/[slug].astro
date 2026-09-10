@@ -62,7 +62,11 @@ if (isPreview) {
   study = await getPreviewItemBySlug<CaseStudy>(
     "case_studies",
     slug,
-    CASE_STUDY_FIELDS
+    CASE_STUDY_FIELDS,
+    {
+      id: Astro.url.searchParams.get("id"),
+      version: Astro.url.searchParams.get("version"),
+    }
   );
   if (study?.sections) {
     study.sections.sort(

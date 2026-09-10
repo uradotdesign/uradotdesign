@@ -61,7 +61,10 @@ if (services && services.length > 0) {
 } else {
   // 2. Try to find a Page (with its block builder). Preview shows drafts.
   const page = isPreview
-    ? await getPagePreviewBySlug(slug)
+    ? await getPagePreviewBySlug(slug, {
+        id: Astro.url.searchParams.get("id"),
+        version: Astro.url.searchParams.get("version"),
+      })
     : await getPageWithBlocks(slug);
   if (page && (isPreview || page.status === 'published')) {
     type = 'page';

@@ -11,15 +11,19 @@
  *   DIRECTUS_EMAIL | ADMIN_EMAIL  +  DIRECTUS_PASSWORD | ADMIN_PASSWORD
  */
 
+import { WEBSITE_POLICY, canCopyToWebsite } from "./website-permissions.mjs";
+
 const j = JSON.stringify;
 
 /** Reads admin connection settings from environment variables. */
 export function resolveAdminConfigFromEnv() {
   return {
     baseUrl: process.env.DIRECTUS_URL || "http://localhost:8055",
-    token: process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_TOKEN || null,
+    token:
+      process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_TOKEN || null,
     email: process.env.DIRECTUS_EMAIL || process.env.ADMIN_EMAIL || null,
-    password: process.env.DIRECTUS_PASSWORD || process.env.ADMIN_PASSWORD || null,
+    password:
+      process.env.DIRECTUS_PASSWORD || process.env.ADMIN_PASSWORD || null,
   };
 }
 
@@ -182,7 +186,9 @@ export function createDirectusAdmin(config = resolveAdminConfigFromEnv()) {
       console.log(`+ Created relation: ${payload.collection}.${payload.field}`);
     } catch (e) {
       if (isExists(e))
-        console.log(`= Relation exists: ${payload.collection}.${payload.field}`);
+        console.log(
+          `= Relation exists: ${payload.collection}.${payload.field}`
+        );
       else throw e;
     }
   }
@@ -209,7 +215,9 @@ export function createDirectusAdmin(config = resolveAdminConfigFromEnv()) {
     if (policyId) return policyId;
     const policies = await authRequest("/policies");
     const list = Array.isArray(policies?.data) ? policies.data : policies;
-    return list?.find((p) => p.name?.toLowerCase().includes("public"))?.id || null;
+    return (
+      list?.find((p) => p.name?.toLowerCase().includes("public"))?.id || null
+    );
   }
 
   async function permissionExists(policyId, collection, action) {
@@ -233,6 +241,7 @@ export function createDirectusAdmin(config = resolveAdminConfigFromEnv()) {
    * @param {object} [opts.permissions={}] Row filter, e.g. { status: { _eq: "published" } }.
    */
   async function grantPublicRead(policyId, collection, opts = {}) {
+    policyId = await permissionTarget(policyId, collection, "read");
     const { fields = "*", permissions = {} } = opts;
     if (await permissionExists(policyId, collection, "read")) {
       console.log(`= Read permission exists: ${collection}`);
@@ -241,12 +250,19 @@ export function createDirectusAdmin(config = resolveAdminConfigFromEnv()) {
     try {
       await authRequest("/permissions", {
         method: "POST",
-        body: j({ policy: policyId, collection, action: "read", fields, permissions }),
+        body: j({
+          policy: policyId,
+          collection,
+          action: "read",
+          fields,
+          permissions,
+        }),
       });
-      console.log(`+ Granted public read: ${collection}`);
+      console.log(`+ Granted content read: ${collection}`);
     } catch (e) {
       if (isExists(e)) console.log(`= Read permission exists: ${collection}`);
-      else console.warn(`! Could not grant read to ${collection}: ${e.message}`);
+      else
+        console.warn(`! Could not grant read to ${collection}: ${e.message}`);
     }
   }
 
@@ -257,6 +273,7 @@ export function createDirectusAdmin(config = resolveAdminConfigFromEnv()) {
    * @param {object} [opts.validation={}] Optional validation filter.
    */
   async function grantPublicCreate(policyId, collection, opts = {}) {
+    policyId = await permissionTarget(policyId, collection, "create");
     const { fields = "*", validation = {} } = opts;
     if (await permissionExists(policyId, collection, "create")) {
       console.log(`= Create permission exists: ${collection}`);
@@ -274,11 +291,26 @@ export function createDirectusAdmin(config = resolveAdminConfigFromEnv()) {
           validation,
         }),
       });
-      console.log(`+ Granted public create: ${collection}`);
+      console.log(`+ Granted content create: ${collection}`);
     } catch (e) {
       if (isExists(e)) console.log(`= Create permission exists: ${collection}`);
-      else console.warn(`! Could not grant create to ${collection}: ${e.message}`);
+      else
+        console.warn(`! Could not grant create to ${collection}: ${e.message}`);
     }
+  }
+
+  // Once migrated, schema provisioning must not reopen anonymous access to
+  // private children or bypass the website's contact validation/rate limiting.
+  let websitePolicy;
+  async function permissionTarget(publicPolicy, collection, action) {
+    if (!canCopyToWebsite({ collection, action })) return publicPolicy;
+    if (websitePolicy === undefined) {
+      const result = await authRequest(
+        `/policies?filter[name][_eq]=${encodeURIComponent(WEBSITE_POLICY)}&limit=1&fields=id`
+      );
+      websitePolicy = result.data?.[0]?.id ?? null;
+    }
+    return websitePolicy || publicPolicy;
   }
 
   return {
