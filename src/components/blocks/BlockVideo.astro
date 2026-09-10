@@ -43,13 +43,13 @@ let embedUrl = '';
 if (provider === 'youtube' && rawUrl) {
   const params = new URLSearchParams({
     rel: '0',
-    ...(autoplay ? { autoplay: '1', mute: '1' } : {}),
+    ...(autoplay ? { mute: '1' } : {}),
     ...(loop ? { loop: '1', playlist: youtubeId(rawUrl) } : {}),
   });
   embedUrl = `https://www.youtube-nocookie.com/embed/${youtubeId(rawUrl)}?${params}`;
 } else if (provider === 'vimeo' && rawUrl) {
   const params = new URLSearchParams({
-    ...(autoplay ? { autoplay: '1', muted: '1' } : {}),
+    ...(autoplay ? { muted: '1' } : {}),
     ...(loop ? { loop: '1' } : {}),
   });
   embedUrl = `https://player.vimeo.com/video/${vimeoId(rawUrl)}?${params}`;
@@ -79,7 +79,7 @@ const hasVideo = provider === 'file' ? Boolean(fileUrl) : Boolean(embedUrl);
                 poster={poster || undefined}
                 controls
                 playsinline
-                autoplay={autoplay}
+                data-cms-autoplay={autoplay ? 'true' : undefined}
                 loop={loop}
                 muted={muted}
                 preload="metadata"
@@ -88,6 +88,7 @@ const hasVideo = provider === 'file' ? Boolean(fileUrl) : Boolean(embedUrl);
               <iframe
                 class="absolute inset-0 h-full w-full border-0"
                 src={embedUrl}
+                data-cms-autoplay={autoplay ? 'true' : undefined}
                 title={heading || caption || 'Video'}
                 loading="lazy"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -105,3 +106,26 @@ const hasVideo = provider === 'file' ? Boolean(fileUrl) : Boolean(embedUrl);
     </section>
   )
 }
+<script>
+  import { prefersReducedMotion, watchReducedMotion } from '../../scripts/reduced-motion.js';
+  function updateMedia() {
+    const reduce = prefersReducedMotion();
+    document.querySelectorAll<HTMLVideoElement | HTMLIFrameElement>('[data-cms-autoplay="true"]').forEach(media => {
+      if (media instanceof HTMLVideoElement) {
+        if (reduce) media.pause();
+        else void media.play().catch(() => {});
+      } else {
+        const url = new URL(media.src);
+        const autoplay = reduce ? '0' : '1';
+        if (url.searchParams.get('autoplay') !== autoplay) {
+          url.searchParams.set('autoplay', autoplay);
+          media.src = url.href;
+        }
+      }
+    });
+  }
+  watchReducedMotion(updateMedia);
+  document.addEventListener('astro:page-load', updateMedia);
+  document.addEventListener('astro:before-swap', () => document.querySelectorAll<HTMLVideoElement>('video[data-cms-autoplay]').forEach(media => media.pause()));
+  updateMedia();
+</script>

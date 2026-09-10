@@ -1,7 +1,7 @@
 /**
  * Table-of-contents extraction for WYSIWYG post bodies.
  *
- * Blog content is trusted HTML rendered via `set:html`. This module walks that
+ * Blog content is sanitized before being rendered via `set:html`. This module walks the
  * HTML once on the server to (a) collect a heading tree for an "On this page"
  * navigation and (b) inject stable, unique `id` anchors onto each heading so the
  * links resolve. Only `h2`/`h3` participate — `h1` is the page title and deeper

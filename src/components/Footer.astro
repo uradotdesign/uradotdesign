@@ -1,4 +1,5 @@
 ---
+import { richText } from '../lib/rich-text';
 import {
   getSocialLinks,
   getSiteSettings,
@@ -19,7 +20,7 @@ import {
 import { GLOBAL_COPY, NEWSLETTER_ACTION } from "../lib/global-defaults.mjs";
 import NewsletterForm from "./NewsletterForm.astro";
 
-const currentLang = getCurrentLanguage(Astro.url);
+const currentLang = Astro.locals.lang ?? getCurrentLanguage(Astro.url);
 const [ui, socialLinksData, siteSettings, footerSettings, headerSettings] =
   await Promise.all([
     getUI(currentLang),
@@ -417,10 +418,10 @@ const copyrightText = localized("copyright_text");
       {(copyrightText || companyLegalName) && (
         <p
           class="order-2 sm:order-1"
-          set:html={
+          set:html={richText(
             copyrightText ||
             ui("footer.copyright", { name: companyLegalName ?? "" })
-          }
+          )}
         />
       )}
       {legalLinks.length > 0 && (

@@ -110,7 +110,8 @@ jobs:
             test "$(git rev-parse HEAD)" = "${{ github.sha }}"
 
             echo "==> Rebuild the Astro image (only service built from source)"
-            docker compose -f docker-compose.prod.yml build astro
+            bash scripts/prepare-cms-css.sh directus_cms
+            docker compose -f docker-compose.prod.yml build --build-arg CMS_CLASSES_SHA256="$(sha256sum .cms-build/classes.html | cut -d ' ' -f1)" astro
 
             echo "==> Recreate changed services and wait for health"
             docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 240

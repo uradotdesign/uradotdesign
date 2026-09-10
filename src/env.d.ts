@@ -3,6 +3,7 @@
 declare namespace App {
   interface Locals {
     lang: 'en' | 'de';
+    originalUrl?: string;
   }
 }
 

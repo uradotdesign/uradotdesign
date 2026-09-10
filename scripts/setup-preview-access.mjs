@@ -11,8 +11,8 @@
  *
  * The token is READ-ONLY and lives only in the Astro container env
  * (DIRECTUS_PREVIEW_TOKEN); it never reaches the browser. Preview itself is
- * gated by PREVIEW_SECRET in the URL. The script prints the token so you can
- * add it to the server .env.
+ * gated by PREVIEW_SECRET in the URL. New credentials are saved directly to
+ * the private CMS_SECRETS_OUTPUT file and never printed.
  *
  * IMPORTANT: Directus MASKS the `token` field on read (it returns the literal
  * string "**********"), so the real value can never be read back via the API.
@@ -27,6 +27,7 @@
  */
 
 import crypto from "node:crypto";
+import { appendFileSync, chmodSync } from "node:fs";
 import { createDirectusAdmin } from "./lib/directus-admin.mjs";
 
 const j = JSON.stringify;
@@ -70,8 +71,24 @@ async function main() {
 
   // 2. Read permission (no status filter) on every non-system collection. ----
   const collections = unwrap(await authRequest("/collections?limit=-1"))
+    .filter((c) => c.schema)
     .map((c) => c.collection)
-    .filter((name) => name && !name.startsWith("directus_"));
+    .filter(
+      (name) =>
+        name && !name.startsWith("directus_") && name !== "contact_submissions"
+    );
+  const allowed = new Set([
+    ...collections,
+    "directus_files",
+    "directus_versions",
+  ]);
+  const stale = unwrap(
+    await authRequest(
+      `/permissions?filter[policy][_eq]=${policyId}&fields=id,collection,action&limit=-1`
+    )
+  ).filter((p) => !allowed.has(p.collection) || p.action !== "read");
+  for (const row of stale)
+    await authRequest(`/permissions/${row.id}`, { method: "DELETE" });
   const existingRead = new Set(
     unwrap(
       await authRequest(
@@ -126,7 +143,14 @@ async function main() {
     )
   )[0];
   const rotate = process.argv.includes("--rotate");
-  const newToken = "uradp_" + crypto.randomBytes(32).toString("hex");
+  const output = process.env.CMS_SECRETS_OUTPUT;
+  if ((!user || rotate) && !output)
+    throw new Error(
+      "Set CMS_SECRETS_OUTPUT to a private env file before creating or rotating preview credentials."
+    );
+  const newToken =
+    (!user && process.env.DIRECTUS_PREVIEW_TOKEN) ||
+    "uradp_" + crypto.randomBytes(32).toString("hex");
   // `token` is only populated when we actually create the user or rotate it; a
   // null value means "leave the existing token untouched".
   let token = null;
@@ -181,10 +205,12 @@ async function main() {
   }
 
   if (token) {
+    appendFileSync(output, `\nDIRECTUS_PREVIEW_TOKEN=${token}\n`, {
+      mode: 0o600,
+    });
+    chmodSync(output, 0o600);
     console.log(
-      "\n=== DIRECTUS_PREVIEW_TOKEN (set this in the Astro container env) ===\n" +
-        token +
-        "\n===================================================================\n"
+      "Preview credential saved to the private CMS_SECRETS_OUTPUT file."
     );
   } else {
     console.log(

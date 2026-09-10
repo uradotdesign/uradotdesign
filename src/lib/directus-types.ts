@@ -323,6 +323,7 @@ export interface ContactSubmission {
   email: string;
   phone?: string;
   contact_preference?: "phone" | "email" | "signal";
+  contact_preferences?: Array<'phone' | 'email' | 'signal'>;
   message: string;
   language?: string;
   user_agent?: string;

@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "scan:cms": "node scripts/scan-cms-tailwind.mjs",
-    "prebuild": "node scripts/scan-cms-tailwind.mjs || true",
+    "prebuild": "node scripts/prepare-build-css.mjs",
     "build": "astro check && astro build",
     "postbuild": "node scripts/verify-built-css.mjs",
     "preview": "astro preview",
@@ -22,13 +22,15 @@
     "directus:stop": "docker compose down",
     "directus:logs": "docker compose logs -f directus",
     "schema:sync": "node scripts/sync-directus-schema-complete.mjs",
-    "schema:snapshot": "docker exec directus_cms node /directus/cli.js schema snapshot --yes /directus/snapshots/schema.yaml",
-    "schema:apply": "docker exec directus_cms node /directus/cli.js schema apply --yes /directus/snapshots/schema.yaml",
+    "schema:snapshot": "node --env-file=.env scripts/cms-schema.mjs export",
+    "schema:apply": "node --env-file=.env scripts/cms-schema.mjs apply",
     "provision:all": "node --env-file=.env scripts/provision-all.mjs",
     "provision:editor-role": "node --env-file=.env scripts/setup-editor-role.mjs",
     "provision:global-controls": "node --env-file=.env scripts/setup-global-controls.mjs",
     "provision:insights": "node --env-file=.env scripts/setup-insights-dashboards.mjs",
-    "provision:external-tools": "node --env-file=.env scripts/setup-external-tools-dashboard.mjs"
+    "provision:external-tools": "node --env-file=.env scripts/setup-external-tools-dashboard.mjs",
+    "schema:diff": "node --env-file=.env scripts/cms-schema.mjs diff",
+    "cms:export": "node --env-file=.env scripts/cms-configuration.mjs export"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.5",
@@ -37,6 +39,7 @@
     "astro": "^7.3.2",
     "ioredis": "^6.0.0",
     "lottie-web": "^5.13.0",
+    "sanitize-html": "^2.17.7",
     "satori": "^0.33.4",
     "zod": "^4.6.1"
   },
@@ -46,6 +49,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.4",
+    "@types/sanitize-html": "^2.16.1",
     "eslint": "^10.10.0",
     "eslint-plugin-astro": "^1.7.0",
     "globals": "^17.12.0",

@@ -1,4 +1,5 @@
 ---
+import { richText, svgIcon } from '../../lib/rich-text';
 import { getServices, getAssetUrl } from "../../lib/directus";
 import { getCurrentLanguage, getLocalizedField } from "../../lib/i18n";
 import { getUI } from "../../lib/translations";
@@ -41,10 +42,24 @@ const allServicesData = await getServices({
 // Helper function to fetch SVG content
 async function fetchSvgContent(url: string): Promise<string | null> {
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {signal: AbortSignal.timeout(4000)});
     if (!response.ok) return null;
-    const text = await response.text();
-    return text;
+    if (Number(response.headers.get('content-length')) > 262144 || !response.body) {
+      await response.body?.cancel();
+      return null;
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let text = '';
+    let bytes = 0;
+    while (true) {
+      const {done,value} = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > 262144) { await reader.cancel(); return null; }
+      text += decoder.decode(value,{stream:true});
+    }
+    return svgIcon(text + decoder.decode());
   } catch (error) {
     console.error('Error fetching SVG:', error);
     return null;
@@ -136,8 +151,8 @@ const allServices = await Promise.all(
                 .replace(/stroke="[^"]*"/g, '')
                 .replace(/fill="[^"]*"/g, '')
                 .replace(/<svg/, usesFill 
-                  ? `<svg class="w-4 h-4 md:w-6 md:h-6" fill="currentColor"`
-                  : `<svg class="w-4 h-4 md:w-6 md:h-6" stroke="currentColor" fill="none" stroke-width="${isActive ? "2.5" : "1.5"}"`
+                  ? `<svg aria-hidden="true" focusable="false" class="w-4 h-4 md:w-6 md:h-6" fill="currentColor"`
+                  : `<svg aria-hidden="true" focusable="false" class="w-4 h-4 md:w-6 md:h-6" stroke="currentColor" fill="none" stroke-width="${isActive ? "2.5" : "1.5"}"`
                 );
             } else {
               // Fallback to hardcoded SVG icons based on slug
@@ -235,7 +250,7 @@ const allServices = await Promise.all(
           currentService.extendedDescription && (
             <div
               class="text-2xl sm:text-end text-start leading-tight mb-8 lg:mb-0"
-              set:html={currentService.extendedDescription}
+              set:html={richText(currentService.extendedDescription)}
             />
           )
         }

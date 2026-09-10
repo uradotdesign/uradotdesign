@@ -121,7 +121,16 @@ module.exports = function (data) {
 
   var phoneVal = blank(p.phone) ? "—" : esc(p.phone);
   var companyVal = blank(p.company) ? "—" : esc(p.company);
-  var prefVal = blank(p.contact_preference) ? "—" : esc(cap(p.contact_preference));
+  var prefVal =
+    Array.isArray(p.contact_preferences) && p.contact_preferences.length
+      ? p.contact_preferences
+          .map(function (v) {
+            return esc(cap(v));
+          })
+          .join(", ")
+      : blank(p.contact_preference)
+        ? "—"
+        : esc(cap(p.contact_preference));
   var langVal = blank(p.language)
     ? "—"
     : esc(LANGS[String(p.language).toLowerCase()] || p.language);
@@ -130,17 +139,17 @@ module.exports = function (data) {
 
   function row(label, valueHtml) {
     return (
-      '<tr>' +
+      "<tr>" +
       '<td style="padding:11px 0;border-bottom:1px solid ' +
       LINE +
-      ';width:40%;vertical-align:top;color:' +
+      ";width:40%;vertical-align:top;color:" +
       FAINT +
       ';font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;">' +
       label +
       "</td>" +
       '<td style="padding:11px 0;border-bottom:1px solid ' +
       LINE +
-      ';vertical-align:top;color:' +
+      ";vertical-align:top;color:" +
       INK +
       ';font-size:15px;line-height:1.45;">' +
       valueHtml +
@@ -160,7 +169,7 @@ module.exports = function (data) {
     row("Submitted (Berlin)", esc(whenVal));
 
   var html =
-    '<!DOCTYPE html>' +
+    "<!DOCTYPE html>" +
     '<html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<link rel="preconnect" href="https://fonts.googleapis.com">' +
@@ -191,7 +200,7 @@ module.exports = function (data) {
     '<tr><td style="padding:30px 32px 4px;">' +
     '<h1 style="margin:0;font-family:' +
     FONT_DISPLAY +
-    ';font-weight:400;font-size:27px;line-height:1.2;color:' +
+    ";font-weight:400;font-size:27px;line-height:1.2;color:" +
     INK +
     ';">New contact submission</h1>' +
     '<p style="margin:7px 0 0;color:' +
@@ -211,7 +220,7 @@ module.exports = function (data) {
     ';font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;">Message</p>' +
     '<div style="background:#f9fafb;border-left:3px solid ' +
     BRAND +
-    ';border-radius:10px;padding:16px 18px;color:' +
+    ";border-radius:10px;padding:16px 18px;color:" +
     INK +
     ';font-size:15px;line-height:1.65;white-space:pre-wrap;word-break:break-word;">' +
     messageVal +

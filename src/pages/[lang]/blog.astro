@@ -121,7 +121,7 @@ const blogJsonLd = {
 };
 ---
 
-<BaseLayout title={copy.title} description={copy.description} jsonLd={blogJsonLd}>
+<BaseLayout title={currentPage > 1 ? `${copy.title} – ${lang === 'de' ? 'Seite' : 'Page'} ${currentPage}` : copy.title} pageNumber={currentPage} description={copy.description} jsonLd={blogJsonLd}>
   {/* Hero Section */}
   <section
     class="relative flex items-end bg-[var(--color-background)] text-[var(--color-foreground)]"

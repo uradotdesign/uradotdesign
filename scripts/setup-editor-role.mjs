@@ -1,152 +1,251 @@
-/**
- * Provisions (idempotently) a scoped "Editor" role + policy in Directus.
- *
- * The Editor policy grants full CRUD on every NON-system content collection
- * (pages, posts, case studies, services, all block_* collections, junctions and
- * *_translations) plus read/create/update on the file library — but NO admin or
- * system access. Assign teammates to the Editor role so day-to-day content work
- * never needs an admin account.
- *
- * Safe + additive: existing roles/policies/permissions are detected and left in
- * place; nothing is deleted.
- *
- * Usage:
- *   node --env-file=.env scripts/setup-editor-role.mjs
- *
- * Requires admin credentials in the environment (DIRECTUS_ADMIN_TOKEN, or
- * DIRECTUS_EMAIL/ADMIN_EMAIL + DIRECTUS_PASSWORD/ADMIN_PASSWORD) and DIRECTUS_URL.
- */
+/** Reconcile named editorial policies. Never change user assignments. */
 import { createDirectusAdmin } from "./lib/directus-admin.mjs";
-
+import { CONTENT_ACTIONS, editorFields } from "./lib/editor-permissions.mjs";
 const { authRequest } = createDirectusAdmin();
 const j = JSON.stringify;
+const data = async (path) => (await authRequest(path)).data;
+const [collections, fields, policies, roles, permissions] = await Promise.all([
+  data("/collections?limit=-1"),
+  data("/fields"),
+  data("/policies?limit=-1"),
+  data("/roles?fields=id,name,policies.policy.id&limit=-1"),
+  data("/permissions?limit=-1"),
+]);
 
-const ROLE_NAME = "Editor";
-const POLICY_NAME = "Editor";
-
-async function findRole(name) {
-  const r = await authRequest(
-    `/roles?filter[name][_eq]=${encodeURIComponent(name)}&fields=id,name,policies.policy.id`
-  );
-  return r?.data?.[0] ?? null;
-}
-
-async function findPolicy(name) {
-  const r = await authRequest(
-    `/policies?filter[name][_eq]=${encodeURIComponent(name)}&fields=id,name`
-  );
-  return r?.data?.[0] ?? null;
-}
-
-async function listContentCollections() {
-  const all =
-    (await authRequest("/collections?limit=-1&fields=collection"))?.data ?? [];
-  return all
-    .map((c) => c.collection)
-    .filter((name) => name && !name.startsWith("directus_"));
-}
-
-async function permissionExists(policyId, collection, action) {
-  const res = await authRequest(
-    `/permissions?filter[policy][_eq]=${encodeURIComponent(policyId)}` +
-      `&filter[collection][_eq]=${encodeURIComponent(collection)}` +
-      `&filter[action][_eq]=${encodeURIComponent(action)}&limit=1`
-  );
-  const list = Array.isArray(res?.data) ? res.data : res;
-  return Array.isArray(list) && list.length > 0;
-}
-
-async function ensurePermission(policyId, collection, action, fields = "*") {
-  if (await permissionExists(policyId, collection, action)) {
-    console.log(`= perm ${action.padEnd(6)} ${collection}`);
-    return;
-  }
-  await authRequest("/permissions", {
-    method: "POST",
-    body: j({
-      policy: policyId,
-      collection,
-      action,
-      fields,
-      permissions: {},
-      validation: {},
-    }),
-  });
-  console.log(`+ perm ${action.padEnd(6)} ${collection}`);
-}
-
-async function main() {
-  console.log(`\nSetting up "${ROLE_NAME}" role -> ${process.env.DIRECTUS_URL}\n`);
-
-  // 1. Policy (app access, no admin).
-  let policy = await findPolicy(POLICY_NAME);
-  if (!policy) {
-    const created = await authRequest("/policies", {
-      method: "POST",
-      body: j({
-        name: POLICY_NAME,
-        icon: "edit_note",
-        description:
-          "Content editors: full CRUD on content, no admin/system access.",
-        app_access: true,
-        admin_access: false,
-        enforce_tfa: false,
-      }),
+async function policyAndRole(name, description) {
+  let policy = policies.find((p) => p.name === name);
+  const body = {
+    name,
+    description,
+    icon: "edit_note",
+    app_access: true,
+    admin_access: false,
+  };
+  if (!policy)
+    policy = (await authRequest("/policies", { method: "POST", body: j(body) }))
+      .data;
+  else
+    await authRequest(`/policies/${policy.id}`, {
+      method: "PATCH",
+      body: j(body),
     });
-    policy = created?.data;
-    console.log(`+ Created policy (${policy.id})`);
-  } else {
-    console.log(`= Policy exists (${policy.id})`);
-  }
-
-  // 2. Role attached to the policy.
-  let role = await findRole(ROLE_NAME);
-  if (!role) {
-    const created = await authRequest("/roles", {
+  const role = roles.find((r) => r.name === name);
+  if (!role)
+    await authRequest("/roles", {
       method: "POST",
       body: j({
-        name: ROLE_NAME,
+        name,
+        description,
         icon: "supervised_user_circle",
-        description: "Content editor (scoped, non-admin).",
         policies: [{ policy: policy.id }],
       }),
     });
-    role = created?.data;
-    console.log(`+ Created role (${role.id})`);
-  } else {
-    console.log(`= Role exists (${role.id})`);
-    const attached = (role.policies || []).some(
-      (p) => (p?.policy?.id || p?.policy) === policy.id
-    );
-    if (!attached) {
-      await authRequest(`/roles/${role.id}`, {
-        method: "PATCH",
-        body: j({ policies: { create: [{ policy: { id: policy.id } }] } }),
-      });
-      console.log(`= Attached policy to role`);
-    }
+  else if (
+    !role.policies?.some((p) => (p.policy?.id || p.policy) === policy.id)
+  ) {
+    await authRequest(`/roles/${role.id}`, {
+      method: "PATCH",
+      body: j({ policies: { create: [{ policy: policy.id }] } }),
+    });
   }
-
-  // 3. CRUD on every content collection.
-  const actions = ["create", "read", "update", "delete"];
-  const collections = await listContentCollections();
-  console.log(`\nGranting CRUD on ${collections.length} content collections:`);
-  for (const c of collections) {
-    for (const a of actions) await ensurePermission(policy.id, c, a);
-  }
-
-  // 4. File library: read + upload + edit (no delete by default).
-  console.log(`\nFile library:`);
-  for (const a of ["read", "create", "update"]) {
-    await ensurePermission(policy.id, "directus_files", a);
-  }
-
-  console.log(
-    `\nDone. Assign teammates to the "${ROLE_NAME}" role in Settings → Users.`
-  );
+  return policy.id;
 }
 
-main().catch((e) => {
-  console.error(e?.message || e);
-  process.exit(1);
+async function permission(
+  policy,
+  collection,
+  action,
+  allowedFields,
+  filter = {},
+  validation = {}
+) {
+  const existing = permissions.filter(
+    (p) =>
+      p.policy === policy && p.collection === collection && p.action === action
+  );
+  if (!allowedFields) {
+    for (const p of existing)
+      await authRequest(`/permissions/${p.id}`, { method: "DELETE" });
+    return;
+  }
+  const body = {
+    policy,
+    collection,
+    action,
+    fields: allowedFields,
+    permissions: filter,
+    validation,
+    presets: null,
+  };
+  if (existing[0]) {
+    if (
+      !Object.entries(body).every(
+        ([key, value]) => j(existing[0][key] ?? null) === j(value ?? null)
+      )
+    )
+      await authRequest(`/permissions/${existing[0].id}`, {
+        method: "PATCH",
+        body: j(body),
+      });
+  } else await authRequest("/permissions", { method: "POST", body: j(body) });
+  for (const duplicate of existing.slice(1))
+    await authRequest(`/permissions/${duplicate.id}`, { method: "DELETE" });
+}
+
+const editor = await policyAndRole(
+  "Editor",
+  "Day-to-day content, translations, ordering and media. No executable integrations, inquiries or administration."
+);
+const trusted = await policyAndRole(
+  "Trusted Designer",
+  "Trusted HTML, CSS, JavaScript and integrations, plus editorial content. No inquiries or administration."
+);
+const inquiries = await policyAndRole(
+  "Inquiries Manager",
+  "Read contact inquiries and update their workflow status. No content editing or administration."
+);
+// Pre-12.2 app policies may still have wildcard settings reads, including AI
+// provider credentials. Keep only Studio configuration required by the UI.
+for (const policy of [editor, trusted, inquiries]) {
+  await permission(policy, "directus_settings", "read", [
+    "id",
+    "project_url",
+    "project_logo",
+    "module_bar",
+    "storage_asset_transform",
+    "storage_asset_presets",
+    "custom_aspect_ratios",
+    "basemaps",
+    "mapbox_key",
+    "visual_editor_urls",
+    "collaborative_editing_enabled",
+    "report_error_url",
+    "default_save_action",
+  ]);
+  const profileFields = [
+    "first_name",
+    "last_name",
+    "password",
+    "avatar",
+    "location",
+    "title",
+    "description",
+    "tags",
+    "language",
+    "appearance",
+    "theme_dark",
+    "theme_light",
+    "theme_dark_overrides",
+    "theme_light_overrides",
+  ];
+  await permission(
+    policy,
+    "directus_users",
+    "update",
+    profileFields.filter((name) =>
+      fields.some((f) => f.collection === "directus_users" && f.field === name)
+    ),
+    { id: { _eq: "$CURRENT_USER" } }
+  );
+}
+const content = collections.filter(
+  (c) => c.schema && !c.collection.startsWith("directus_")
+);
+for (const c of content) {
+  const collectionFields = fields.filter((f) => f.collection === c.collection);
+  for (const action of CONTENT_ACTIONS) {
+    await permission(
+      editor,
+      c.collection,
+      action,
+      editorFields(c.collection, action, collectionFields)
+    );
+    await permission(
+      trusted,
+      c.collection,
+      action,
+      c.collection === "contact_submissions" ? null : ["*"]
+    );
+  }
+}
+// Shares are an additional disclosure capability. Routine editors use scoped
+// live preview; administrators manage share links and expiry deliberately.
+for (const policy of [editor, trusted]) {
+  // Studio 12 requires versions access even to create an item in a versioned
+  // collection. Scope drafts to content the role may edit, never inquiries.
+  const versioned = content
+    .filter(
+      (c) =>
+        c.meta?.versioning &&
+        (policy === trusted
+          ? c.collection !== "contact_submissions"
+          : editorFields(
+              c.collection,
+              "update",
+              fields.filter((f) => f.collection === c.collection)
+            ))
+    )
+    .map((c) => c.collection);
+  const versionScope = { collection: { _in: versioned } };
+  for (const action of CONTENT_ACTIONS) {
+    // Studio 12.3 checks update access against the virtual UUID "+" before
+    // autosaving its first draft. A row-filtered update returns false there.
+    // VersionsService.save/updateMany first read the version with the scoped
+    // read permission; promote also enforces the underlying content policy.
+    await permission(
+      policy,
+      "directus_versions",
+      action,
+      ["*"],
+      action === "update" ? {} : versionScope,
+      action === "create" ? versionScope : {}
+    );
+  }
+  const dashboards = (await data("/dashboards?fields=id,name&limit=-1")).filter(
+    (d) =>
+      [
+        "Content Overview",
+        "Publishing Pipeline",
+        "SEO Health",
+        "Media Library",
+        "Translations / i18n",
+      ].includes(d.name)
+  );
+  const ids = dashboards.map((d) => d.id);
+  await permission(policy, "directus_dashboards", "read", ["*"], {
+    id: { _in: ids },
+  });
+  await permission(policy, "directus_panels", "read", ["*"], {
+    dashboard: { _in: ids },
+  });
+  for (const action of CONTENT_ACTIONS)
+    await permission(policy, "directus_shares", action, null);
+  for (const collection of ["directus_files", "directus_folders"]) {
+    for (const action of ["read", "create", "update"])
+      await permission(policy, collection, action, ["*"]);
+  }
+}
+await permission(inquiries, "contact_submissions", "read", ["*"]);
+await permission(
+  inquiries,
+  "contact_submissions",
+  "update",
+  ["status"],
+  {},
+  { status: { _in: ["new", "in_progress", "closed", "spam"] } }
+);
+await permission(inquiries, "contact_submissions", "create", null);
+await permission(inquiries, "contact_submissions", "delete", null);
+const inquiryDashboards = (await data("/dashboards?fields=id,name&limit=-1"))
+  .filter((d) => d.name === "Leads")
+  .map((d) => d.id);
+await permission(inquiries, "directus_dashboards", "read", ["*"], {
+  id: { _in: inquiryDashboards },
 });
+await permission(inquiries, "directus_panels", "read", ["*"], {
+  dashboard: { _in: inquiryDashboards },
+});
+await authRequest("/utils/cache/clear", { method: "POST" });
+console.log(
+  `Reconciled Editor, Trusted Designer and Inquiries Manager across ${content.length} content collections. User assignments unchanged.`
+);

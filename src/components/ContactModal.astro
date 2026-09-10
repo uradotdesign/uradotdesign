@@ -6,7 +6,7 @@ import { t } from "../lib/translations";
 import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
 
 // Get current language
-const currentLang = getCurrentLanguage(Astro.url);
+const currentLang = Astro.locals.lang ?? getCurrentLanguage(Astro.url);
 
 const teamMembers = await getContactTeamMembers({
   fields: ["id", "full_name", "translations.*", "photo", "email"],

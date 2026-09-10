@@ -1,115 +1,61 @@
-/**
- * One-command, ordered provisioning of a Directus instance from the repo's
- * idempotent setup scripts — the single source of truth for "stand up / repair
- * the CMS". Every step is safe to re-run; existing collections, fields,
- * relations, permissions, flows and dashboards are detected and skipped.
- *
- * Run order matters: base schema → page-builder blocks → i18n → preview →
- * permissions → revalidate flow → roles/shares → scheduled publishing →
- * versioning → editorial guardrails → dashboards.
- *
- * Usage:
- *   npm run provision:all
- *   node --env-file=.env scripts/provision-all.mjs                # full run
- *   node --env-file=.env scripts/provision-all.mjs --only=editor-role,insights
- *   node --env-file=.env scripts/provision-all.mjs --continue-on-error
- *   node --env-file=.env scripts/provision-all.mjs --list
- *
- * Schema source of truth (separate from these scripts):
- *   npm run schema:snapshot   # write directus-snapshots/schema.yaml (commit it)
- *   npm run schema:apply      # re-apply it on another environment
- *
- * Custom extension deploy (panels + editorial interfaces). Extensions are NOT
- * installed over the API — build each, copy the built folder into the Directus
- * `extensions` volume, then restart:
- *   cd directus-extensions/panel-external-embed && npm install && npm run build
- *   cd directus-extensions/ura-interfaces      && npm install && npm run build
- *   docker cp directus-extensions/panel-external-embed \
- *     directus_cms:/directus/extensions/directus-extension-panel-external-embed
- *   docker cp directus-extensions/ura-interfaces \
- *     directus_cms:/directus/extensions/directus-extension-ura-interfaces
- *   docker compose restart directus
- */
+/** The committed native schema is the bootstrap source; historic migrations are not replayed. */
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// id -> script file. `requiresSecret` steps are skipped (with a warning) when
-// REVALIDATE_SECRET is absent so the rest of the run still succeeds.
-const STEPS = [
-  { id: "schema", file: "sync-directus-schema-complete.mjs" },
-  { id: "page-builder", file: "setup-page-builder.mjs" },
-  { id: "content-blocks", file: "setup-content-blocks.mjs" },
-  { id: "scripts-blocks", file: "setup-scripts-blocks.mjs" },
-  { id: "scripts-blocks-2", file: "setup-scripts-blocks-phase2.mjs" },
-  { id: "blocks-3", file: "setup-blocks-phase3.mjs" },
-  { id: "i18n", file: "setup-translations-languages.mjs" },
-  { id: "preview-access", file: "setup-preview-access.mjs" },
-  { id: "preview-urls", file: "setup-preview-urls.mjs" },
-  { id: "permissions", file: "reconcile-public-permissions.mjs" },
-  { id: "revalidate", file: "setup-revalidate-flow.mjs", requiresSecret: true },
-  { id: "editor-role", file: "setup-editor-role.mjs" },
-  { id: "global-controls", file: "setup-global-controls.mjs" },
-  { id: "editor-shares", file: "setup-editor-shares.mjs" },
-  { id: "scheduled-publishing", file: "setup-scheduled-publishing.mjs" },
-  { id: "content-versioning", file: "setup-content-versioning.mjs" },
-  { id: "validation-presets", file: "setup-validation-presets.mjs" },
-  { id: "insights", file: "setup-insights-dashboards.mjs" },
-  { id: "external-tools", file: "setup-external-tools-dashboard.mjs" },
-  { id: "i18n-dashboard", file: "setup-i18n-dashboard.mjs" },
+import { appendFileSync, chmodSync } from "node:fs";
+const steps = [
+  ["schema", "cms-schema.mjs", ["apply"]],
+  ["seed", "setup-cms-seed.mjs"],
+  ["configuration", "cms-configuration.mjs", ["apply"]],
+  ["website-access", "setup-website-access.mjs", ["--prepare"]],
+  ["preview-access", "setup-preview-access.mjs"],
+  ["preview-urls", "setup-preview-urls.mjs", [], "PREVIEW_SECRET"],
+  ["contact-email", "setup-contact-email-flow.mjs"],
+  ["contact-preferences", "setup-contact-preferences.mjs"],
+  ["scheduled-publishing", "setup-scheduled-publishing.mjs"],
+  ["editorial-ux", "setup-editorial-ux.mjs"],
+  ["native-fallbacks", "backfill-native-fallbacks.mjs"],
+  ["editorial-views", "setup-editorial-views.mjs"],
+  ["editor-role", "setup-editor-role.mjs"],
+  ["revalidate", "setup-revalidate-flow.mjs", [], "REVALIDATE_SECRET"],
 ];
-
-const args = process.argv.slice(2);
-const flag = (name) => args.includes(`--${name}`);
-const value = (name) => {
-  const hit = args.find((a) => a.startsWith(`--${name}=`));
-  return hit ? hit.split("=").slice(1).join("=") : null;
-};
-
-if (flag("list")) {
-  console.log("Provisioning steps (in order):");
-  for (const s of STEPS) console.log(`  ${s.id.padEnd(18)} ${s.file}`);
+if (process.argv.includes("--list")) {
+  for (const [id, file] of steps) console.log(`${id}: ${file}`);
   process.exit(0);
 }
-
-const only = value("only")?.split(",").map((s) => s.trim()).filter(Boolean) ?? null;
-const continueOnError = flag("continue-on-error");
-const steps = only ? STEPS.filter((s) => only.includes(s.id)) : STEPS;
-
-if (steps.length === 0) {
-  console.error(`No matching steps for --only=${only?.join(",")}`);
-  process.exit(1);
+const only = process.argv
+  .find((a) => a.startsWith("--only="))
+  ?.slice(7)
+  .split(",");
+if (only?.some((id) => !steps.some((s) => s[0] === id)))
+  throw new Error("Unknown provisioning step. Use --list.");
+const chosen = steps.filter((s) => !only || only.includes(s[0]));
+if (chosen.some((s) => ["website-access", "preview-access"].includes(s[0]))) {
+  if (!process.env.CMS_SECRETS_OUTPUT)
+    throw new Error(
+      "Set CMS_SECRETS_OUTPUT to a private env file. Existing website/preview credentials must be preserved there."
+    );
+  appendFileSync(process.env.CMS_SECRETS_OUTPUT, "", { mode: 0o600 });
+  chmodSync(process.env.CMS_SECRETS_OUTPUT, 0o600);
 }
-
-console.log(`\nProvisioning ${process.env.DIRECTUS_URL || "(DIRECTUS_URL unset)"}`);
-console.log(`Steps: ${steps.map((s) => s.id).join(", ")}\n`);
-
-let failures = 0;
-for (const step of steps) {
-  if (step.requiresSecret && !process.env.REVALIDATE_SECRET) {
-    console.warn(`! Skipping "${step.id}" — REVALIDATE_SECRET not set.\n`);
+let skipped = 0;
+for (const [id, file, args = [], required] of chosen) {
+  if (required && !process.env[required]) {
+    console.log(`Skipped ${id}: set ${required} to enable this integration.`);
+    skipped++;
     continue;
   }
-  console.log(`\n=== ${step.id} (${step.file}) ===`);
-  const res = spawnSync("node", [join(__dirname, step.file)], {
-    stdio: "inherit",
-    env: process.env,
-  });
-  if (res.status !== 0) {
-    failures += 1;
-    console.error(`✗ Step "${step.id}" failed (exit ${res.status}).`);
-    if (!continueOnError) {
-      console.error("Aborting. Re-run with --continue-on-error to skip failures.");
-      process.exit(res.status || 1);
-    }
-  }
+  console.log(`Running ${id}`);
+  const extra =
+    id === "website-access"
+      ? [`--env-file=${process.env.CMS_SECRETS_OUTPUT}`]
+      : [];
+  const result = spawnSync(
+    process.execPath,
+    [fileURLToPath(new URL(file, import.meta.url)), ...args, ...extra],
+    { stdio: "inherit", env: process.env }
+  );
+  if (result.status !== 0) process.exit(result.status || 1);
 }
-
 console.log(
-  failures === 0
-    ? `\n✓ Provisioning complete.`
-    : `\n⚠ Provisioning finished with ${failures} failed step(s).`
+  `Provisioning steps passed; ${skipped} optional integrations skipped. New contact mail flows stay inactive until SMTP and recipients are configured.`
 );
-process.exit(failures === 0 ? 0 : 1);

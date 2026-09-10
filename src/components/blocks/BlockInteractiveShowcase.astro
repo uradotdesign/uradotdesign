@@ -1,4 +1,5 @@
 ---
+import { richText } from '../../lib/rich-text';
 import { getAssetUrl } from '../../lib/directus';
 import { getLocalizedField, type Language } from '../../lib/i18n';
 import { getUI } from '../../lib/translations';
@@ -49,7 +50,7 @@ const tabs = (Array.isArray(data.tabs) ? data.tabs : [])
         >
           {tabs.map((t) => (
             <div data-label={t.label}>
-              <div class="description" set:html={t.description} />
+              <div class="description" set:html={richText(t.description)} />
               <div class="visual">
                 {t.lotties.length > 0 ? (
                   <>

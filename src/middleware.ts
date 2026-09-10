@@ -6,9 +6,8 @@ import { runWithRequestCache } from './lib/request-cache';
  * Baseline security headers applied to every response.
  *
  * Note on CSP: the site renders trusted admin-authored `custom_code` (inline
- * HTML/JS) and uses inline bootstrap scripts plus Lottie (which relies on
- * `eval`). A full `script-src`/`style-src` policy would therefore need
- * `'unsafe-inline'`/`'unsafe-eval'` (little protection) or a nonce refactor.
+ * HTML/JS) and uses inline bootstrap scripts. A full `script-src`/`style-src`
+ * policy needs a nonce refactor and a contract for trusted custom content.
  * We enforce only the directives that add real protection without breaking
  * resource loading: clickjacking (`frame-ancestors`), plugin/object blocking,
  * and `base-uri` injection hardening. A full `script-src` policy can be layered
@@ -40,7 +39,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Detect language from path and store it for pages.
   const url = new URL(context.request.url);
   const langMatch = url.pathname.match(/^\/(en|de)(\/|$)/);
-  context.locals.lang = (langMatch ? langMatch[1] : 'en') as 'en' | 'de';
+  context.locals.lang ??= (langMatch ? langMatch[1] : 'en') as 'en' | 'de';
+  context.locals.originalUrl ??= url.href;
+  if (['GET', 'HEAD'].includes(context.request.method) && /^\/(en|de)\//.test(url.pathname) && url.pathname.endsWith('/')) {
+    url.pathname = url.pathname.replace(/\/+$/, '');
+    return context.redirect(url.pathname + url.search, 308);
+  }
 
   const isPreview =
     Boolean(previewSecret) && url.searchParams.get('preview') === previewSecret;

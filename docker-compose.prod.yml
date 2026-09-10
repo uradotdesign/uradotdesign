@@ -1,7 +1,16 @@
+secrets:
+  cms-classes:
+    file: ./.cms-build/classes.html
+
 services:
   # 1. Your Astro Website
   astro:
-    build: .
+    build:
+      context: .
+      args:
+        REQUIRE_CMS_CLASSES: "true"
+      secrets:
+        - cms-classes
     restart: unless-stopped
     ports:
       - "127.0.0.1:4321:4321" # Expose only to localhost for Nginx reverse proxy
@@ -72,7 +81,7 @@ services:
       - directus_uploads:/directus/uploads
       - directus_extensions:/directus/extensions
       # Version-controlled schema snapshots (source of truth). `npm run
-      # schema:snapshot` writes schema.yaml here so it can be committed; `npm run
+      # schema:snapshot` writes schema.json here so it can be committed; `npm run
       # schema:apply` re-applies it. Additive mount — does not touch uploads/extensions.
       - ./directus-snapshots:/directus/snapshots
     environment:

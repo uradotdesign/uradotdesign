@@ -11,7 +11,12 @@ let lottiePromise = null;
 
 export function loadLottie() {
   if (!lottiePromise) {
-    lottiePromise = import("lottie-web").then((m) => m.default || m);
+    // All CMS animations use SVG and keyframes. The light player omits the
+    // expression evaluator: uploaded JSON cannot execute expressions as code.
+    lottiePromise = import("lottie-web/build/player/lottie_light.js").then((m) => m.default || m).catch(error => {
+      lottiePromise = null;
+      throw error;
+    });
   }
   return lottiePromise;
 }
