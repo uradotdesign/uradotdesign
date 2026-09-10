@@ -182,6 +182,7 @@ const copyrightText = localized("copyright_text");
 ---
 
 <footer
+  data-site-footer
   class="relative overflow-hidden"
   data-weather-location={showTemperature ? weatherLocation : undefined}
   data-bg-color-light={bgColorLight}
@@ -577,7 +578,7 @@ const copyrightText = localized("copyright_text");
   }
 
   function initFooter() {
-    const footer = document.querySelector<HTMLElement>("footer");
+    const footer = document.querySelector<HTMLElement>("footer[data-site-footer]");
     if (!footer) return;
     for (const theme of ["light", "dark"]) {
       const color = footer.getAttribute(`data-bg-color-${theme}`);
