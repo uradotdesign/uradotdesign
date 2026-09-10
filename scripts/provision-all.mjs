@@ -51,6 +51,7 @@ const STEPS = [
   { id: "permissions", file: "reconcile-public-permissions.mjs" },
   { id: "revalidate", file: "setup-revalidate-flow.mjs", requiresSecret: true },
   { id: "editor-role", file: "setup-editor-role.mjs" },
+  { id: "global-controls", file: "setup-global-controls.mjs" },
   { id: "editor-shares", file: "setup-editor-shares.mjs" },
   { id: "scheduled-publishing", file: "setup-scheduled-publishing.mjs" },
   { id: "content-versioning", file: "setup-content-versioning.mjs" },

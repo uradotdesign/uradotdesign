@@ -25,6 +25,7 @@
     "schema:apply": "docker exec directus_cms node /directus/cli.js schema apply --yes /directus/snapshots/schema.yaml",
     "provision:all": "node --env-file=.env scripts/provision-all.mjs",
     "provision:editor-role": "node --env-file=.env scripts/setup-editor-role.mjs",
+    "provision:global-controls": "node --env-file=.env scripts/setup-global-controls.mjs",
     "provision:insights": "node --env-file=.env scripts/setup-insights-dashboards.mjs",
     "provision:external-tools": "node --env-file=.env scripts/setup-external-tools-dashboard.mjs"
   },

@@ -12,6 +12,7 @@ const CHILD_COLLECTIONS = new Set([
   "service_checklist_items",
   "posts_related",
   "case_studies_related",
+  "footer_links",
 ]);
 
 export function needsWebsiteIdentity(collection, action) {

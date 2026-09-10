@@ -77,7 +77,7 @@ mock.method(
 );
 
 const { remember } = await import("../src/lib/redis.ts");
-const { getClients, getSiteSettings, getPreviewItemBySlug } =
+const { getClients, getSiteSettings, getFooterSettings, getPreviewItemBySlug } =
   await import("../src/lib/directus.ts");
 const { POST: revalidate } = await import("../src/pages/api/revalidate.ts");
 const { POST: contact } = await import("../src/pages/api/contact.ts");
@@ -90,6 +90,16 @@ beforeEach(() => {
   state.count = 0;
   state.fetchCalls = [];
   state.upstreamStatus = 200;
+});
+
+test("footer rollout bypasses cached relation IDs and requests translated links", async () => {
+  state.values.set("directus:config:footer_settings", JSON.stringify({ id: 1, links: [1, 2] }));
+  await getFooterSettings();
+  assert.equal(state.fetchCalls.length, 1);
+  const fields = new URL(state.fetchCalls[0].url).searchParams.get("fields");
+  assert.ok(fields?.includes("links.*"));
+  assert.ok(fields?.includes("links.translations.*"));
+  assert.equal(state.fetchCalls[0].authorization, "Bearer test-website-token");
 });
 
 test("a failed CMS fetch is not cached and the next request recovers", async () => {

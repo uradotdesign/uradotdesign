@@ -1,5 +1,7 @@
 ---
-import { getContactTeamMembers, getAssetUrl } from "../lib/directus";
+import { getContactTeamMembers, getAssetUrl, getSiteSettings } from "../lib/directus";
+import { GLOBAL_COPY } from "../lib/global-defaults.mjs";
+import { isEnabled } from "../lib/global-content";
 import { t } from "../lib/translations";
 import { getCurrentLanguage, getLocalizedField } from "../lib/i18n";
 
@@ -10,17 +12,13 @@ const teamMembers = await getContactTeamMembers({
   fields: ["id", "full_name", "translations.*", "photo", "email"],
 });
 
-// Localized section copy (localized strings, no CMS lookup needed).
-const label = currentLang === "de" ? "Kontakt" : "Got a project in mind?";
-
-const heading =
-  currentLang === "de"
-    ? "Lassen Sie uns zusammen etwas Großartiges erschaffen."
-    : "Let's bring clarity to your project, together";
-
-const responseTime = currentLang === "de" ? "72 Stunden" : "72 hours";
-
-const buttonText = currentLang === "de" ? "Nachricht senden" : "Send request";
+const siteSettings = await getSiteSettings();
+const copy = (field: keyof typeof GLOBAL_COPY.en) => getLocalizedField(siteSettings, field, currentLang) || GLOBAL_COPY[currentLang][field];
+const label = copy("contact_label");
+const heading = copy("contact_heading");
+const responseTime = copy("contact_response_time");
+const buttonText = copy("contact_button_text");
+const showTeam = isEnabled(siteSettings?.show_contact_team);
 
 // Form labels (localized)
 const labels = {
@@ -190,7 +188,7 @@ const clientMessages = {
 
           <div class="flex items-center gap-4">
             {
-              teamMembers.length > 0 && (
+              showTeam && teamMembers.length > 0 && (
                 <div class="flex items-center -space-x-3">
                   {teamMembers.slice(0, 3).map(
                     (member, index) =>

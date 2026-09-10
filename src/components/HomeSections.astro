@@ -1,0 +1,29 @@
+---
+import Clients from "./sections/Clients.astro";
+import ServicesGrid from "./sections/ServicesGrid.astro";
+import CaseStudies from "./sections/CaseStudies.astro";
+import Testimonials from "./sections/Testimonials.astro";
+import LatestFromUs from "./sections/LatestFromUs.astro";
+import { HOME_SECTIONS, visibleSections } from "../lib/global-content";
+interface Props {
+  sections?: unknown;
+  configured?: boolean;
+}
+const components = {
+  clients: Clients,
+  services: ServicesGrid,
+  case_studies: CaseStudies,
+  testimonials: Testimonials,
+  latest: LatestFromUs,
+};
+const sections = visibleSections(
+  Astro.props.sections,
+  HOME_SECTIONS,
+  Astro.props.configured
+);
+---
+
+{sections.map((section) => {
+  const Component = components[section];
+  return <Component />;
+})}
