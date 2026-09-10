@@ -92,8 +92,8 @@ const siteDescription =
 
 // Favicon
 const faviconUrl = settings?.favicon
-  ? getAssetUrl(settings.favicon) || "/favicon.svg"
-  : "/favicon.svg";
+  ? getAssetUrl(settings.favicon) || "/favicon.svg?v=ura-mark-1"
+  : "/favicon.svg?v=ura-mark-1";
 // CMS asset URLs have no extension. Omit the optional type for uploaded files
 // and let the asset's real Content-Type describe SVG, PNG or ICO accurately.
 const faviconType = settings?.favicon ? undefined : 'image/svg+xml';
@@ -226,9 +226,9 @@ const serializeJsonLd = (obj: Record<string, any>) =>
       crossorigin="anonymous"
     />
 
+    <link rel="icon" href="/favicon.ico?v=ura-mark-1" sizes="16x16 32x32 48x48" />
     <link rel="icon" type={faviconType} href={faviconUrl} />
-    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=ura-mark-1" sizes="180x180" />
     <ClientRouter fallback="animate" />
 
     {/* Live Preview only: runtime Tailwind so unsafelisted classes render live. */}
