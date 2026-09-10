@@ -5,7 +5,7 @@
  *
  * Trigger:  action event on items.create / items.update / items.delete for the
  *           content collections (submissions and nav folders excluded).
- * Action:   POST http://astro:4321/api/revalidate (internal Docker network)
+ * Action:   POST to the configured stable site origin (or local Compose in development)
  *           with the shared secret header.
  *
  * Requires REVALIDATE_SECRET in the environment (must match the value Astro
@@ -31,7 +31,10 @@ if (TRIGGER_ONLY) {
 
 const FLOW_NAME = "Revalidate Astro cache";
 const REVALIDATE_URL =
-  process.env.REVALIDATE_URL || "http://astro:4321/api/revalidate";
+  process.env.REVALIDATE_URL ||
+  (process.env.SITE_URL
+    ? new URL("/api/revalidate", process.env.SITE_URL).href
+    : "http://astro:4321/api/revalidate");
 
 const COLLECTIONS = [
   "about_page",
