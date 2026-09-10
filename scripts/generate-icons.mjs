@@ -1,4 +1,4 @@
-/** Deterministic raster/ICO exports of the existing SVG favicon. */
+/** Deterministic exports of Ura's existing CMS brand icon (85d96b0e-be3e-48f5-822e-037842927728). */
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
@@ -11,7 +11,9 @@ const svg = await readFile(
   "utf8"
 );
 const png = (size) => {
-  const resvg = new Resvg(svg, { fitTo: { mode: "width", value: size } });
+  // Preserve the original mark's aspect ratio on a square, transparent canvas.
+  const square = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 44 44">${svg.replace('<svg ', '<svg x="0" y="2" ')}</svg>`;
+  const resvg = new Resvg(square);
   const rendered = resvg.render();
   try {
     return Buffer.from(rendered.asPng());

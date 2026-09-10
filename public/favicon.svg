@@ -1,4 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="ura.design">
-  <rect width="32" height="32" rx="7" fill="#141414"/>
-  <path d="M10 10.5v6a6 6 0 0 0 12 0v-6" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<svg width="44" height="40" viewBox="0 0 44 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style>
+    path {
+        fill: #1F78D1 !important;
+    }
+    @media (prefers-color-scheme: dark) {
+        path {
+            fill: #fff !important;
+        }
+    }
+</style>
+<path d="M9.89096 40.0004L17.134 19.6465C11.0393 20.4429 5.47446 23.0093 0.792969 26.9031C1.94126 32.3013 5.2978 36.9031 9.89096 40.0004Z"/>
+<path d="M33.125 40.0004C37.8065 37.0801 41.163 32.3898 42.3996 26.9031C37.7182 22.8323 32.1534 20.266 26.0586 19.6465L33.125 40.0004Z"/>
+<path d="M43.105 22.7433V21.7699C43.105 9.646 33.4771 0 21.6409 0C9.80463 0 0 9.646 0 21.7699V22.7433C6.27143 18.0531 13.7795 15.4867 21.6409 15.4867C29.3256 15.4867 36.8336 18.0531 43.105 22.7433Z"/>
 </svg>
