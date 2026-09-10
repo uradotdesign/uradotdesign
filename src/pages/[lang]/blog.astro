@@ -283,6 +283,7 @@ const blogJsonLd = {
                 {/* Image */}
                 <a
                   href={`/${lang}/blog/${article.slug}`}
+                  aria-label={article.title}
                   class="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-900 mb-6"
                 >
                   {article.cover_image ? (

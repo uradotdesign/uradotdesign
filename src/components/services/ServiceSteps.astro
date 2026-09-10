@@ -57,14 +57,14 @@ const ui = await getUI(currentLang);
             <div class="flex items-start gap-6 lg:gap-8">
               <!-- Small Number on Left -->
               <span
-                class="text-xl font-normal flex-shrink-0 pt-1 text-[var(--timeline-accent)]"
+                class="step-number text-xl font-normal flex-shrink-0 pt-1 text-foreground"
               >
                 {step.number}
               </span>
 
               <!-- Content on Right -->
-              <div class="flex-1">
-                <h3 class="font-display text-4xl sm:text-5xl lg:text-6xl font-normal leading-tight mb-6">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-display text-4xl sm:text-5xl lg:text-6xl font-normal leading-tight mb-6 [overflow-wrap:anywhere]">
                   {step.title}
                 </h3>
                 
@@ -91,6 +91,12 @@ const ui = await getUI(currentLang);
     </div>
   </div>
 </section>
+
+<style>
+  .step-number {
+    color: color-mix(in srgb, var(--timeline-accent) 40%, var(--color-foreground));
+  }
+</style>
 
 <script>
   import type { AnimationItem } from 'lottie-web';

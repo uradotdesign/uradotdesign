@@ -23,20 +23,10 @@ for name in [app, 'directus_cms', 'directus_postgres', 'ura_redis']:
     except (subprocess.SubprocessError, ValueError):
         failures.append(name + ' cannot be inspected')
 try:
-    # Only an aggregate count leaves Postgres; no credentials/content are printed.
-    script = '''psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "SELECT count(*) FROM directus_flows WHERE status='active'"'''
-    if int(output(['docker', 'exec', 'directus_postgres', 'sh', '-ec', script])) < 3:
-        failures.append('A required CMS flow is inactive')
-    # A terminal failed operation is actionable; a false Condition branch is not.
-    sql = """SELECT count(*) FROM directus_revisions r
-      JOIN directus_activity a ON a.id=r.activity
-      JOIN directus_operations o ON o.id::text=(r.data::jsonb->'steps'->-1->>'operation')
-      WHERE r.collection='directus_flows' AND a.timestamp > now()-interval '20 minutes'
-      AND r.data::jsonb->'steps'->-1->>'status'='reject' AND o.type <> 'condition'"""
-    script = 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc ' + __import__('shlex').quote(sql)
-    if int(output(['docker', 'exec', 'directus_postgres', 'sh', '-ec', script])):
-        failures.append('A CMS flow ended with a failed operation in the last 20 minutes')
-except subprocess.SubprocessError:
+    # A persisted inspection cursor covers delayed or dropped scheduler runs.
+    from ura_monitor import inspect_flows
+    failures.extend(inspect_flows(output))
+except (subprocess.SubprocessError, OSError, ValueError, KeyError):
     failures.append('CMS database or required flows check failed')
 try:
     for name in ['ura.design', 'cms.ura.design']:

@@ -48,6 +48,27 @@
 /* Long-tail classes actually used in CMS content (regenerated at build time). */
 @source "./cms-classes.generated.html";
 
+/* Native CMS formatting presets. Keep these outside generated utilities so
+   editors can use them immediately without adding class names or rebuilding. */
+.ura-section-label {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-transform: uppercase;
+  margin-block: 0 2rem;
+}
+.ura-lead {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  line-height: 1.5;
+}
+.ura-highlight {
+  color: var(--color-background);
+  background-color: var(--color-foreground);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 /*
  * Z-Index Scale:
  * --z-base:      0   (default stacking)

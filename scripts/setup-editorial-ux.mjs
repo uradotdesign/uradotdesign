@@ -1,6 +1,7 @@
 /** Standardize current native forms and defaults without changing content. */
 import { createDirectusAdmin } from "./lib/directus-admin.mjs";
 import { buildLayoutPlan, isLayoutField } from "./lib/cms-form-layout.mjs";
+import { withEditorFormats } from "./lib/editor-formats.mjs";
 const { authRequest, ensureField } = createDirectusAdmin();
 const j = JSON.stringify;
 const data = async (path) => (await authRequest(path)).data;
@@ -259,11 +260,12 @@ for (const c of collections.filter((c) => c.schema)) {
     }
     if ((changes.interface || f.meta?.interface) === "input-rich-text-html") {
       changes.note =
-        "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.";
+        "Use native headings, lists and the Ura formatting menu for section labels, lead paragraphs and highlights; no CSS classes or rebuild needed. For legacy HTML, review the comparison before converting. Edit Raw HTML preserves existing markup.";
       if (f.meta?.options?.tinymceOverrides) {
         const { tinymceOverrides: _deprecated, ...options } = f.meta.options;
         changes.options = options;
       }
+      changes.options = withEditorFormats(changes.options || f.meta?.options || {});
     }
     if (f.field === "show_in_hero") {
       changes.translations = [

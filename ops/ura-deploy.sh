@@ -25,7 +25,7 @@ image="ura-astro:$sha"
 test "$(docker image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$sha"
 backend_hash=$(git ls-files Dockerfile.directus docker-compose.prod.yml directus-extensions scripts/patch-directus-picker.mjs scripts/verify-directus-ui-build.mjs | xargs sha256sum | sha256sum | cut -d ' ' -f1)
 if [ ! -f "$state/backend-hash" ] || [ "$(cat "$state/backend-hash")" != "$backend_hash" ]; then
-  /usr/local/sbin/ura-backup
+  URA_DEPLOY_LOCK_HELD=1 /usr/local/sbin/ura-backup
   docker compose -f docker-compose.prod.yml up -d --no-build --wait --wait-timeout 240 postgres redis directus
   # Bundles are built in CI and shipped inside the verified CMS image.
   for extension in panel-external-embed ura-interfaces; do

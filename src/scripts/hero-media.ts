@@ -26,6 +26,9 @@ function update() {
   const active = document.getElementById(activeId);
   control.style.display = active instanceof HTMLVideoElement ? 'flex' : 'none';
   for (const video of videos()) {
+    if (video.id === activeId && control.dataset.state === 'paused' && video.readyState === 0 && video.dataset.posterSrc) {
+      video.poster = video.dataset.posterSrc;
+    }
     if (video.id !== activeId || control.dataset.state !== 'playing' || document.hidden || !inView) {
       video.pause();
       continue;
@@ -38,6 +41,7 @@ function update() {
     }).catch(() => {
       if (video.isConnected && button() === control) {
         control.dataset.state = 'paused';
+        if (video.readyState === 0 && video.dataset.posterSrc) video.poster = video.dataset.posterSrc;
         draw();
       }
     });

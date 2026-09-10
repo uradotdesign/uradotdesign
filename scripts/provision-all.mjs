@@ -7,6 +7,7 @@ const steps = [
   ["seed", "setup-cms-seed.mjs"],
   ["configuration", "cms-configuration.mjs", ["apply"]],
   ["website-access", "setup-website-access.mjs", ["--prepare"]],
+  ["hero-metadata", "setup-hero-metadata.mjs"],
   ["preview-access", "setup-preview-access.mjs"],
   ["preview-urls", "setup-preview-urls.mjs", [], "PREVIEW_SECRET"],
   ["contact-email", "setup-contact-email-flow.mjs"],

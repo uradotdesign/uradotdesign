@@ -41,6 +41,11 @@ const darkFileMetadata = mediaDarkId ? await getFileMetadata(mediaDarkId) : null
 // Determine if media is video based on file type from Directus or file extension
 const isVideoLight = lightFileMetadata?.type?.startsWith('video/') || mediaLight?.match(/\.(mp4|webm|ogg)$/i);
 const isVideoDark = darkFileMetadata?.type?.startsWith('video/') || mediaDark?.match(/\.(mp4|webm|ogg)$/i);
+// Full-resolution, lossless first frame of the current film. Never show this
+// stale frame after an editor replaces the video, including in-place replacement.
+const darkPoster = mediaDarkId === '2f10ae5d-0791-4640-a74c-277e01d58a6d'
+  && Date.parse(darkFileMetadata?.modified_on || '') === Date.parse('2026-09-10T19:46:45.117Z')
+  ? '/hero-dark-poster.webp' : undefined;
 
 // Services with fallback and localization
 const services = servicesData.length > 0
@@ -61,7 +66,7 @@ const services = servicesData.length > 0
 <section class="hero-wrapper relative min-h-[100dvh] lg:min-h-screen">
   <!-- Hero Background - Video or Image for Light Theme -->
   {isVideoLight ? (
-    <video id="hero-media-light" data-is-video="true" poster={!isVideoDark ? mediaDark : undefined} class="hero-video hero-video-light" muted loop playsinline aria-hidden="true" preload="none">
+    <video id="hero-media-light" data-is-video="true" class="hero-video hero-video-light" muted loop playsinline aria-hidden="true" preload="none">
       <source src={mediaLight} type={lightFileMetadata?.type || (mediaLight?.endsWith('.webm') ? 'video/webm' : mediaLight?.endsWith('.ogg') ? 'video/ogg' : 'video/mp4')} />
     </video>
   ) : (
@@ -70,7 +75,7 @@ const services = servicesData.length > 0
   
   <!-- Hero Background - Video or Image for Dark Theme -->
   {isVideoDark ? (
-    <video id="hero-media-dark" data-is-video="true" poster={!isVideoLight ? mediaLight : undefined} class="hero-video hero-video-dark" muted loop playsinline aria-hidden="true" preload="none">
+    <video id="hero-media-dark" data-is-video="true" data-poster-src={darkPoster} class="hero-video hero-video-dark" muted loop playsinline aria-hidden="true" preload="none">
       <source src={mediaDark} type={darkFileMetadata?.type || (mediaDark?.endsWith('.webm') ? 'video/webm' : mediaDark?.endsWith('.ogg') ? 'video/ogg' : 'video/mp4')} />
     </video>
   ) : (
@@ -153,6 +158,17 @@ const services = servicesData.length > 0
   /* Hero wrapper - normal flow, no sticky/overlay */
   .hero-wrapper {
     position: relative;
+  }
+
+  /* Maintain readable white copy over even the brightest frames. The original
+     media stays untouched; this also covers the reduced-motion poster. */
+  :global(.dark) .hero-wrapper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 55%);
+    pointer-events: none;
+    z-index: 0;
   }
 
   .hero-content {
