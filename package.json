@@ -30,7 +30,9 @@
     "provision:insights": "node --env-file=.env scripts/setup-insights-dashboards.mjs",
     "provision:external-tools": "node --env-file=.env scripts/setup-external-tools-dashboard.mjs",
     "schema:diff": "node --env-file=.env scripts/cms-schema.mjs diff",
-    "cms:export": "node --env-file=.env scripts/cms-configuration.mjs export"
+    "cms:export": "node --env-file=.env scripts/cms-configuration.mjs export",
+    "test:browser": "playwright test",
+    "directus:review-upgrade": "node scripts/review-directus-upgrade.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.5",
@@ -46,10 +48,12 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.4",
     "@types/sanitize-html": "^2.16.1",
+    "axe-core": "4.13.0",
     "eslint": "^10.10.0",
     "eslint-plugin-astro": "^1.7.0",
     "globals": "^17.12.0",

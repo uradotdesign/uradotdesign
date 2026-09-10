@@ -38,6 +38,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check operational scripts and delayed monitoring
+        run: |
+          bash -n ops/ura-backup.sh ops/ura-deploy.sh
+          python3 -m py_compile ops/ura-health.py ops/ura-recovery-test.py
+          python3 -m unittest discover -s ops -p 'test_*.py'
+
       - name: Test
         run: npm test
         env:

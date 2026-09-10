@@ -58,18 +58,17 @@ const services = servicesData.length > 0
     </div>
 
     <!-- Services Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16" role="list">
+    <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16 list-none" role="list">
       {services.map((service) => {
         const titleId = `service-${service.id}-title`;
         const descriptionId = `service-${service.id}-description`;
 
         return (
-          <article 
+          <li 
             class="service-item group relative" 
             data-spotlight-color={service.colorAccent}
             data-service-id={service.id}
             style={`--service-accent: ${service.colorAccent || "#10b981"};`}
-            role="listitem"
             aria-labelledby={service.title ? titleId : undefined}
             aria-describedby={service.description ? descriptionId : undefined}
           >
@@ -118,10 +117,10 @@ const services = servicesData.length > 0
             >
               {service.ctaText}
             </a>
-          </article>
+          </li>
         );
       })}
-    </div>
+    </ul>
   </div>
 </section>
 

@@ -45,7 +45,7 @@ const defaultLinkText = caseStudy?.linkText || ui("services.seeHow");
         </div>
 
         <!-- Accordion -->
-        <div class="space-y-0" data-spotlight-container role="list">
+        <div class="space-y-0" data-spotlight-container>
           {
             activities.map((activity, index) => (
               <details
@@ -54,7 +54,6 @@ const defaultLinkText = caseStudy?.linkText || ui("services.seeHow");
                   index === 0 ? "border-t-0" : "border-t",
                 ]}
                 open={activity.isOpen}
-                role="listitem"
               >
                 <summary class="w-full py-8 flex items-center justify-between text-left relative cursor-pointer list-none marker:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-border)]">
                   <h3 class="spotlight-text text-2xl sm:text-3xl lg:text-4xl font-normal leading-tight pr-8 font-display">
@@ -121,7 +120,7 @@ const defaultLinkText = caseStudy?.linkText || ui("services.seeHow");
             
             <a
               href={caseStudy.link}
-              class="group flex flex-col relative overflow-hidden rounded-2xl border border-foreground/10 hover:border-foreground/20 transition-all duration-300 min-h-[400px] aspect-[4/5] md:aspect-[3/4] lg:aspect-auto"
+              class="group flex flex-col relative min-w-0 w-full overflow-hidden rounded-2xl border border-foreground/10 hover:border-foreground/20 transition-all duration-300 min-h-[400px] aspect-[4/5] md:aspect-[3/4] lg:aspect-auto"
             >
               <!-- Background Image (if provided) -->
               {

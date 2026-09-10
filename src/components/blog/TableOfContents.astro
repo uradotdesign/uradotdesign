@@ -18,7 +18,7 @@ const show = headings.length >= minHeadings;
       aria-label={label}
       class="toc not-prose mb-16 border-l border-[var(--color-border)] pl-5"
     >
-      <p class="text-xs font-semibold uppercase tracking-wider opacity-60 mb-4">
+      <p class="text-xs font-semibold uppercase tracking-wider opacity-90 mb-4">
         {label}
       </p>
       <ol class="space-y-2 text-sm leading-snug">
@@ -26,7 +26,7 @@ const show = headings.length >= minHeadings;
           <li class={h.level === 3 ? "pl-4" : ""}>
             <a
               href={`#${h.id}`}
-              class="inline-block opacity-70 hover:opacity-100 hover:underline decoration-1 underline-offset-4 transition-opacity"
+              class="inline-block opacity-90 hover:opacity-100 hover:underline decoration-1 underline-offset-4 transition-opacity"
             >
               {h.text}
             </a>

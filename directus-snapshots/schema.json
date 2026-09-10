@@ -7318,7 +7318,25 @@
         "hidden": false,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -13610,7 +13628,25 @@
         "hidden": false,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -17047,7 +17083,25 @@
         "hidden": false,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -19268,7 +19322,25 @@
         "hidden": false,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -20030,7 +20102,25 @@
         "hidden": false,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -24646,6 +24736,23 @@
             "visualaid",
             "charmap",
             "emoticons"
+          ],
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
           ]
         },
         "readonly": true,
@@ -24757,6 +24864,23 @@
             "visualaid",
             "charmap",
             "emoticons"
+          ],
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
           ]
         },
         "readonly": true,
@@ -24873,6 +24997,23 @@
             "visualaid",
             "charmap",
             "emoticons"
+          ],
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
           ]
         },
         "readonly": true,
@@ -25434,6 +25575,23 @@
             "visualaid",
             "charmap",
             "emoticons"
+          ],
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
           ]
         },
         "readonly": false,
@@ -25532,6 +25690,23 @@
             "visualaid",
             "charmap",
             "emoticons"
+          ],
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
           ]
         },
         "readonly": false,
@@ -25630,6 +25805,23 @@
             "visualaid",
             "charmap",
             "emoticons"
+          ],
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
           ]
         },
         "readonly": false,
@@ -28191,7 +28383,25 @@
         "hidden": false,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -34921,6 +35131,23 @@
             "fullscreen",
             "ltr",
             "rtl"
+          ],
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
           ]
         },
         "readonly": true,
@@ -35959,7 +36186,25 @@
         "hidden": false,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -36377,7 +36622,25 @@
         "hidden": true,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": true,
         "required": false,
         "searchable": true,
@@ -37463,7 +37726,25 @@
         "hidden": false,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -41582,7 +41863,25 @@
         "hidden": false,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
-        "options": null,
+        "options": {
+          "customFormats": [
+            {
+              "title": "Ura: Section label",
+              "block": "p",
+              "classes": "ura-section-label"
+            },
+            {
+              "title": "Ura: Lead paragraph",
+              "block": "p",
+              "classes": "ura-lead"
+            },
+            {
+              "title": "Ura: Highlight",
+              "inline": "span",
+              "classes": "ura-highlight"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,

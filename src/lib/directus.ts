@@ -416,7 +416,7 @@ async function fetchSingletonHTTP<T>(
 // Helper function to get file metadata (including MIME type)
 export async function getFileMetadata(
   fileId: string | undefined
-): Promise<{ type: string; filename_download: string } | null> {
+): Promise<{ type: string; filename_download: string; modified_on?: string } | null> {
   if (!fileId) return null;
   try {
     const response = await fetchWithTimeout(`${directusUrl}/files/${fileId}`, {
@@ -430,6 +430,7 @@ export async function getFileMetadata(
       ? {
           type: data.data.type,
           filename_download: data.data.filename_download,
+          modified_on: data.data.modified_on,
         }
       : null;
   } catch (error) {

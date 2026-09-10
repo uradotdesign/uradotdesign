@@ -249,7 +249,7 @@ if (showWeather && weatherLocation) {
         aria-label={weatherLabel}
       >
         <span class="hidden sm:inline">{weatherLocation.toUpperCase()}</span>
-      <span class="ml-2 flex items-center" aria-label={weather.condition}>
+      <span class="ml-2 flex items-center" role="img" aria-label={weather.condition}>
         <WeatherIcon icon={weather.icon} class="w-4 h-4" />
       </span>
       <time id="header-time" datetime="" class="ml-2"><span class="time-hours">--</span><span class="time-colon">:</span><span class="time-minutes">--</span> CEST</time>

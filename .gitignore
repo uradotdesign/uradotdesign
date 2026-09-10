@@ -32,6 +32,9 @@ pnpm-debug.log*
 data/
 backups/
 .cms-build/
+.qa-results/
+playwright-report/
+test-results/
 
 # Cursor plugin hook artifacts (machine-specific absolute paths)
 .github/hooks/

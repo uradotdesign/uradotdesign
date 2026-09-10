@@ -17,6 +17,7 @@ export default [
       "dist/**",
       "directus-extensions/*/dist/**",
       ".astro/**",
+      ".qa-results/**",
       "node_modules/**",
       "public/**",
       "*.min.js",

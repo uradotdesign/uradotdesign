@@ -40,7 +40,7 @@ const teamMembers = teamMembersData.length > 0
     </div>
 
     <!-- Team Cards Row -->
-    <div id="team-cards-row" class="team-cards-row">
+    <div id="team-cards-row" class="team-cards-row" style={`--team-count: ${Math.max(1, teamMembers.length)}`}>
       {teamMembers.map((member, index) => (
         <div 
           class="team-card"
@@ -130,7 +130,7 @@ const teamMembers = teamMembersData.length > 0
     padding: 2rem 0;
     min-height: 450px;
     position: relative;
-    max-width: 700px;
+    max-width: 100%;
     margin: 0 auto;
   }
 
@@ -166,6 +166,7 @@ const teamMembers = teamMembersData.length > 0
     .team-card:not(:first-child) {
       margin-left: -4rem;
     }
+
     
     .team-cards-row::-webkit-scrollbar {
       display: none;
@@ -194,6 +195,13 @@ const teamMembers = teamMembersData.length > 0
     scroll-snap-align: center;
     perspective: 1000px;
     transition: filter 0.3s ease-in-out;
+  }
+
+  @media (min-width: 769px) {
+    .team-card {
+      /* Keep the overlapping row inside its container as the CMS team grows. */
+      width: min(clamp(240px, 22vw, 300px), calc((100% + (var(--team-count) - 1) * 7rem) / var(--team-count)));
+    }
   }
 
   .team-card:hover {
