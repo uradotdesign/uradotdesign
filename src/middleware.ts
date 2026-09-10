@@ -1,6 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { previewSecret, publicDirectusUrl } from './lib/config';
 import { runWithRequestCache } from './lib/request-cache';
+import { renderCachedHtml } from './lib/html-cache';
 
 /**
  * Baseline security headers applied to every response.
@@ -51,7 +52,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Share one in-memory memoization store across every Directus getter invoked
   // while rendering this request (layout + header + footer + page).
-  const response = await runWithRequestCache(() => next());
+  const response = await renderCachedHtml(context.request, () => runWithRequestCache(() => next()));
 
   for (const [name, value] of Object.entries(BASE_SECURITY_HEADERS)) {
     response.headers.set(name, value);
@@ -78,9 +79,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   }
 
-  // Shared-cache (CDN/nginx) micro-caching for anonymous HTML GETs. Browsers
-  // still revalidate every time (max-age=0); a shared cache may serve a stored
-  // copy for up to 60s and refresh in the background. Deliberately skips
+  // The shared Redis microcache above owns HTML freshness. Browsers and
+  // downstream intermediaries revalidate instead of stacking another TTL. Skip
   // preview, API routes, non-200 responses, anything that sets cookies, and
   // any handler that already set its own Cache-Control (e.g. sitemap).
   const contentType = response.headers.get('content-type') || '';
@@ -95,7 +95,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   ) {
     response.headers.set(
       'Cache-Control',
-      'public, max-age=0, s-maxage=60, stale-while-revalidate=86400'
+      'public, max-age=0, must-revalidate'
     );
   }
 

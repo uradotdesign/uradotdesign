@@ -1,4 +1,5 @@
 ---
+import { getContentRevision } from "../lib/redis";
 import { ClientRouter } from "astro:transitions";
 import {
   getSiteSettings,
@@ -99,9 +100,17 @@ const faviconUrl = settings?.favicon
 const faviconType = settings?.favicon ? undefined : 'image/svg+xml';
 
 // Social/OG Images
-const ogImage =
+let ogImage =
   image || (settings?.og_image ? getAssetUrl(settings.og_image) : null) ||
   new URL(`/${currentLang}/og.png`, Astro.site ?? siteUrl).href;
+// Revision URLs escape the previous year-long edge cache and change on publication.
+if (ogImage) {
+  const socialUrl = new URL(ogImage, siteUrl);
+  if (socialUrl.origin === new URL(siteUrl).origin && socialUrl.pathname.endsWith('/og.png')) {
+    socialUrl.searchParams.set('v', await getContentRevision());
+    ogImage = socialUrl.href;
+  }
+}
 const twitterImage = settings?.twitter_image
   ? getAssetUrl(settings.twitter_image)
   : ogImage;

@@ -1,5 +1,10 @@
 # Deployment and maintenance
 
+The [deployment audit fixes](deployment-audit-fixes.md) describe the current
+blue/green application release, restricted CI identity, backup schedule, resource
+budgets and monitoring. They supersede the original rebuild-and-restart deployment
+steps below; the database recovery and privilege guidance still applies.
+
 Verified on 10 September 2026. This is a shared Hetzner VPS: scope Docker work
 to this project's services and volumes; other applications run on the host.
 

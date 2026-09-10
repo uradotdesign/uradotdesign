@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { getBlogPosts } from "../../lib/directus";
-import { getLocalizedField, type Language } from "../../lib/i18n";
+import { getBlogPosts } from "../../lib/directus.ts";
+import { getLocalizedField, type Language } from "../../lib/i18n.ts";
 
 export const prerender = false;
 
@@ -40,12 +40,19 @@ export const GET: APIRoute = async ({ params, site }) => {
   const blogUrl = `${base}/${lang}/blog`;
   const channel = CHANNEL[lang];
 
-  const posts = await getBlogPosts({
+  let posts;
+  try {
+    posts = await getBlogPosts({
     filter: { status: { _eq: "published" } },
     sort: ["-published_date"],
     limit: 50,
     fields: ["title", "slug", "excerpt", "published_date", "translations.*"],
-  }).catch(() => []);
+    });
+  } catch {
+    return new Response('Feed temporarily unavailable', {
+      status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '60' },
+    });
+  }
 
   const items = (posts as any[])
     .filter((p) => p?.slug)

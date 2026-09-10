@@ -3,6 +3,7 @@ import { beforeEach, mock, test } from "node:test";
 
 const state = {
   values: new Map<string, string>(),
+  generation: undefined as string | undefined,
   getFails: false,
   writeFails: false,
   scanFails: false,
@@ -16,7 +17,13 @@ class FakeRedis {
   }
   async get(key: string) {
     if (state.getFails) throw new Error("Redis read unavailable");
+    if (key === 'ura:cache-generation') return state.generation ?? null;
     return state.values.get(key) ?? null;
+  }
+  async set(key: string, value: string, nx?: string) {
+    if (state.writeFails) throw new Error('Redis write unavailable');
+    if (key === 'ura:cache-generation' && (!nx || !state.generation)) state.generation = value;
+    return 'OK';
   }
   async setex(key: string, _ttl: number, value: string) {
     if (state.writeFails) throw new Error("Redis write unavailable");
@@ -34,7 +41,13 @@ class FakeRedis {
   async del(...keys: string[]) {
     return keys.reduce((n, key) => n + Number(state.values.delete(key)), 0);
   }
-  async eval() {
+  async eval(_script: string, count: number, ...args: any[]) {
+    if (count === 2) {
+      if (state.writeFails) throw new Error('Redis write unavailable');
+      if (state.generation !== args[2]) return 0;
+      state.values.set(args[1], args[4]);
+      return 1;
+    }
     return ++state.count;
   }
 }
@@ -81,6 +94,7 @@ const { POST: contact } = await import("../src/pages/api/contact.ts");
 
 beforeEach(() => {
   state.values.clear();
+  state.generation = undefined;
   state.getFails = false;
   state.writeFails = false;
   state.scanFails = false;
