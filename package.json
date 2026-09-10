@@ -8,6 +8,7 @@
     "scan:cms": "node scripts/scan-cms-tailwind.mjs",
     "prebuild": "node scripts/scan-cms-tailwind.mjs || true",
     "build": "astro check && astro build",
+    "postbuild": "node scripts/verify-built-css.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
