@@ -164,9 +164,16 @@ module.exports = function (data) {
 
   var phoneVal = blank(p.phone) ? "—" : esc(p.phone);
   var companyVal = blank(p.company) ? "—" : esc(p.company);
-  var prefVal = blank(p.contact_preference)
-    ? "—"
-    : esc(cap(p.contact_preference));
+  var prefVal =
+    Array.isArray(p.contact_preferences) && p.contact_preferences.length
+      ? p.contact_preferences
+          .map(function (v) {
+            return esc(cap(v));
+          })
+          .join(", ")
+      : blank(p.contact_preference)
+        ? "—"
+        : esc(cap(p.contact_preference));
   var whenVal = formatBerlin(p.submitted_at);
   var messageVal = blank(p.message) ? "—" : esc(p.message);
 

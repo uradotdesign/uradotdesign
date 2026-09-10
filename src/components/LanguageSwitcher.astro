@@ -2,7 +2,7 @@
 import { getCurrentLanguage } from "../lib/i18n";
 import { getUI } from "../lib/translations";
 
-const currentLang = getCurrentLanguage(Astro.url);
+const currentLang = Astro.locals.lang ?? getCurrentLanguage(Astro.url);
 const currentPath = Astro.url.pathname;
 const ui = await getUI(currentLang);
 
@@ -39,7 +39,6 @@ const languages = [
     </svg>
   </summary>
   <div
-    role="menu"
     aria-labelledby="lang-toggle"
     class="absolute top-full right-0 mt-2 w-36 z-[60] opacity-0 invisible group-open:opacity-100 group-open:visible group-open:pointer-events-auto transition-all duration-200 origin-top-right"
   >
@@ -51,7 +50,6 @@ const languages = [
           <a
             href={lang.path}
             data-astro-reload
-            role="menuitem"
             class:list={[
               "block px-4 py-2 text-sm transition-colors cursor-pointer focus:outline-none",
               currentLang === lang.code

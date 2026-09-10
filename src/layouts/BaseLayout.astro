@@ -15,6 +15,7 @@ import Footer from "../components/Footer.astro";
 import SkipLinks from "../components/SkipLinks.astro";
 import ContactModal from "../components/ContactModal.astro";
 import "../styles/globals.css";
+import { pageTitle, canonicalUrl as buildCanonicalUrl } from '../lib/seo';
 
 export interface Props {
   title?: string;
@@ -25,6 +26,7 @@ export interface Props {
   fullWidth?: boolean;
   /** When true, emit `<meta name="robots" content="noindex,follow">`. */
   noindex?: boolean;
+  pageNumber?: number;
   /** Open Graph article metadata for blog posts / case studies. */
   article?: {
     publishedTime?: string;
@@ -39,7 +41,8 @@ export interface Props {
 
 const settings = await getSiteSettings();
 const accessibilitySettings = await getAccessibilitySettings();
-const currentLang = getCurrentLanguage(Astro.url);
+const currentLang = Astro.locals.lang ?? getCurrentLanguage(Astro.url);
+const requestUrl = new URL(Astro.locals.originalUrl || Astro.url);
 
 // In Live Preview only, load Tailwind's browser JIT so editors see arbitrary
 // CMS classes compile instantly — before a deploy bakes them into the static
@@ -74,9 +77,7 @@ const defaultTagline = await t(
 const siteTagline =
   getLocalizedField(settings, "site_tagline", currentLang) || defaultTagline;
 
-const siteTitle = title
-  ? `${title} | ${siteName}`
-  : `${siteName} - ${siteTagline}`;
+const siteTitle = pageTitle(title, siteName, siteTagline);
 
 // Description (multilingual)
 const defaultDesc = await t(
@@ -93,17 +94,14 @@ const siteDescription =
 const faviconUrl = settings?.favicon
   ? getAssetUrl(settings.favicon) || "/favicon.svg"
   : "/favicon.svg";
-const getFaviconType = (url: string) => {
-  if (url.endsWith(".svg")) return "image/svg+xml";
-  if (url.endsWith(".png")) return "image/png";
-  if (url.endsWith(".ico")) return "image/x-icon";
-  return "image/svg+xml";
-};
-const faviconType = getFaviconType(faviconUrl);
+// CMS asset URLs have no extension. Omit the optional type for uploaded files
+// and let the asset's real Content-Type describe SVG, PNG or ICO accurately.
+const faviconType = settings?.favicon ? undefined : 'image/svg+xml';
 
 // Social/OG Images
 const ogImage =
-  image || (settings?.og_image ? getAssetUrl(settings.og_image) : null);
+  image || (settings?.og_image ? getAssetUrl(settings.og_image) : null) ||
+  new URL(`/${currentLang}/og.png`, Astro.site ?? siteUrl).href;
 const twitterImage = settings?.twitter_image
   ? getAssetUrl(settings.twitter_image)
   : ogImage;
@@ -133,10 +131,10 @@ const ui = await getUI(currentLang);
 // Language alternates for SEO (hreflang + og:locale). Paths are prefixed with
 // the language code (e.g. /en/about, /de/about), so swap the first segment.
 const buildAlternate = (lng: string) => {
-  const seg = Astro.url.pathname.split("/").filter(Boolean);
+  const seg = requestUrl.pathname.split("/").filter(Boolean);
   if (seg[0] === "en" || seg[0] === "de") seg[0] = lng;
   else seg.unshift(lng);
-  return new URL("/" + seg.join("/"), Astro.site ?? siteUrl).href;
+  return buildCanonicalUrl(new URL('/' + seg.join('/'), requestUrl), Astro.site ?? siteUrl, Astro.props.pageNumber).href;
 };
 const alternates = [
   { lang: "en", href: buildAlternate("en"), ogLocale: "en_US" },
@@ -147,7 +145,7 @@ const ogLocaleAlternate = currentLang === "de" ? "en_US" : "de_DE";
 
 // Canonical/OG URLs strip query strings (e.g. ?preview=, ?lang=) so shared and
 // indexed URLs stay clean.
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+const canonicalUrl = buildCanonicalUrl(requestUrl, Astro.site ?? siteUrl, Astro.props.pageNumber).href;
 
 // Structured data (JSON-LD): a global Organization + WebSite graph on every
 // page, plus any page-specific schema passed via the `jsonLd` prop.
@@ -156,7 +154,7 @@ const sameAs = (socialLinks || [])
   .filter((s) => s.url && s.status !== "draft")
   .map((s) => s.url);
 const orgLogo =
-  ogImage || new URL("/favicon.svg", Astro.site ?? siteUrl).href;
+  new URL("/apple-touch-icon.png", Astro.site ?? siteUrl).href;
 const orgId = `${siteUrl.replace(/\/$/, "")}#organization`;
 const websiteId = `${siteUrl.replace(/\/$/, "")}#website`;
 const globalJsonLd: Record<string, any>[] = [
@@ -229,6 +227,8 @@ const serializeJsonLd = (obj: Record<string, any>) =>
     />
 
     <link rel="icon" type={faviconType} href={faviconUrl} />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
     <ClientRouter fallback="animate" />
 
     {/* Live Preview only: runtime Tailwind so unsafelisted classes render live. */}

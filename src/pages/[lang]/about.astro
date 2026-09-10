@@ -1,4 +1,5 @@
 ---
+import { richText } from '../../lib/rich-text';
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import ValuesAccordion from "../../components/sections/ValuesAccordion.astro";
 import Certifications from "../../components/sections/Certifications.astro";
@@ -199,7 +200,7 @@ const valuesImageDark = valuesImageDarkId
           <div>
             <div
               class="text-base sm:text-lg leading-relaxed"
-              set:html={sectionText}
+              set:html={richText(sectionText)}
             />
           </div>
         </div>

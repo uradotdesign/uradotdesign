@@ -14,7 +14,9 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+ARG REQUIRE_CMS_CLASSES=false
+ARG CMS_CLASSES_SHA256=committed
+RUN --mount=type=secret,id=cms-classes REQUIRE_CMS_CLASSES=$REQUIRE_CMS_CLASSES CMS_CLASSES_SHA256=$CMS_CLASSES_SHA256 npm run build
 
 # 3. Production dependencies only (drops eslint/prettier/typescript/etc.).
 FROM base AS prod-deps

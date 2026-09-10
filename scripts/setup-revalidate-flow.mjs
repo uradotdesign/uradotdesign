@@ -34,37 +34,83 @@ const REVALIDATE_URL =
   process.env.REVALIDATE_URL || "http://astro:4321/api/revalidate";
 
 const COLLECTIONS = [
-  "about_page", "accessibility_settings", "approaches", "case_studies",
-  "case_studies_categories", "case_study_categories", "case_study_section_images",
-  "case_study_sections", "certifications", "clients", "clients_section",
-  "company_values", "footer_settings", "footer_links", "header_settings",
-  "hero_section", "navigation_links", "pages", "posts", "service_activities",
-  "service_checklist_items", "service_steps", "service_subservices", "services",
-  "site_settings", "social_links", "team_members", "testimonials", "translations",
+  "about_page",
+  "accessibility_settings",
+  "approaches",
+  "case_studies",
+  "case_studies_categories",
+  "case_study_categories",
+  "case_study_section_images",
+  "case_study_sections",
+  "certifications",
+  "clients",
+  "clients_section",
+  "company_values",
+  "footer_settings",
+  "footer_links",
+  "header_settings",
+  "hero_section",
+  "navigation_links",
+  "pages",
+  "posts",
+  "service_activities",
+  "service_checklist_items",
+  "service_steps",
+  "service_subservices",
+  "services",
+  "site_settings",
+  "social_links",
+  "team_members",
+  "testimonials",
+  "translations",
   "languages",
   // Page builder (F): blocks + junctions so edits bust the page cache instantly.
-  "pages_blocks", "block_hero", "block_richtext", "block_image",
-  "block_two_column", "block_gallery", "block_gallery_images", "block_cta",
-  "block_stats", "block_quote", "block_faq", "block_logos", "block_logos_items",
-  "block_embed", "block_custom_code",
-  "block_before_after", "block_lottie_grid", "block_lottie_grid_items",
-  "block_character_system", "block_character_system_options",
-  "block_interactive_showcase", "block_interactive_showcase_tabs",
+  "pages_blocks",
+  "block_hero",
+  "block_richtext",
+  "block_image",
+  "block_two_column",
+  "block_gallery",
+  "block_gallery_images",
+  "block_cta",
+  "block_stats",
+  "block_quote",
+  "block_faq",
+  "block_logos",
+  "block_logos_items",
+  "block_embed",
+  "block_custom_code",
+  "block_before_after",
+  "block_lottie_grid",
+  "block_lottie_grid_items",
+  "block_character_system",
+  "block_character_system_options",
+  "block_interactive_showcase",
+  "block_interactive_showcase_tabs",
   "block_interactive_showcase_lotties",
   // Phase 3 (audit) blocks.
-  "block_testimonial", "block_testimonial_items",
+  "block_testimonial",
+  "block_testimonial_items",
   "block_video",
-  "block_accordion", "block_accordion_items",
-  "block_pricing", "block_pricing_tiers",
-  "block_timeline", "block_timeline_items",
+  "block_accordion",
+  "block_accordion_items",
+  "block_pricing",
+  "block_pricing_tiers",
+  "block_timeline",
+  "block_timeline_items",
   // Additive block-builder junctions on non-page collections.
-  "case_studies_blocks", "posts_blocks", "services_blocks", "about_page_blocks",
+  "case_studies_blocks",
+  "posts_blocks",
+  "services_blocks",
+  "about_page_blocks",
   // Related cards are edited through junctions rather than their parent item.
-  "case_studies_related", "posts_related",
+  "case_studies_related",
+  "posts_related",
 ];
 
 async function buildTriggerCollections() {
-  const all = (await authRequest("/collections?limit=-1&fields=collection"))?.data ?? [];
+  const all =
+    (await authRequest("/collections?limit=-1&fields=collection"))?.data ?? [];
   const names = all.map((c) => c.collection).filter(Boolean);
   // Auto-include every block collection, every block M2A junction, and every
   // translation junction that exists in the live schema. This keeps the trigger
@@ -133,14 +179,16 @@ async function main() {
   } else {
     await authRequest(`/flows/${flowId}`, {
       method: "PATCH",
-      body: j({ status: "active", options: triggerOptions }),
+      body: j({ options: triggerOptions }),
     });
     console.log(`= Updated flow trigger (${flowId})`);
   }
 
   if (TRIGGER_ONLY) {
     await authRequest(`/utils/cache/clear`, { method: "POST" }).catch(() => {});
-    console.log("\nDone (trigger collections synced; operation left untouched).");
+    console.log(
+      "\nDone (trigger collections synced; operation left untouched)."
+    );
     return;
   }
 

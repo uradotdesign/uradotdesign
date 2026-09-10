@@ -1,0 +1,31 @@
+---
+// The failure page must render even when Directus and Redis are unavailable.
+import '../styles/globals.css';
+import { getCurrentLanguage } from '../lib/i18n';
+
+interface Props { title: string }
+const lang = Astro.locals.lang ?? getCurrentLanguage(Astro.url);
+const home = lang === 'de' ? 'Zur Startseite' : 'Back to home';
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{Astro.props.title} | Ura Design</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" sizes="16x16 32x32 48x48" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
+  <body class="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
+    <header class="px-6 sm:px-8 lg:px-12 py-8">
+      <a href={`/${lang}`} class="inline-flex items-center gap-3 rounded focus-visible:outline-2 focus-visible:outline-offset-4" aria-label={`Ura Design — ${home}`}>
+        <img src="/favicon.svg" width="40" height="40" alt="" />
+        <span class="font-display text-2xl">Ura Design</span>
+      </a>
+    </header>
+    <main id="main-content"><slot /></main>
+  </body>
+</html>

@@ -1,4 +1,6 @@
 ---
+import { localizedSeo } from '../../lib/seo';
+import { richText } from '../../lib/rich-text';
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import ServiceHero from "../../components/services/ServiceHero.astro";
 import ServiceSteps from "../../components/services/ServiceSteps.astro";
@@ -48,8 +50,7 @@ const isPreview = isPreviewActive(Astro.url);
 const services = await getServices({
   filter: {
     slug: { _eq: slug },
-    status: { _eq: "published" },
-    show_in_hero: { _neq: false }
+    status: { _eq: "published" }
   },
   limit: 1,
   fields: ["*", "relevant_case_study.*", "relevant_case_study.translations.*", ...PAGE_BLOCK_FIELDS]
@@ -232,12 +233,12 @@ if (type === 'page') {
     title: localizedTitle,
     content: page.content || "",
     seoTitle:
-      getLocalizedField(page, "seo_title", lang) ||
+      localizedSeo(page, 'seo_title', lang) ||
       localizedTitle ||
       page.seo_title ||
       page.title,
     seoDescription:
-      getLocalizedField(page, "seo_description", lang) ||
+      localizedSeo(page, 'seo_description', lang) ||
       page.seo_description ||
       "",
   };
@@ -250,11 +251,11 @@ const serviceBlocks: PageBlock[] =
 
 // Common Meta (optional SEO overrides fall back to the page's own values)
 const pageTitle = type === 'service'
-  ? getLocalizedField(data, 'seo_title', lang) || currentService?.title
+  ? localizedSeo(data, 'seo_title', lang) || currentService?.title
   : pageContent?.seoTitle || pageContent?.title;
 
 const pageDescription = type === 'service'
-  ? getLocalizedField(data, 'seo_description', lang) || currentService?.description || ""
+  ? localizedSeo(data, 'seo_description', lang) || currentService?.description || ""
   : pageContent?.seoDescription || "";
 
 // OG Image - prefer the explicit SEO/social image, then service hero background.
@@ -292,7 +293,7 @@ const pageJsonLd = {
               <div class="max-w-4xl mx-auto">
                 <div
                   class="prose prose-lg prose-gray dark:prose-invert max-w-none"
-                  set:html={currentService.longDescription}
+                  set:html={richText(currentService.longDescription)}
                 />
               </div>
             </section>
@@ -342,7 +343,7 @@ const pageJsonLd = {
             </h1>
             <div
               class="prose dark:prose-invert prose-lg max-w-2xl mx-auto prose-headings:font-display prose-headings:font-normal prose-p:font-serif prose-img:rounded-none prose-img:w-full"
-              set:html={pageContent.content}
+              set:html={richText(pageContent.content)}
             />
           </div>
         </article>

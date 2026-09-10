@@ -1,5 +1,7 @@
+import { escapeHtml } from "./escape-html.js";
 import { watchTheme } from "./shadow-theme.js";
 import { loadLottie } from "./loadLottie.js";
+import { prefersReducedMotion, watchReducedMotion } from './reduced-motion.js';
 
 class LottiePlayer extends HTMLElement {
   constructor() {
@@ -9,13 +11,19 @@ class LottiePlayer extends HTMLElement {
   }
 
   connectedCallback() {
+    this._generation = (this._generation || 0) + 1;
     this.render();
     this._unwatchTheme = watchTheme(this);
+    this._unwatchMotion = watchReducedMotion(reduce => { if (reduce) this.pauseAll(); });
     this.initLottie();
   }
 
   disconnectedCallback() {
+    this._generation++;
     this._unwatchTheme?.();
+    this._unwatchMotion?.();
+    this.lottieInstances.forEach(anim => anim.destroy());
+    this.lottieInstances = [];
   }
 
   get controlsPosition() {
@@ -180,17 +188,17 @@ class LottiePlayer extends HTMLElement {
         </div>
 
         <div class="controls">
-          <button class="btn-pause" title="${this.labelPause}">
+          <button class="btn-pause" title="${escapeHtml(this.labelPause)}">
             <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 14h2V4h-2v10ZM10.5 4v10h2V4h-2Z"/></svg>
-            <span>${this.labelPause}</span>
+            <span>${escapeHtml(this.labelPause)}</span>
           </button>
-          <button class="btn-play" title="${this.labelPlay}">
+          <button class="btn-play" title="${escapeHtml(this.labelPlay)}">
             <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4v10l8-5-8-5Z"/></svg>
-            <span>${this.labelPlay}</span>
+            <span>${escapeHtml(this.labelPlay)}</span>
           </button>
-          <button class="btn-stop" title="${this.labelStop}">
+          <button class="btn-stop" title="${escapeHtml(this.labelStop)}">
             <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4h9v10h-9V4Z"/></svg>
-            <span>${this.labelStop}</span>
+            <span>${escapeHtml(this.labelStop)}</span>
           </button>
         </div>
       </div>
@@ -208,6 +216,7 @@ class LottiePlayer extends HTMLElement {
   }
 
   async initLottie() {
+    const generation = this._generation;
     let lottie;
     try {
       lottie = await loadLottie();
@@ -216,13 +225,14 @@ class LottiePlayer extends HTMLElement {
       return;
     }
 
+    if (!this.isConnected || generation !== this._generation) return;
     // Scan for Lottie elements in Light DOM
     const elements = this.querySelectorAll("[data-lottie-path]");
 
     elements.forEach((el) => {
       const path = el.getAttribute("data-lottie-path");
       const loop = el.getAttribute("data-loop") !== "false";
-      const autoplay = el.getAttribute("data-autoplay") !== "false";
+      const autoplay = el.getAttribute("data-autoplay") !== "false" && !prefersReducedMotion();
 
       const anim = lottie.loadAnimation({
         container: el,

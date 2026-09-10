@@ -1,8 +1,8 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import ErrorLayout from '../layouts/ErrorLayout.astro';
 import { getCurrentLanguage } from '../lib/i18n';
 
-const currentLang = getCurrentLanguage(Astro.url);
+const currentLang = Astro.locals.lang ?? getCurrentLanguage(Astro.url);
 
 const messages = {
   en: {
@@ -30,7 +30,7 @@ const msg = messages[currentLang] || messages.en;
 Astro.response.status = 500;
 ---
 
-<BaseLayout title={msg.title} noindex>
+<ErrorLayout title={msg.title}>
   <section class="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
     <h1 class="text-8xl sm:text-9xl font-bold tracking-tight text-[var(--color-foreground)] opacity-20 select-none">
       {msg.heading}
@@ -51,4 +51,4 @@ Astro.response.status = 500;
       {msg.cta}
     </a>
   </section>
-</BaseLayout>
+</ErrorLayout>

@@ -46,33 +46,33 @@ export const GET: APIRoute = async ({ site }) => {
     getPages({
       filter: { status: { _eq: "published" } },
       fields: ["slug", "date_updated", "date_created"],
-    }).catch(() => []),
+    }),
     getBlogPosts({
       filter: { status: { _eq: "published" } },
       fields: ["slug", "date_updated", "published_date"],
-    }).catch(() => []),
+    }),
     getCaseStudies({
       filter: { status: { _eq: "published" } },
       fields: ["slug", "date_updated"],
-    }).catch(() => []),
+    }),
     getServices({
-      filter: { status: { _eq: "published" }, show_in_hero: { _neq: false } },
+      filter: { status: { _eq: "published" } },
       fields: ["slug", "date_updated"],
-    }).catch(() => []),
+    }),
   ]);
 
   // Dedupe by path; services and pages share the /{lang}/{slug} route.
   const byPath = new Map<string, SitemapEntry>();
-  const add = (entry: SitemapEntry) => {
-    if (RESERVED.has(entry.path)) return;
+  const add = (entry: SitemapEntry, staticRoute = false) => {
+    if (!staticRoute && RESERVED.has(entry.path)) return;
     byPath.set(entry.path, entry);
   };
 
   // Static routes first.
-  add({ path: "", changefreq: "weekly", priority: "1.0" });
-  add({ path: "about", changefreq: "monthly", priority: "0.7" });
-  add({ path: "blog", changefreq: "weekly", priority: "0.7" });
-  add({ path: "works", changefreq: "weekly", priority: "0.7" });
+  add({ path: "", changefreq: "weekly", priority: "1.0" }, true);
+  add({ path: "about", changefreq: "monthly", priority: "0.7" }, true);
+  add({ path: "blog", changefreq: "weekly", priority: "0.7" }, true);
+  add({ path: "works", changefreq: "weekly", priority: "0.7" }, true);
 
   for (const p of pages as any[]) {
     if (!p?.slug) continue;

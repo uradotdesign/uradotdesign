@@ -30,7 +30,7 @@ const j = JSON.stringify;
 
 const COLLECTIONS = ["posts", "pages", "case_studies"];
 const FLOW_NAME = "Publish scheduled content";
-// Every minute by default: a cheap, indexed, filtered query on three small
+// Every minute by default: a filtered query on three small
 // collections. Override with PUBLISH_CRON for a gentler cadence.
 const CRON = process.env.PUBLISH_CRON || "* * * * *";
 
@@ -42,7 +42,7 @@ async function ensurePublishField(collection) {
       interface: "datetime",
       width: "half",
       note:
-        'Optional. Set a future time on a Draft and it auto-publishes then ' +
+        "Optional. Set a future time on a Draft and it auto-publishes then " +
         '(via the "Publish scheduled content" flow). Leave empty to publish manually.',
       display: "datetime",
       display_options: { relative: true },
@@ -56,7 +56,7 @@ const updateOptions = (collection) => ({
   collection,
   permissions: "$full",
   emitEvents: true,
-  payload: { status: "published" },
+  payload: { status: "published", publish_at: null },
   query: {
     filter: {
       status: { _eq: "draft" },
@@ -73,7 +73,11 @@ async function findFlow() {
   return res?.data?.[0] ?? null;
 }
 
-async function upsertOperation(flowId, existingOps, { key, name, x, y, options }) {
+async function upsertOperation(
+  flowId,
+  existingOps,
+  { key, name, x, y, options }
+) {
   const found = existingOps.find((o) => o.key === key);
   if (found) {
     await authRequest(`/operations/${found.id}`, {
@@ -131,7 +135,7 @@ async function main() {
   } else {
     await authRequest(`/flows/${flowId}`, {
       method: "PATCH",
-      body: j({ status: "active", trigger: "schedule", options: { cron: CRON } }),
+      body: j({ trigger: "schedule", options: { cron: CRON } }),
     });
     console.log(`  = Updated flow (${flowId})`);
   }

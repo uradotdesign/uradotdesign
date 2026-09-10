@@ -49,7 +49,7 @@ services:
       - directus_uploads:/directus/uploads
       - directus_extensions:/directus/extensions
       # Version-controlled schema snapshots (source of truth). `npm run
-      # schema:snapshot` writes schema.yaml here so it can be committed; `npm run
+      # schema:snapshot` writes schema.json here so it can be committed; `npm run
       # schema:apply` re-applies it on another environment. Additive mount — does
       # not affect uploads/extensions.
       - ./directus-snapshots:/directus/snapshots

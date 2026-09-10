@@ -1,4 +1,6 @@
 ---
+import { localizedSeo } from '../../../lib/seo';
+import { richText } from '../../../lib/rich-text';
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import {
   getBlogPostBySlug,
@@ -23,8 +25,7 @@ import RelatedPosts from "../../../components/blog/RelatedPosts.astro";
 
 const { lang, slug } = Astro.params;
 
-const supportedLanguages = ["en", "de"];
-if (!lang || !supportedLanguages.includes(lang)) {
+if (lang !== 'en' && lang !== 'de') {
   return Astro.rewrite("/404");
 }
 
@@ -104,8 +105,8 @@ const description =
 
 // Optional SEO overrides (fall back to the post's title/excerpt/cover image).
 const seoImage = getAssetUrl(post.seo_image);
-const metaTitle = post.seo_title || title;
-const metaDescription = post.seo_description || description;
+const metaTitle = localizedSeo(post, 'seo_title', lang) || title;
+const metaDescription = localizedSeo(post, 'seo_description', lang) || description;
 
 // Cover alt text + focal point from the file metadata.
 const coverMeta = await getAssetMeta(post.cover_image);
@@ -313,7 +314,7 @@ const breadcrumbJsonLd = {
         )
       }
         <TableOfContents headings={headings} label={ui("blog.onThisPage")} />
-        <div set:html={contentHtml} />
+        <div set:html={richText(contentHtml)} />
       </div>
     </div>
   </article>

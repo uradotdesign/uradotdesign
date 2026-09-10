@@ -5,6 +5,8 @@
       :model-value="value"
       :placeholder="placeholder"
       :disabled="disabled"
+      :aria-label="inputLabel"
+      :aria-describedby="meterId"
       :nullable="true"
       @update:model-value="onInput"
     />
@@ -13,11 +15,13 @@
       :model-value="value"
       :placeholder="placeholder"
       :disabled="disabled"
+      :aria-label="inputLabel"
+      :aria-describedby="meterId"
       :nullable="true"
       @update:model-value="onInput"
     />
 
-    <div class="meter" :class="state">
+    <div :id="meterId" class="meter" :class="state" aria-live="polite">
       <span class="count">{{ length }}</span>
       <span v-if="recommended" class="rec">/ {{ recommended }}</span>
       <span v-if="recommended" class="label">{{ stateLabel }}</span>
@@ -26,7 +30,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from 'vue';
+import { defineComponent, computed, useId } from 'vue';
 
 export default defineComponent({
   props: {
@@ -35,13 +39,16 @@ export default defineComponent({
     recommended: { type: Number, default: null },
     placeholder: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
+    field: { type: String, default: 'Text' },
   },
   emits: ['input'],
   setup(props, { emit }) {
+    const meterId = useId();
+    const inputLabel = computed(() => props.field.replaceAll('_', ' ').replace(/^seo\b/i, 'SEO'));
     const length = computed(() => (props.value ?? '').length);
 
     const state = computed(() => {
-      if (!props.recommended) return 'neutral';
+      if (!props.recommended || length.value === 0) return 'neutral';
       if (length.value > props.recommended) return 'over';
       if (length.value >= props.recommended * 0.9) return 'near';
       return 'ok';
@@ -50,13 +57,13 @@ export default defineComponent({
     const stateLabel = computed(() => {
       switch (state.value) {
         case 'over':
-          return 'Too long';
+          return 'Above guideline';
         case 'near':
-          return 'Near limit';
+          return 'Near guideline';
         case 'ok':
           return 'Good';
         default:
-          return '';
+          return length.value === 0 ? 'Optional' : '';
       }
     });
 
@@ -64,7 +71,7 @@ export default defineComponent({
       emit('input', next === '' ? null : next);
     }
 
-    return { length, state, stateLabel, onInput };
+    return { length, state, stateLabel, onInput, meterId, inputLabel };
   },
 });
 </script>

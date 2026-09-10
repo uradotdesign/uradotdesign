@@ -3,7 +3,7 @@
 import { getCurrentLanguage } from '../lib/i18n';
 import { getUI } from '../lib/translations';
 
-const currentLang = getCurrentLanguage(Astro.url);
+const currentLang = Astro.locals.lang ?? getCurrentLanguage(Astro.url);
 const ui = await getUI(currentLang);
 const labelDay = ui('theme.day');
 const labelNight = ui('theme.night');
@@ -17,7 +17,6 @@ const labelNight = ui('theme.night');
   <summary
     class="theme-toggle text-sm font-medium font-mono tracking-wide transition-opacity flex items-center gap-1 cursor-pointer list-none marker:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-border)]"
     aria-label={ui('theme.toggle')}
-    aria-haspopup="menu"
   >
     <span class="theme-text inline-block min-w-[5ch] text-right">{labelNight}</span>
     <svg
@@ -34,7 +33,6 @@ const labelNight = ui('theme.night');
     </svg>
   </summary>
   <div
-    role="menu"
     class="theme-dropdown-panel absolute right-0 w-32 z-[60] opacity-0 invisible group-open:opacity-100 group-open:visible group-open:pointer-events-auto transition-all duration-200"
   >
     <div
@@ -42,7 +40,6 @@ const labelNight = ui('theme.night');
     >
       <button
         data-theme="light"
-        role="menuitem"
         class="theme-option block w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800"
         aria-label={ui('theme.switchLight')}
       >
@@ -50,7 +47,6 @@ const labelNight = ui('theme.night');
       </button>
       <button
         data-theme="dark"
-        role="menuitem"
         class="theme-option block w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800"
         aria-label={ui('theme.switchDark')}
       >

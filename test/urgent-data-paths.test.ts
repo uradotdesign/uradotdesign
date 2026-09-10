@@ -93,7 +93,10 @@ beforeEach(() => {
 });
 
 test("footer rollout bypasses cached relation IDs and requests translated links", async () => {
-  state.values.set("directus:config:footer_settings", JSON.stringify({ id: 1, links: [1, 2] }));
+  state.values.set(
+    "directus:config:footer_settings",
+    JSON.stringify({ id: 1, links: [1, 2] })
+  );
   await getFooterSettings();
   assert.equal(state.fetchCalls.length, 1);
   const fields = new URL(state.fetchCalls[0].url).searchParams.get("fields");
@@ -252,6 +255,34 @@ function contactRequest(overrides: Record<string, unknown> = {}) {
     }),
   });
 }
+test("contact preferences retain every selection and reject unsupported methods", async () => {
+  assert.equal(
+    (
+      await contact({
+        request: contactRequest({
+          contact_preferences: ["email", "phone", "signal"],
+        }),
+      } as any)
+    ).status,
+    200
+  );
+  assert.deepEqual(state.fetchCalls[0].body.contact_preferences, [
+    "email",
+    "phone",
+    "signal",
+  ]);
+  assert.equal(state.fetchCalls[0].body.contact_preference, "email");
+  state.fetchCalls = [];
+  assert.equal(
+    (
+      await contact({
+        request: contactRequest({ contact_preferences: ["fax"] }),
+      } as any)
+    ).status,
+    400
+  );
+  assert.equal(state.fetchCalls.length, 0);
+});
 test("legitimate two-link and industry-keyword inquiries reach Directus exactly once", async () => {
   const response = await contact({
     request: contactRequest({

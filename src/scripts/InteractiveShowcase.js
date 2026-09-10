@@ -1,4 +1,6 @@
+import { escapeHtml } from "./escape-html.js";
 import { loadLottie } from "./loadLottie.js";
+import { prefersReducedMotion, watchReducedMotion } from './reduced-motion.js';
 
 class InteractiveShowcase extends HTMLElement {
   constructor() {
@@ -25,6 +27,9 @@ class InteractiveShowcase extends HTMLElement {
   }
 
   connectedCallback() {
+    this._generation = (this._generation || 0) + 1;
+    this._events = new AbortController();
+    this._unwatchMotion = watchReducedMotion(reduce => { if (reduce) this.lottieInstances.forEach(anim => anim.pause()); });
     this.render();
 
     // Wait for children to be available
@@ -33,7 +38,7 @@ class InteractiveShowcase extends HTMLElement {
       this.setupLottieControls();
     } else {
       // Use MutationObserver to wait for children
-      const observer = new MutationObserver(() => {
+      const observer = this._observer = new MutationObserver(() => {
         if (this.children.length > 0) {
           this.initTabs();
           this.setupLottieControls();
@@ -42,6 +47,23 @@ class InteractiveShowcase extends HTMLElement {
       });
       observer.observe(this, { childList: true });
     }
+  }
+
+  disconnectedCallback() {
+    this._generation++;
+    this._observer?.disconnect();
+    this._events?.abort();
+    this._unwatchMotion?.();
+    clearTimeout(this._tabTimer);
+    this.lottieInstances.forEach(anim => anim.destroy());
+    this.lottieInstances.clear();
+    // Restore authored wrappers so reconnection can rebuild tabs once.
+    this.items.forEach(item => {
+      if (item.desc) { item.desc.removeAttribute('slot'); item.wrapper.appendChild(item.desc); }
+      if (item.visual) { item.visual.removeAttribute('slot'); item.wrapper.appendChild(item.visual); }
+      item.wrapper.removeAttribute('data-processed');
+    });
+    this.items = [];
   }
 
   render() {
@@ -426,6 +448,7 @@ class InteractiveShowcase extends HTMLElement {
 
       // Store reference
       this.items.push({
+        wrapper,
         label,
         desc,
         visual,
@@ -437,12 +460,23 @@ class InteractiveShowcase extends HTMLElement {
       btn.className = "nav-item";
       btn.textContent = label;
       btn.setAttribute("role", "tab");
+      btn.tabIndex = -1;
       btn.setAttribute("aria-selected", "false");
       const currentIndex = this.items.length - 1;
-      btn.setAttribute("aria-controls", `panel-${currentIndex}`);
+      // The visual is slotted light DOM; cross-shadow ID references do not
+      // resolve reliably. Keep the tab state and accessible panel label local.
       btn.dataset.index = currentIndex;
 
       btn.addEventListener("click", () => this.activateTab(currentIndex, true));
+      btn.addEventListener('keydown', event => {
+        const keys = ['ArrowDown','ArrowRight','ArrowUp','ArrowLeft','Home','End'];
+        if (!keys.includes(event.key)) return;
+        event.preventDefault();
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? this.items.length - 1 :
+          (currentIndex + (['ArrowDown','ArrowRight'].includes(event.key) ? 1 : -1) + this.items.length) % this.items.length;
+        this.activateTab(next, false);
+        navArea.querySelectorAll('button')[next]?.focus();
+      });
       navArea.appendChild(btn);
     });
 
@@ -451,7 +485,7 @@ class InteractiveShowcase extends HTMLElement {
       // Check if any tab is active, if not activate first
       const activeBtn = navArea.querySelector(".nav-item.active");
       if (!activeBtn) {
-        setTimeout(() => this.activateTab(0, false), 0);
+        this.activateTab(0, false);
       }
     }
   }
@@ -476,6 +510,8 @@ class InteractiveShowcase extends HTMLElement {
   }
 
   activateTab(index, animate = true) {
+    clearTimeout(this._tabTimer);
+    animate = animate && !prefersReducedMotion();
     const navButtons = this.shadowRoot.querySelectorAll(".nav-item");
     const descWrapper = this.shadowRoot.querySelector(".description-wrapper");
     const visualWrapper = this.shadowRoot.querySelector(".visual-wrapper");
@@ -485,6 +521,7 @@ class InteractiveShowcase extends HTMLElement {
       const isActive = idx === index;
       btn.classList.toggle("active", isActive);
       btn.setAttribute("aria-selected", isActive);
+      btn.tabIndex = isActive ? 0 : -1;
     });
 
     if (animate) {
@@ -492,7 +529,8 @@ class InteractiveShowcase extends HTMLElement {
       descWrapper.classList.add("fading");
       visualWrapper.classList.add("fading");
 
-      setTimeout(() => {
+      this._tabTimer = setTimeout(() => {
+        if (!this.isConnected) return;
         this.switchContent(index);
         // Fade in
         descWrapper.classList.remove("fading");
@@ -505,7 +543,8 @@ class InteractiveShowcase extends HTMLElement {
             : null;
 
         if (img && !img.complete) {
-          img.onload = () => visualWrapper.classList.remove("fading");
+          img.addEventListener('load', () => visualWrapper.classList.remove('fading'), {once:true,signal:this._events.signal});
+          img.addEventListener('error', () => visualWrapper.classList.remove('fading'), {once:true,signal:this._events.signal});
         } else {
           visualWrapper.classList.remove("fading");
         }
@@ -572,6 +611,7 @@ class InteractiveShowcase extends HTMLElement {
   }
 
   async initLottiesInContainer(container) {
+    const generation = this._generation;
     const lottieElements = container.querySelectorAll("[data-lottie-path]");
     if (lottieElements.length === 0) return;
 
@@ -586,14 +626,14 @@ class InteractiveShowcase extends HTMLElement {
       return;
     }
 
-    if (!lottie) return;
+    if (!lottie || !this.isConnected || generation !== this._generation || container.getAttribute('slot') !== 'active-visual') return;
 
     lottieElements.forEach((el) => {
       if (this.lottieInstances.has(el)) return; // Already initialized
 
       const path = el.getAttribute("data-lottie-path");
       const loop = el.getAttribute("data-loop") !== "false";
-      const autoplay = el.getAttribute("data-autoplay") !== "false";
+      const autoplay = el.getAttribute("data-autoplay") !== "false" && !prefersReducedMotion();
 
       const anim = lottie.loadAnimation({
         container: el,
@@ -627,17 +667,17 @@ class InteractiveShowcase extends HTMLElement {
 
     // Create buttons with span for text (allows hiding text in vertical mode)
     shadowControls.innerHTML = `
-        <button data-lottie-action="pause-all" title="${this.labelPause}">
+        <button data-lottie-action="pause-all" title="${escapeHtml(this.labelPause)}">
           <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 14h2V4h-2v10ZM10.5 4v10h2V4h-2Z"/></svg>
-          <span>${this.labelPause}</span>
+          <span>${escapeHtml(this.labelPause)}</span>
         </button>
-        <button data-lottie-action="play-all" title="${this.labelPlay}">
+        <button data-lottie-action="play-all" title="${escapeHtml(this.labelPlay)}">
           <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4v10l8-5-8-5Z"/></svg>
-          <span>${this.labelPlay}</span>
+          <span>${escapeHtml(this.labelPlay)}</span>
         </button>
-        <button data-lottie-action="stop-all" title="${this.labelStop}">
+        <button data-lottie-action="stop-all" title="${escapeHtml(this.labelStop)}">
            <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 4h9v10h-9V4Z"/></svg>
-           <span>${this.labelStop}</span>
+           <span>${escapeHtml(this.labelStop)}</span>
         </button>
       `;
 
@@ -689,7 +729,7 @@ class InteractiveShowcase extends HTMLElement {
       } else if (action === "stop-all") {
         instances.forEach((anim) => anim.stop());
       }
-    });
+    }, {signal:this._events.signal});
   }
 }
 

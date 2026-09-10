@@ -61,7 +61,7 @@ const services = servicesData.length > 0
 <section class="hero-wrapper relative min-h-[100dvh] lg:min-h-screen">
   <!-- Hero Background - Video or Image for Light Theme -->
   {isVideoLight ? (
-    <video id="hero-media-light" data-is-video="true" class="hero-video hero-video-light" autoplay muted loop playsinline aria-hidden="true" preload="metadata">
+    <video id="hero-media-light" data-is-video="true" poster={!isVideoDark ? mediaDark : undefined} class="hero-video hero-video-light" muted loop playsinline aria-hidden="true" preload="metadata">
       <source src={mediaLight} type="video/mp4" />
     </video>
   ) : (
@@ -70,7 +70,7 @@ const services = servicesData.length > 0
   
   <!-- Hero Background - Video or Image for Dark Theme -->
   {isVideoDark ? (
-    <video id="hero-media-dark" data-is-video="true" class="hero-video hero-video-dark" autoplay muted loop playsinline aria-hidden="true" preload="metadata">
+    <video id="hero-media-dark" data-is-video="true" poster={!isVideoLight ? mediaLight : undefined} class="hero-video hero-video-dark" muted loop playsinline aria-hidden="true" preload="metadata">
       <source src={mediaDark} type="video/mp4" />
     </video>
   ) : (
@@ -277,181 +277,5 @@ const services = servicesData.length > 0
 </style>
 
 <script>
-  // Video control functionality
-  function initVideoControl() {
-    const controlButton = document.getElementById('video-control');
-    const pauseIcon = document.getElementById('pause-icon');
-    const playIcon = document.getElementById('play-icon');
-
-    // Only set up controls if button exists
-    if (!controlButton) return;
-
-    const setIconState = (playing: boolean) => {
-      if (pauseIcon) pauseIcon.style.display = playing ? 'block' : 'none';
-      if (playIcon) playIcon.style.display = playing ? 'none' : 'block';
-    };
-
-    const previousHandler = (controlButton as any).__videoToggleHandler;
-    if (previousHandler) {
-      controlButton.removeEventListener('click', previousHandler);
-    }
-
-    // Initialize state
-    if (!controlButton.dataset.state) {
-      controlButton.dataset.state = 'playing';
-    }
-    setIconState(controlButton.dataset.state !== 'paused');
-
-    const handler = () => {
-      const currentState = controlButton.dataset.state;
-      const newState = currentState === 'paused' ? 'playing' : 'paused';
-      
-      controlButton.dataset.state = newState;
-      setIconState(newState === 'playing');
-      
-      // Dispatch event for time colon animation in header
-      if (newState === 'paused') {
-        document.dispatchEvent(new CustomEvent('hero-video-paused'));
-      } else {
-        document.dispatchEvent(new CustomEvent('hero-video-playing'));
-      }
-      
-      // Update actual video playback
-      updateVideoPlayback();
-    };
-
-    controlButton.addEventListener('click', handler);
-    (controlButton as any).__videoToggleHandler = handler;
-  }
-
-  // Update video control button visibility based on current theme
-  function updateControlButtonVisibility() {
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    const controlButton = document.getElementById('video-control');
-    
-    if (!controlButton) return;
-    
-    const hasLightVideo = controlButton.getAttribute('data-has-light-video') === 'true';
-    const hasDarkVideo = controlButton.getAttribute('data-has-dark-video') === 'true';
-    
-    // Show button only if current theme has a video
-    if ((isDarkMode && hasDarkVideo) || (!isDarkMode && hasLightVideo)) {
-      controlButton.style.display = 'flex';
-    } else {
-      controlButton.style.display = 'none';
-    }
-  }
-
-  // Robust video playback helper
-  async function playVideo(video: HTMLVideoElement) {
-    if (!video) return;
-    
-    try {
-      video.muted = true;
-      video.playsInline = true;
-      
-      if (video.readyState === 0) {
-        video.load();
-      }
-
-      await video.play();
-    } catch (err) {
-      console.warn('Autoplay failed, retrying:', err);
-      // Progressive retry
-      const retryDelays = [100, 300, 500];
-      
-      const attemptRetry = (index: number) => {
-        if (index >= retryDelays.length) return;
-        
-        setTimeout(async () => {
-          try {
-             if (video.readyState === 0) video.load();
-             await video.play();
-          } catch (e) {
-            console.error(`Retry ${index + 1} failed:`, e);
-            attemptRetry(index + 1);
-          }
-        }, retryDelays[index]);
-      };
-      
-      attemptRetry(0);
-    }
-  }
-
-  function pauseVideo(video: HTMLVideoElement) {
-    if (video && !video.paused) {
-      video.pause();
-    }
-  }
-
-  // Central function to manage video states based on theme and user preference
-  function updateVideoPlayback() {
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    const mediaLight = document.getElementById('hero-media-light');
-    const mediaDark = document.getElementById('hero-media-dark');
-    const controlButton = document.getElementById('video-control');
-    
-    const isVideoLight = mediaLight?.getAttribute('data-is-video') === 'true';
-    const isVideoDark = mediaDark?.getAttribute('data-is-video') === 'true';
-    
-    // Check user preference (default to playing)
-    const userPaused = controlButton?.dataset.state === 'paused';
-
-    if (userPaused) {
-      if (mediaLight instanceof HTMLVideoElement) pauseVideo(mediaLight);
-      if (mediaDark instanceof HTMLVideoElement) pauseVideo(mediaDark);
-      return;
-    }
-
-    // Play correct video based on theme
-    if (isDarkMode) {
-      if (isVideoDark && mediaDark instanceof HTMLVideoElement) {
-        playVideo(mediaDark);
-      }
-      if (isVideoLight && mediaLight instanceof HTMLVideoElement) {
-        pauseVideo(mediaLight);
-      }
-    } else {
-      if (isVideoLight && mediaLight instanceof HTMLVideoElement) {
-        playVideo(mediaLight);
-      }
-      if (isVideoDark && mediaDark instanceof HTMLVideoElement) {
-        pauseVideo(mediaDark);
-      }
-    }
-  }
-
-  function initializeHeroMedia() {
-    // Ensure hydrated class is present for visibility logic
-    if (!document.documentElement.classList.contains('hydrated')) {
-        document.documentElement.classList.add('hydrated');
-    }
-
-    initVideoControl();
-    updateControlButtonVisibility();
-    updateVideoPlayback();
-  }
-
-  // Use astro:page-load for View Transitions compatibility
-  if (!(window as any).__heroPageLoadAttached) {
-    (window as any).__heroPageLoadAttached = true;
-    document.addEventListener('astro:page-load', initializeHeroMedia);
-  } else {
-    initializeHeroMedia();
-  }
-
-  // Also listen for theme changes to switch videos
-  // Remove existing listener if present to avoid duplicates
-  const themeChangeHandler = () => {
-    updateControlButtonVisibility();
-    updateVideoPlayback();
-  };
-
-  // We use a unique property on the document to track the handler
-  if ((document as any).__heroThemeHandler) {
-    document.removeEventListener('theme-changed', (document as any).__heroThemeHandler);
-  }
-  
-  document.addEventListener('theme-changed', themeChangeHandler);
-  (document as any).__heroThemeHandler = themeChangeHandler;
+  import "../../scripts/hero-media";
 </script>

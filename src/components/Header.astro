@@ -21,7 +21,7 @@ export interface Props {
 const { overlay = false } = Astro.props as Props;
 
 const currentPath = Astro.url.pathname;
-const currentLang = getCurrentLanguage(Astro.url);
+const currentLang = Astro.locals.lang ?? getCurrentLanguage(Astro.url);
 const langPrefix = `/${currentLang}`;
 
 // Fetch settings from CMS (SDK with smart caching)
@@ -59,6 +59,7 @@ const servicesMenuLabel = await t('header.services_menu_label', currentLang, cur
 const weatherLabel = await t('header.weather_label', currentLang, currentLang === 'de' ? 'Aktuelles Wetter und Zeit' : 'Current weather and time');
 const mobileNavLabel = await t('header.mobile_nav_label', currentLang, currentLang === 'de' ? 'Mobile Navigation' : 'Mobile navigation');
 const openMenuLabel = await t('header.open_menu', currentLang, currentLang === 'de' ? 'Menü öffnen' : 'Open menu');
+const closeMenuLabel = await t('header.close_menu', currentLang, currentLang === 'de' ? 'Menü schließen' : 'Close menu');
 
 // Language switcher setting
 const showLanguageSwitcher = siteSettings?.language_switcher_enabled !== false;
@@ -162,17 +163,16 @@ if (showWeather && weatherLocation) {
   </div>
 
   <!-- Navigation with Dropdowns -->
-  <nav id="main-navigation" role="navigation" aria-label={mainNavLabel} class="flex items-center gap-4 xl:gap-8 min-w-0">
-    <ul role="menubar" class={['hidden lg:flex items-center gap-4 xl:gap-8 text-sm font-medium font-mono', isOverlay ? 'adaptive-color' : 'text-white'].join(' ')}>
-      {showServicesMenu && services.length > 0 && (
-      <li class="relative" role="none">
+  <nav id="main-navigation" tabindex="-1" aria-label={mainNavLabel} class="flex items-center gap-4 xl:gap-8 min-w-0">
+    <ul class={['hidden lg:flex items-center gap-4 xl:gap-8 text-sm font-medium font-mono', isOverlay ? 'adaptive-color' : 'text-white'].join(' ')}>
+      {showServicesMenu && processedServices.length > 0 && (
+      <li class="relative">
         <details class="group relative">
           <summary
             class:list={[
               'nav-link flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded cursor-pointer select-none list-none marker:hidden',
               isServicesActive ? 'is-active' : ''
             ]}
-            aria-haspopup="menu"
             aria-label={servicesMenuLabel}
           >
             {servicesLabel}
@@ -182,13 +182,11 @@ if (showWeather && weatherLocation) {
           </summary>
           <div
             class="services-dropdown-menu absolute top-full left-0 mt-2 w-56 opacity-0 invisible pointer-events-none transition-all duration-200 z-[60] group-open:opacity-100 group-open:visible group-open:pointer-events-auto origin-top-left"
-            role="menu"
           >
             <div class="rounded-md shadow-lg border border-[var(--color-border)] py-2 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95">
             {processedServices.map((service) => (
               <a
                 href={service.link}
-                role="menuitem"
                 class="block px-4 py-2 text-sm font-sans text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800 cursor-pointer"
                 aria-label={ui('nav.viewService', { name: service.title })}
               >
@@ -202,9 +200,8 @@ if (showWeather && weatherLocation) {
       )}
 
       {navLinks.map((link) => (
-          <li role="none">
+          <li>
             <a
-              role="menuitem"
               href={link.href}
               target={link.newTab ? '_blank' : undefined}
               rel={link.newTab ? 'noopener noreferrer' : undefined}
@@ -279,6 +276,8 @@ if (showWeather && weatherLocation) {
       type="button"
       class="relative z-20 flex items-center justify-center w-10 h-10 adaptive-color focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-full"
       aria-label={openMenuLabel}
+      data-open-label={openMenuLabel}
+      data-close-label={closeMenuLabel}
       aria-expanded="false"
       aria-controls="mobile-menu-overlay"
     >
@@ -352,6 +351,7 @@ if (showWeather && weatherLocation) {
   id="mobile-menu-overlay" 
   class="mobile-menu-overlay lg:hidden fixed inset-0 z-[99] pointer-events-none transition-transform duration-300"
   aria-hidden="true"
+  inert
 >
   <!-- Background Layer -->
   <div class="absolute inset-0 mobile-nav-bg"></div>
@@ -360,7 +360,7 @@ if (showWeather && weatherLocation) {
     <!-- Navigation Links -->
     <nav class="flex-1 flex flex-col justify-center">
       <ul class="space-y-6">
-        {showServicesMenu && services.length > 0 && (
+        {showServicesMenu && processedServices.length > 0 && (
           <li>
             <details class="mobile-accordion group">
               <summary class="flex items-center justify-between text-3xl font-display font-medium cursor-pointer list-none">
@@ -412,6 +412,7 @@ if (showWeather && weatherLocation) {
 </div>
 
 <script>
+  import { visibleTabStops } from '../scripts/focus.js';
   // ============================================================
   // Header controller — transition-safe (single module instance).
   // The desktop <header> and mobile <nav> persist across navigations
@@ -424,6 +425,8 @@ if (showWeather && weatherLocation) {
   let videoPaused = false;
   let colonVisible = true;
   let isMenuOpen = false;
+  const inerted = new Map<HTMLElement, boolean>();
+  let previousOverflow = '';
 
   // ---- Scroll-driven appearance -------------------------------
   function applyScrollState() {
@@ -435,7 +438,7 @@ if (showWeather && weatherLocation) {
     if (header) {
       const threshold = parseInt(header.dataset.scrollThreshold || '50', 10);
       const showBorder = header.dataset.showBorder === 'true';
-      if (header.dataset.blurOnScroll === 'true') header.classList.add('blur-enabled');
+      header.classList.toggle('blur-enabled', header.dataset.blurOnScroll === 'true');
       const scrolled = y > threshold;
       header.classList.toggle('scrolled', scrolled);
       header.classList.toggle('show-border', scrolled && showBorder);
@@ -459,6 +462,7 @@ if (showWeather && weatherLocation) {
     if (ctaEl) {
       ctaEl.style.opacity = showCta ? '1' : '0';
       ctaEl.style.pointerEvents = showCta ? 'auto' : 'none';
+      ctaEl.inert = !showCta;
     }
   }
 
@@ -519,7 +523,7 @@ if (showWeather && weatherLocation) {
   }
 
   function toggleColon() {
-    if (videoPaused) {
+    if (videoPaused || matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.reduceMotion === 'true') {
       document.querySelectorAll('.time-colon').forEach((c) => ((c as HTMLElement).style.visibility = 'visible'));
       return;
     }
@@ -536,10 +540,24 @@ if (showWeather && weatherLocation) {
     isMenuOpen = open;
     overlay?.classList.toggle('is-open', open);
     overlay?.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (overlay) overlay.inert = !open;
     toggle?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (toggle) toggle.setAttribute('aria-label',(open ? toggle.dataset.closeLabel : toggle.dataset.openLabel) || 'Menu');
     toggle?.querySelector('.hamburger-icon')?.classList.toggle('hidden', open);
     toggle?.querySelector('.close-icon')?.classList.toggle('hidden', !open);
-    document.body.style.overflow = open ? 'hidden' : '';
+    if (open) {
+      previousOverflow = document.body.style.overflow;
+      for (const child of document.body.children) {
+        if (child instanceof HTMLElement && child !== overlay && child.id !== 'mobile-nav' && !['SCRIPT','STYLE'].includes(child.tagName)) {
+          inerted.set(child, child.inert);
+          child.inert = true;
+        }
+      }
+    } else {
+      for (const [element, wasInert] of inerted) element.inert = wasInert;
+      inerted.clear();
+    }
+    document.body.style.overflow = open ? 'hidden' : previousOverflow;
     if (open) {
       const weatherEl = document.getElementById('mobile-nav-weather');
       const ctaEl = document.getElementById('mobile-nav-cta');
@@ -547,7 +565,9 @@ if (showWeather && weatherLocation) {
       if (ctaEl) {
         ctaEl.style.opacity = '1';
         ctaEl.style.pointerEvents = 'auto';
+        ctaEl.inert = false;
       }
+      (overlay && visibleTabStops(overlay)[0])?.focus();
     } else {
       applyMobileCtaState();
     }
@@ -614,6 +634,10 @@ if (showWeather && weatherLocation) {
 
     // Mobile menu keyboard: Escape to close + focus trap.
     document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const details = document.activeElement?.closest('details[open]') as HTMLDetailsElement | null;
+        if (details) { e.preventDefault(); details.open = false; details.querySelector('summary')?.focus(); return; }
+      }
       if (!isMenuOpen) return;
       const overlay = document.getElementById('mobile-menu-overlay');
       if (!overlay) return;
@@ -623,21 +647,29 @@ if (showWeather && weatherLocation) {
         return;
       }
       if (e.key === 'Tab') {
-        const focusable = overlay.querySelectorAll<HTMLElement>(
-          'a[href], button, input, [tabindex]:not([tabindex="-1"])'
-        );
+        const mobileNav = document.getElementById('mobile-nav');
+        const focusable = [...(mobileNav ? visibleTabStops(mobileNav) : []), ...visibleTabStops(overlay)];
         if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
+        if (e.shiftKey && (document.activeElement === first || !focusable.includes(document.activeElement))) {
           e.preventDefault();
           last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
+        } else if (!e.shiftKey && (document.activeElement === last || !focusable.includes(document.activeElement))) {
           e.preventDefault();
           first.focus();
         }
       }
     });
+    // Close the menu before the contact dialog's document click handler runs.
+    // Otherwise its background inert boundary would also disable the dialog.
+    document.addEventListener('click', (event) => {
+      if (isMenuOpen && (event.target as Element)?.closest('#mobile-nav a')) setMenu(false);
+    }, true);
+    window.matchMedia('(min-width: 1024px)').addEventListener('change', e => {
+      if (e.matches && isMenuOpen) setMenu(false);
+    });
+    document.addEventListener('astro:before-swap', () => { if (isMenuOpen) setMenu(false); });
 
     // The persisted header carries its live classes (e.g. `.scrolled`) across a
     // navigation. Reconciling scroll state on the new page toggles the CTA /

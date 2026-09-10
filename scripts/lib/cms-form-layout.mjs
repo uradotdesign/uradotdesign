@@ -11,7 +11,12 @@ export const SECTIONS = [
   { key: "media", label: "Media", icon: "perm_media", start: "closed" },
   { key: "links", label: "Links & Actions", icon: "link", start: "closed" },
   { key: "display", label: "Display options", icon: "tune", start: "closed" },
-  { key: "seo", label: "SEO & Social", icon: "travel_explore", start: "closed" },
+  {
+    key: "seo",
+    label: "SEO & Social",
+    icon: "travel_explore",
+    start: "closed",
+  },
 ];
 
 export const GROUP_PREFIX = "grp_";
@@ -66,7 +71,7 @@ export function classifyField(field) {
 
   // Publishing / identity / ordering.
   if (
-    /^(status|slug|enabled|featured|draft)$/.test(name) ||
+    /^(status|slug|enabled|featured|draft|publish_at)$/.test(name) ||
     /^sort(_order)?$/.test(name) ||
     /(^date_|_date$|^published)/.test(name)
   )
@@ -76,14 +81,17 @@ export function classifyField(field) {
   if (/^(seo_|meta_|og_|twitter_)/.test(name)) return "seo";
 
   // Links & actions.
-  if (/(^|_)(url|link|href|target)(_|$)|^cta_|^button_/.test(name)) return "links";
+  if (/(^|_)(url|link|href|target)(_|$)|^cta_|^button_/.test(name))
+    return "links";
 
   // Media. `file` is boundary-anchored so it doesn't swallow `profile`/`filename`.
   if (
     type === "file" ||
     type === "files" ||
     FILE_INTERFACES.has(iface) ||
-    /(image|photo|logo|avatar|icon|video|background|gallery|media)/.test(name) ||
+    /(image|photo|logo|avatar|icon|video|background|gallery|media)/.test(
+      name
+    ) ||
     /(^|_)files?(_|$)/.test(name) ||
     name === "alt" ||
     /^focal_point/.test(name)
@@ -193,5 +201,10 @@ export function buildLayoutPlan({ fields, translationBaseNames = [], mode }) {
     });
   }
 
-  return { groups, fieldUpdates, hides, usedSections: usedSections.map((s) => s.key) };
+  return {
+    groups,
+    fieldUpdates,
+    hides,
+    usedSections: usedSections.map((s) => s.key),
+  };
 }

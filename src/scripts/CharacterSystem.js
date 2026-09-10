@@ -1,4 +1,5 @@
 import { watchTheme } from "./shadow-theme.js";
+import { prefersReducedMotion } from './reduced-motion.js';
 
 class CharacterPicker extends HTMLElement {
   constructor() {
@@ -15,7 +16,7 @@ class CharacterPicker extends HTMLElement {
     this._unwatchTheme = watchTheme(this);
 
     // Initial selection broadcast after a tick to ensure listener is ready
-    setTimeout(() => {
+    this._initialTimer = setTimeout(() => {
       const initial =
         this.querySelector('[data-selected="true"]') ||
         this.querySelector(".item");
@@ -26,6 +27,7 @@ class CharacterPicker extends HTMLElement {
   }
 
   disconnectedCallback() {
+    clearTimeout(this._initialTimer);
     this._unwatchTheme?.();
     if (this._onDocClick) {
       document.removeEventListener("click", this._onDocClick);
@@ -320,7 +322,7 @@ class CharacterDisplay extends HTMLElement {
     window.addEventListener("character-change", this._onCharacterChange);
 
     // Show first image by default if none visible
-    setTimeout(() => {
+    this._initialTimer = setTimeout(() => {
       const active = this.querySelector(".active");
       if (!active) {
         const first = this.querySelector("img");
@@ -333,6 +335,7 @@ class CharacterDisplay extends HTMLElement {
   }
 
   disconnectedCallback() {
+    clearTimeout(this._initialTimer);
     window.removeEventListener("character-change", this._onCharacterChange);
   }
 
@@ -348,7 +351,7 @@ class CharacterDisplay extends HTMLElement {
       if (img.getAttribute("data-value") === value) {
         img.classList.add("active");
         img.style.display = "block"; // Ensure display block
-        img.style.animation = "fadeIn 0.5s ease forwards";
+        img.style.animation = prefersReducedMotion() ? 'none' : "fadeIn 0.5s ease forwards";
       } else {
         img.classList.remove("active");
         img.style.display = "none"; // Explicitly hide others

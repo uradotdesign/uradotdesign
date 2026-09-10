@@ -68,8 +68,9 @@ Edit `.env` with your values:
 PUBLIC_DIRECTUS_URL=http://localhost:8055
 DIRECTUS_URL=http://localhost:8055
 
-# Site URL
-PUBLIC_URL=http://localhost:3000
+# Directus and website public URLs
+PUBLIC_URL=http://localhost:8055
+SITE_URL=http://localhost:3000
 
 # Directus Admin Credentials
 KEY=your-random-uuid-here
@@ -79,7 +80,7 @@ ADMIN_PASSWORD=your-secure-password
 
 # Database
 POSTGRES_USER=directus
-POSTGRES_PASSWORD=directus
+POSTGRES_PASSWORD=your-secure-database-password
 POSTGRES_DB=directus
 
 # Redis
@@ -110,6 +111,11 @@ docker-compose up -d
 Wait for all services to be healthy (check with `docker-compose ps`).
 
 Directus will be available at: **http://localhost:8055**
+
+On an empty database, follow [CMS provisioning](docs/cms-provisioning.md) before
+starting Astro. It installs the current native schema, extensions, shared views,
+roles and required service credentials. See [the editing guide](docs/cms-editing.md)
+for translations, drafts, visibility, scheduling, blocks and shared settings.
 
 ### 4. Start Astro Development Server
 
@@ -184,7 +190,10 @@ AVAILABLE_LOCALES=en,de
 #### 2. Deploy with Docker Compose
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d --build
+bash scripts/prepare-cms-css.sh directus_cms
+docker compose -f docker-compose.prod.yml build \
+  --build-arg CMS_CLASSES_SHA256="$(sha256sum .cms-build/classes.html | cut -d ' ' -f1)" astro
+docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 240
 ```
 
 #### 3. Configure Nginx Reverse Proxy
@@ -241,7 +250,8 @@ server {
 #### 1. Build Astro
 
 ```bash
-npm run build
+node --env-file=.env scripts/scan-cms-tailwind.mjs --output=.cms-build/classes.html
+CMS_CLASSES_INPUT=.cms-build/classes.html REQUIRE_CMS_CLASSES=true npm run build
 ```
 
 This creates a `dist/` folder with:

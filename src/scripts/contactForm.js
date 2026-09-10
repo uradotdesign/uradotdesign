@@ -137,7 +137,7 @@ export function initContactFormLogic(form, opts) {
       phone: formData.get("phone") || undefined,
       company: formData.get("company") || undefined,
       website: formData.get("website") || undefined,
-      contact_preference: contactPreferences[0] || "email",
+      contact_preferences: contactPreferences.length ? contactPreferences : ['email'],
       message: formData.get("message"),
       url: formData.get("url"),
       language,

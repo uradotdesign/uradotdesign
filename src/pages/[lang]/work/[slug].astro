@@ -1,4 +1,6 @@
 ---
+import { localizedSeo } from '../../../lib/seo';
+import { richText } from '../../../lib/rich-text';
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import {
   getCaseStudies,
@@ -115,9 +117,9 @@ const heroImageMobileDark = getAssetUrl(study.featured_image_mobile_dark);
 
 // Optional SEO overrides (fall back to the page's own title/description/image).
 const seoImage = getAssetUrl(study.seo_image);
-const metaTitle = getLocalizedField(study, "seo_title", lang) || title;
+const metaTitle = localizedSeo(study, 'seo_title', lang) || title;
 const metaDescription =
-  getLocalizedField(study, "seo_description", lang) || description;
+  localizedSeo(study, 'seo_description', lang) || description;
 
 // Hero alt text + focal point (from the file metadata of the shown image).
 const heroFileId = study.cover_image || study.featured_image_light;
@@ -340,9 +342,9 @@ const workBreadcrumbJsonLd = {
               <div class="flex flex-col lg:flex-row gap-6 lg:gap-24">
                 {/* Left: Section Title */}
                 <div class="lg:w-1/6 lg:sticky lg:top-32 h-fit">
-                  <h2 class="text-lg font-mono opacity-80 font-medium">
+                  {String(getLocalizedField(section, "title", lang) || section.title || '').trim() && <h2 class="text-lg font-mono opacity-80 font-medium">
                     {getLocalizedField(section, "title", lang) || section.title}
-                  </h2>
+                  </h2>}
                 </div>
 
                 {/* Right: Content Grid */}
@@ -367,7 +369,7 @@ const workBreadcrumbJsonLd = {
                         {content && (
                           <div
                             class="prose dark:prose-invert max-w-none prose-p:text-lg prose-p:leading-relaxed prose-headings:font-display prose-img:my-0 w-full"
-                            set:html={content}
+                            set:html={richText(content)}
                           />
                         )}
                         {images.map((img: any) => (

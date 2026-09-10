@@ -161,3 +161,13 @@ Sources: [Directus 12 breaking changes](https://github.com/directus/directus/rel
 [PostgreSQL 18.6](https://www.postgresql.org/docs/release/18.6/),
 [PostgreSQL 18.2 upgrade notes](https://www.postgresql.org/docs/release/18.2/),
 [Redis 8.2 security updates](https://redis.io/docs/latest/operate/oss_and_stack/stack-with-enterprise/release-notes/redisce/redisos-8.2-release-notes/).
+
+## Editorial audit follow-up, 10 September 2026
+
+The later [editorial audit record](audit-2026-09-10.md) supersedes the earlier
+collection/route counts above: 125 data collections plus five folders and 48
+sitemap routes. It includes role separation, native forms and dashboards,
+reproducible provisioning, schedules, contact preferences, CMS CSS compilation,
+accessibility and localized metadata. The Lottie eval warning is resolved; the
+four shared extension-tool advisories remain. Use the current
+[provisioning and recovery guide](cms-provisioning.md) for future installations.

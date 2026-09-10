@@ -43,7 +43,9 @@ export function createDirectusAdmin(config = resolveAdminConfigFromEnv()) {
   async function request(path, options = {}) {
     const url = `${baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
     const headers = {
-      "Content-Type": "application/json",
+      ...(options.body instanceof FormData
+        ? {}
+        : { "Content-Type": "application/json" }),
       ...(options.headers || {}),
     };
     const res = await fetch(url, { ...options, headers });
@@ -205,18 +207,22 @@ export function createDirectusAdmin(config = resolveAdminConfigFromEnv()) {
   }
 
   async function getPublicPolicyId() {
-    const roles = await authRequest(
-      "/roles?filter[name][_eq]=Public&fields=*,policies.directus_policies_id.*"
-    );
-    const role = Array.isArray(roles?.data) ? roles.data[0] : roles[0];
-    const policyId =
-      role?.policies?.map((p) => p?.directus_policies_id).filter(Boolean)?.[0]
-        ?.id || null;
-    if (policyId) return policyId;
-    const policies = await authRequest("/policies");
+    const publicAccess = (
+      await authRequest(
+        "/access?filter[user][_null]=true&filter[role][_null]=true&fields=policy&limit=-1"
+      )
+    ).data;
+    const ids = [...new Set((publicAccess || []).map((row) => row.policy))];
+    if (ids.length > 1)
+      throw new Error(
+        "Multiple public policies require an explicit permission review."
+      );
+    if (ids[0]) return ids[0];
+    const policies = await authRequest("/policies?limit=-1");
     const list = Array.isArray(policies?.data) ? policies.data : policies;
     return (
-      list?.find((p) => p.name?.toLowerCase().includes("public"))?.id || null
+      list?.find((p) => ["Public", "$t:public_label"].includes(p.name))?.id ||
+      null
     );
   }
 
