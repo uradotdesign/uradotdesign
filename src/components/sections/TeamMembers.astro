@@ -3,6 +3,7 @@ import { getTeamMembers, getAssetUrl } from '../../lib/directus';
 import { getCurrentLanguage, getLocalizedField } from '../../lib/i18n';
 import { t, getUI } from '../../lib/translations';
 import ProgressiveImage from '../ProgressiveImage.astro';
+import { resolveCmsLink } from '../../lib/global-content';
 
 // Get current language
 const currentLang = getCurrentLanguage(Astro.url);
@@ -20,9 +21,9 @@ const teamMembers = teamMembersData.length > 0
       bio: getLocalizedField(member, 'bio', currentLang),
       photo: member.photo ? getAssetUrl(member.photo) : null,
       email: member.email,
-      linkedinUrl: member.linkedin_url,
+      linkedinUrl: resolveCmsLink(member.linkedin_url, currentLang)?.href,
       twitterUrl: member.twitter_url,
-      githubUrl: member.github_url,
+      githubUrl: resolveCmsLink(member.github_url, currentLang)?.href,
       slug: member.slug
     }))
   : [];
@@ -44,14 +45,13 @@ const teamMembers = teamMembersData.length > 0
         <div 
           class="team-card"
           data-member-index={index}
-          tabindex="0"
-          role="button"
-          aria-label={ui('team.viewProfile', { name: member.fullName })}
+          role="group"
+          aria-label={member.fullName}
         >
           <!-- Card Inner - this is what flips -->
           <div class="card-inner">
             <!-- Front Side -->
-            <div class="card-face card-front">
+            <div class="card-face card-front" role="button" tabindex="0" aria-label={ui('team.viewProfile', { name: member.fullName })} aria-haspopup="dialog">
               <div class="card-image">
                 {member.photo ? (
                   <ProgressiveImage
@@ -74,7 +74,8 @@ const teamMembers = teamMembersData.length > 0
             </div>
 
             <!-- Back Side -->
-            <div class="card-face card-back">
+            <div class="card-face card-back" role="dialog" aria-modal="true" aria-label={member.fullName} aria-hidden="true" inert>
+              <button type="button" class="team-card-close" aria-label={currentLang === 'de' ? 'Profil schließen' : 'Close profile'}>×</button>
               <div class="card-back-content">
                 <h3 class="card-back-name">{member.fullName}</h3>
                 <p class="card-back-role">{member.role}</p>
@@ -117,7 +118,7 @@ const teamMembers = teamMembersData.length > 0
     z-index: 1;
   }
 
-  .team-section.modal-open {
+  #team-section.team-section.modal-open {
     z-index: 9999;
   }
 
@@ -199,11 +200,11 @@ const teamMembers = teamMembersData.length > 0
     z-index: 10;
   }
 
-  .team-card:focus {
+  .card-front:focus {
     outline: none;
   }
 
-  .team-card:focus-visible {
+  .card-front:focus-visible {
     outline: 2px solid var(--color-ring);
     outline-offset: 4px;
     border-radius: 12px;
@@ -329,7 +330,7 @@ const teamMembers = teamMembersData.length > 0
 
   /* Back Side Content */
   .card-back-content {
-    padding: 1.25rem;
+    padding: 3.25rem 1.25rem 1.25rem;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -370,6 +371,11 @@ const teamMembers = teamMembersData.length > 0
   }
 
   .card-back-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
     color: var(--color-muted-foreground);
     transition: color 0.2s ease;
   }
@@ -408,118 +414,158 @@ const teamMembers = teamMembersData.length > 0
     pointer-events: none;
     filter: brightness(0.5);
   }
+  .team-cards-row.has-active {
+    touch-action: auto;
+  }
+
+  .team-card-close {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: 44px;
+    height: 44px;
+    font-size: 1.75rem;
+    cursor: pointer;
+  }
+  .team-card-close:focus-visible, .card-back-links a:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card-inner, .team-card, .team-backdrop { transition: none; }
+  }
+  :global(html[data-reduce-motion="true"]) .card-inner,
+  :global(html[data-reduce-motion="true"]) .team-card,
+  :global(html[data-reduce-motion="true"]) .team-backdrop { transition: none; }
 </style>
 
 <script>
+  import { prefersReducedMotion } from '../../scripts/reduced-motion.js';
   // Set true while a horizontal drag is in progress so the drag gesture
   // never registers as a card "open" click. Reset at the start of every
   // new pointer interaction.
   let teamDragged = false;
 
   class TeamCardFlip {
-    cards: HTMLElement[];
-    backdrop: HTMLElement | null;
-    container: HTMLElement | null;
-    section: HTMLElement | null;
+    cards = Array.from(document.querySelectorAll<HTMLElement>('.team-card'));
+    backdrop = document.getElementById('team-backdrop');
+    container = document.getElementById('team-cards-row');
+    section = document.getElementById('team-section');
     activeCard: HTMLElement | null = null;
+    controller = new AbortController();
+    inertElements = new Map<HTMLElement, boolean>();
+    previousOverflow = '';
+    frame = 0;
+    closeTimer: ReturnType<typeof setTimeout> | undefined;
+    finishClose: (() => void) | undefined;
 
     constructor() {
-      this.cards = Array.from(document.querySelectorAll('.team-card'));
-      this.backdrop = document.getElementById('team-backdrop');
-      this.container = document.getElementById('team-cards-row');
-      this.section = document.getElementById('team-section');
-      this.init();
-    }
-
-    init() {
-      // Card click/keyboard handlers
-      this.cards.forEach((card) => {
-        card.addEventListener('click', (e) => this.handleCardClick(e, card));
-        card.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            this.handleCardClick(e, card);
+      const { signal } = this.controller;
+      for (const card of this.cards) {
+        const trigger = card.querySelector<HTMLElement>('.card-front');
+        trigger?.addEventListener('click', () => {
+          if (!teamDragged) this.openCard(card);
+        }, { signal });
+        trigger?.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            this.openCard(card);
           }
-        });
-      });
-
-      // Backdrop click to close
-      this.backdrop?.addEventListener('click', () => this.closeCard());
-
-      // Escape key to close
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && this.activeCard) {
-          this.closeCard();
-        }
-      });
-    }
-
-    handleCardClick(e: Event, card: HTMLElement) {
-      e.stopPropagation();
-
-      // Ignore the click synthesized at the end of a swipe/drag.
-      if (teamDragged) return;
-
-      if (this.activeCard === card) {
-        // Same card clicked - toggle flip
-        if (card.classList.contains('flipped')) {
-          card.classList.remove('flipped');
-        } else {
-          card.classList.add('flipped');
-        }
-      } else if (this.activeCard) {
-        // Different card is active - close it first, then open new one
-        this.closeCard();
-        setTimeout(() => this.openCard(card), 350);
-      } else {
-        // No active card - open this one
-        this.openCard(card);
+        }, { signal });
+        card.querySelector('.team-card-close')?.addEventListener('click', () => this.closeCard(), { signal });
       }
+      this.backdrop?.addEventListener('click', () => this.closeCard(), { signal });
+      document.addEventListener('keydown', (event) => {
+        if (!this.activeCard) return;
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          this.closeCard();
+        } else if (event.key === 'Tab') {
+          const elements = Array.from(this.activeCard.querySelectorAll<HTMLElement>('.card-back button, .card-back a[href]'))
+            .filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
+          const first = elements[0], last = elements.at(-1);
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault(); last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault(); first?.focus();
+          }
+        }
+      }, { signal });
     }
 
     openCard(card: HTMLElement) {
+      if (this.activeCard === card) return;
+      this.closeCard(false);
+      clearTimeout(this.closeTimer);
+      this.finishClose?.();
+      this.finishClose = undefined;
       this.activeCard = card;
-      
-      // Elevate section z-index
       this.section?.classList.add('modal-open');
-      
-      // Activate card and backdrop
       card.classList.add('active');
       this.backdrop?.classList.add('active');
       this.container?.classList.add('has-active');
-
-      // Flip after a tiny delay for smooth animation
-      requestAnimationFrame(() => {
-        card.classList.add('flipped');
-      });
-
-      // Lock scroll
+      const back = card.querySelector<HTMLElement>('.card-back')!;
+      const front = card.querySelector<HTMLElement>('.card-front')!;
+      back.inert = false;
+      back.setAttribute('aria-hidden', 'false');
+      this.previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
+      let branch = card;
+      while (branch.parentElement) {
+        for (const sibling of branch.parentElement.children) {
+          if (sibling instanceof HTMLElement && sibling !== branch && sibling !== this.backdrop && !['SCRIPT', 'STYLE', 'LINK'].includes(sibling.tagName)) {
+            this.inertElements.set(sibling, sibling.inert);
+            sibling.inert = true;
+          }
+        }
+        if (branch.parentElement === document.body) break;
+        branch = branch.parentElement;
+      }
+      this.frame = requestAnimationFrame(() => {
+        if (this.activeCard !== card || !card.isConnected) return;
+        card.classList.add('flipped');
+        card.querySelector<HTMLButtonElement>('.team-card-close')?.focus();
+        front.inert = true;
+        front.setAttribute('aria-hidden', 'true');
+      });
     }
 
-    closeCard() {
+    closeCard(restoreFocus = true) {
       if (!this.activeCard) return;
-
+      cancelAnimationFrame(this.frame);
       const card = this.activeCard;
-
-      // Remove flipped first for unflip animation
+      this.activeCard = null;
+      const front = card.querySelector<HTMLElement>('.card-front')!;
+      const back = card.querySelector<HTMLElement>('.card-back')!;
+      front.inert = false;
+      front.removeAttribute('aria-hidden');
+      for (const [element, inert] of this.inertElements) element.inert = inert;
+      this.inertElements.clear();
+      document.body.style.overflow = this.previousOverflow;
+      if (restoreFocus && front.isConnected) front.focus();
+      back.inert = true;
+      back.setAttribute('aria-hidden', 'true');
       card.classList.remove('flipped');
-
-      // After flip animation, remove active state
-      setTimeout(() => {
+      this.finishClose = () => {
         card.classList.remove('active');
         this.backdrop?.classList.remove('active');
         this.container?.classList.remove('has-active');
         this.section?.classList.remove('modal-open');
-        
-        // Unlock scroll
-        document.body.style.overflow = '';
-      }, 300);
+      };
+      this.closeTimer = setTimeout(() => {
+        this.finishClose?.();
+        this.finishClose = undefined;
+      }, prefersReducedMotion() ? 0 : 300);
+    }
 
-      this.activeCard = null;
+    destroy() {
+      this.controller.abort();
+      this.closeCard(false);
+      clearTimeout(this.closeTimer);
+      this.finishClose?.();
+      this.finishClose = undefined;
     }
   }
-
   // Horizontal drag/swipe-to-scroll for the overlapping card row.
   // Pointer Events cover touch, mouse and pen with one code path; we only
   // hijack the gesture once the row is actually scrollable and the pointer
@@ -534,6 +580,7 @@ const teamMembers = teamMembersData.length > 0
     const isScrollable = () => row.scrollWidth > row.clientWidth + 4;
 
     row.addEventListener('pointerdown', (e) => {
+      if (row.classList.contains('has-active')) return;
       if (e.button != null && e.button !== 0) return;
       if (!isScrollable()) return;
       active = true;
@@ -582,11 +629,13 @@ const teamMembers = teamMembersData.length > 0
   // Initialize idempotently — the row re-renders on navigation, so a per-row
   // guard prevents double-binding when both DOMContentLoaded and
   // astro:page-load fire for the same DOM.
+  let teamCards: TeamCardFlip | undefined;
   function initTeamCards() {
     const row = document.getElementById('team-cards-row');
     if (!row || row.dataset.teamInit === 'true') return;
     row.dataset.teamInit = 'true';
-    new TeamCardFlip();
+    teamCards?.destroy();
+    teamCards = new TeamCardFlip();
     setupTeamDrag(row);
   }
 
@@ -599,5 +648,6 @@ const teamMembers = teamMembersData.length > 0
   if (!(window as any).__teamCardsListenerAttached) {
     (window as any).__teamCardsListenerAttached = true;
     document.addEventListener('astro:page-load', initTeamCards);
+    document.addEventListener('astro:before-swap', () => teamCards?.destroy());
   }
 </script>

@@ -34,11 +34,8 @@ class FakeRedis {
   async del(...keys: string[]) {
     return keys.reduce((n, key) => n + Number(state.values.delete(key)), 0);
   }
-  async incr() {
+  async eval() {
     return ++state.count;
-  }
-  async expire() {
-    return 1;
   }
 }
 mock.module("ioredis", { defaultExport: FakeRedis });

@@ -490,7 +490,9 @@ const clientMessages = {
     initAvatarTooltips,
   } from "../scripts/contactForm.js";
 
+  let cleanupModal: (() => void) | undefined;
   function initContactModal() {
+    cleanupModal?.();
     const modal = document.getElementById("contact-modal");
     const modalContent = modal?.querySelector(".contact-modal-content");
     const closeButton = modal?.querySelector(
@@ -507,6 +509,18 @@ const clientMessages = {
     // Track modal state and trigger element
     let isOpen = false;
     let triggerElement: HTMLElement | null = null;
+    const controller = new AbortController();
+    const { signal } = controller;
+    let focusTimer: ReturnType<typeof setTimeout> | undefined;
+    let closeTimer: ReturnType<typeof setTimeout> | undefined;
+    let previousOverflow = "";
+    const inertElements = new Map<HTMLElement, boolean>();
+
+    function restoreBackground() {
+      for (const [element, inert] of inertElements) element.inert = inert;
+      inertElements.clear();
+      document.body.style.overflow = previousOverflow;
+    }
 
     // Get all focusable elements in the modal
     function getFocusableElements(): HTMLElement[] {
@@ -519,9 +533,8 @@ const clientMessages = {
         '[tabindex]:not([tabindex="-1"])',
       ].join(", ");
 
-      return Array.from(
-        contentEl.querySelectorAll(focusableSelectors),
-      ) as HTMLElement[];
+      return Array.from(contentEl.querySelectorAll<HTMLElement>(focusableSelectors))
+        .filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0 && !element.closest('[inert]'));
     }
 
     // Trap focus within modal
@@ -552,21 +565,38 @@ const clientMessages = {
     // Open modal
     function openModal(trigger?: HTMLElement) {
       if (isOpen) return;
+      clearTimeout(closeTimer);
+      clearTimeout(focusTimer);
       isOpen = true;
       triggerElement = trigger || (document.activeElement as HTMLElement);
 
       modalEl.classList.remove("opacity-0", "invisible", "pointer-events-none");
       modalEl.classList.add("opacity-100", "visible", "pointer-events-auto");
       modalEl.setAttribute("aria-hidden", "false");
+      modalEl.inert = false;
 
       contentEl.classList.remove("scale-95", "opacity-0");
       contentEl.classList.add("scale-100", "opacity-100");
 
       // Prevent body scroll
+      previousOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
+      // Keep background content out of keyboard and assistive-technology navigation.
+      let branch: HTMLElement = modalEl;
+      while (branch.parentElement) {
+        for (const sibling of branch.parentElement.children) {
+          if (sibling instanceof HTMLElement && sibling !== branch && !['SCRIPT', 'STYLE', 'LINK'].includes(sibling.tagName)) {
+            inertElements.set(sibling, sibling.inert);
+            sibling.inert = true;
+          }
+        }
+        if (branch.parentElement === document.body) break;
+        branch = branch.parentElement;
+      }
 
       // Focus close button first for accessibility, then user can tab to form
-      setTimeout(() => {
+      focusTimer = setTimeout(() => {
+        if (!isOpen || !modalEl.isConnected) return;
         if (closeButton) {
           closeButton.focus();
         } else {
@@ -578,13 +608,14 @@ const clientMessages = {
       }, 100);
 
       // Add tab trap listener
-      document.addEventListener("keydown", handleTabKey);
+      document.addEventListener("keydown", handleTabKey, { signal });
     }
 
     // Close modal
     function closeModal() {
       if (!isOpen) return;
       isOpen = false;
+      clearTimeout(focusTimer);
 
       // Remove tab trap listener
       document.removeEventListener("keydown", handleTabKey);
@@ -592,7 +623,12 @@ const clientMessages = {
       contentEl.classList.remove("scale-100", "opacity-100");
       contentEl.classList.add("scale-95", "opacity-0");
 
-      setTimeout(() => {
+      // Restore focus and background immediately; only the visual exit is delayed.
+      restoreBackground();
+      if (triggerElement?.isConnected) triggerElement.focus();
+      modalEl.inert = true;
+      modalEl.setAttribute("aria-hidden", "true");
+      closeTimer = setTimeout(() => {
         modalEl.classList.remove(
           "opacity-100",
           "visible",
@@ -601,26 +637,19 @@ const clientMessages = {
         modalEl.classList.add("opacity-0", "invisible", "pointer-events-none");
         modalEl.setAttribute("aria-hidden", "true");
 
-        // Restore body scroll
-        document.body.style.overflow = "";
-
-        // Return focus to trigger element
-        if (triggerElement && typeof triggerElement.focus === "function") {
-          triggerElement.focus();
-        }
       }, 200);
     }
 
     // Event listeners
-    closeButton?.addEventListener("click", closeModal);
-    backdrop?.addEventListener("click", closeModal);
+    closeButton?.addEventListener("click", closeModal, { signal });
+    backdrop?.addEventListener("click", closeModal, { signal });
 
     // Escape key
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && isOpen) {
         closeModal();
       }
-    });
+    }, { signal });
 
     // Open modal triggers
     document
@@ -629,7 +658,7 @@ const clientMessages = {
         trigger.addEventListener("click", (e) => {
           e.preventDefault();
           openModal(trigger as HTMLElement);
-        });
+        }, { signal });
       });
 
     // Handle hash-based opening
@@ -642,7 +671,15 @@ const clientMessages = {
       if (window.location.hash === "#contact-modal") {
         openModal();
       }
-    });
+    }, { signal });
+
+    cleanupModal = () => {
+      controller.abort();
+      clearTimeout(focusTimer);
+      clearTimeout(closeTimer);
+      if (isOpen) restoreBackground();
+      isOpen = false;
+    };
 
     // Form handling (shared logic) — keeps the modal open after success.
     const form = modal.querySelector(
@@ -676,6 +713,7 @@ const clientMessages = {
   if (!(window as any).__contactModalInitialized) {
     (window as any).__contactModalInitialized = true;
     document.addEventListener("astro:page-load", initContactModal);
+    document.addEventListener("astro:before-swap", () => cleanupModal?.());
   }
 
   // Spotlight + avatar tooltips (shared logic, scoped to modal selectors)

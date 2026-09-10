@@ -17,6 +17,12 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:8.2.9-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
     steps:
       - uses: actions/checkout@v6
 
@@ -34,6 +40,8 @@ jobs:
 
       - name: Test
         run: npm test
+        env:
+          REDIS_TEST_URL: redis://127.0.0.1:6379
 
       - name: Build Directus extensions from lockfiles
         run: npm run build:extensions

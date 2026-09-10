@@ -1,5 +1,19 @@
 import { getRedisClient } from "./redis.ts";
 
+// Increment and expiry must succeed together. Repair keys left without an
+// expiry by the older two-command implementation without extending live windows.
+export const RATE_LIMIT_SCRIPT = `
+local count = redis.call('INCR', KEYS[1])
+if redis.call('TTL', KEYS[1]) < 0 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return count
+`;
+
+export async function incrementRateLimit(key: string, windowSeconds: number): Promise<number> {
+  return Number(await getRedisClient().eval(RATE_LIMIT_SCRIPT, 1, key, windowSeconds));
+}
+
 /**
  * Resolve the client IP from proxy headers.
  *
@@ -34,11 +48,7 @@ export async function rateLimit(
   windowSeconds: number
 ): Promise<{ limited: boolean; count: number }> {
   try {
-    const redis = getRedisClient();
-    const count = await redis.incr(key);
-    if (count === 1) {
-      await redis.expire(key, windowSeconds);
-    }
+    const count = await incrementRateLimit(key, windowSeconds);
     return { limited: count > limit, count };
   } catch (err) {
     console.warn("rateLimit: Redis unavailable, failing open:", err);
