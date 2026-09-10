@@ -19,6 +19,8 @@ Open **Insights → Content Overview** for published content counts, **Publishin
 
 Pages, Blog Posts and Case Studies use Directus 12 content versions. The **Published** selector and **Publish** action in the top bar describe the saved Studio version. The form’s **Website visibility** field controls whether that record appears on the public website.
 
+If an existing item opens read-only, choose **Edit** in the top bar to start an editable Studio version. Content fields and the page-builder creation buttons then become available according to your role.
+
 1. Create an item, enter its shared slug and write the copy under **Translations**. Directus autosaves this as a Studio draft.
 2. Set **Website visibility → Draft** while preparing content. Use **Publish** in the top bar to commit a hidden record. This does not make it public while Website visibility is Draft.
 3. Use the preview control to review the selected version. To release it immediately, set Website visibility to Published and use the top-bar Publish action.
