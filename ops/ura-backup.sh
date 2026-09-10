@@ -78,6 +78,13 @@ else
   cp -aL /etc/letsencrypt/live/{ura.design,cms.ura.design} "$work/host/etc/letsencrypt/live/"
   cp /usr/local/sbin/ura-{backup,deploy,health,ci-operation} "$work/host/usr/local/sbin/"
   cp /usr/local/sbin/ura_monitor.py "$work/host/usr/local/sbin/"
+  mkdir -p "$work/host/usr/local/bin" "$work/host/etc/sudoers.d" "$work/host/var/lib"
+  cp /usr/local/bin/ura-ssh-command "$work/host/usr/local/bin/"
+  cp /etc/sudoers.d/ura-deploy "$work/host/etc/sudoers.d/"
+  cp -a /var/lib/ura-deploy "$work/host/var/lib/"
+  cp /home/uradeploy/.ssh/authorized_keys "$work/host/deploy-authorized-keys"
+  id uradeploy > "$work/host/deploy-account.txt"
+  git -C "$repo" remote get-url origin > "$work/host/git-origin"
   cp -a /var/lib/ura-assets "$work/host/assets"
   cp -a /etc/systemd/system/ura-backup.{service,timer} "$work/host/"
   nginx -V > "$work/nginx-version.txt" 2>&1
