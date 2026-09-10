@@ -59,6 +59,8 @@ const COLLECTIONS = [
   "block_timeline", "block_timeline_items",
   // Additive block-builder junctions on non-page collections.
   "case_studies_blocks", "posts_blocks", "services_blocks", "about_page_blocks",
+  // Related cards are edited through junctions rather than their parent item.
+  "case_studies_related", "posts_related",
 ];
 
 async function buildTriggerCollections() {
