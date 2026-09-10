@@ -1,3 +1,9 @@
+x-logging: &bounded-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 secrets:
   cms-classes:
     file: ./.cms-build/classes.html
@@ -5,6 +11,12 @@ secrets:
 services:
   # 1. Your Astro Website
   astro:
+    logging: *bounded-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
     build:
       context: .
       args:
@@ -36,6 +48,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - DIRECTUS_CONFIG_CACHE=${DIRECTUS_CONFIG_CACHE:-true}
       - DIRECTUS_CONFIG_CACHE_TTL=${DIRECTUS_CONFIG_CACHE_TTL:-3600}
+      - HTML_CACHE_ENABLED=true
 
       # Shared secret for the /api/revalidate cache hook (called by a Directus
       # Flow on content changes). Endpoint is disabled when unset.
@@ -72,6 +85,7 @@ services:
 
   # 2. Directus CMS
   directus:
+    logging: *bounded-logging
     image: ura-directus:12.3.1-ura.1
     build:
       context: .
@@ -105,6 +119,8 @@ services:
       DB_DATABASE: ${POSTGRES_DB:-directus}
       DB_USER: ${POSTGRES_USER:-directus}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-directus}
+      DB_POOL__MIN: "0"
+      DB_POOL__MAX: "10"
 
       CACHE_ENABLED: ${CACHE_ENABLED:-true}
       CACHE_STORE: ${CACHE_STORE:-redis}
@@ -136,16 +152,22 @@ services:
 
       # File Upload Settings
       FILES_MAX_UPLOAD_SIZE: "500MB"
+      ASSETS_CACHE_TTL: "5m"
+      ASSETS_TRANSFORM_MAX_CONCURRENT: "2"
 
       # Abuse protection. Steady-state traffic is served from the Redis config
       # cache + Astro HTML micro-cache, so few uncached calls reach Directus.
       # Rate limiting is opt-in (set RATE_LIMITER_ENABLED=true in .env once cache
       # hit-rates are confirmed) to guarantee a non-breaking deploy; the query
       # ceiling is always safe — it only rejects abusive oversized queries.
-      RATE_LIMITER_ENABLED: ${RATE_LIMITER_ENABLED:-false}
+      RATE_LIMITER_ENABLED: ${RATE_LIMITER_ENABLED:-true}
       RATE_LIMITER_STORE: "redis"
       RATE_LIMITER_POINTS: ${RATE_LIMITER_POINTS:-100}
       RATE_LIMITER_DURATION: ${RATE_LIMITER_DURATION:-1}
+      RATE_LIMITER_GLOBAL_ENABLED: "true"
+      RATE_LIMITER_GLOBAL_STORE: "redis"
+      RATE_LIMITER_GLOBAL_POINTS: "500"
+      RATE_LIMITER_GLOBAL_DURATION: "1"
       QUERY_LIMIT_MAX: ${QUERY_LIMIT_MAX:-5000}
 
       # Email / SMTP
@@ -185,13 +207,15 @@ services:
 
   # 3. Database
   postgres:
-    image: postgres:18.6-alpine
+    logging: *bounded-logging
+    image: postgres:18.6-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2
+    command: ["postgres", "-c", "max_connections=40", "-c", "shared_buffers=128MB", "-c", "work_mem=2MB", "-c", "effective_cache_size=384MB"]
     container_name: directus_postgres
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 512M
     volumes:
       # PostgreSQL 18 stores its cluster in 18/docker below this mount.
       - postgres_data:/var/lib/postgresql
@@ -209,7 +233,12 @@ services:
 
   # 4. Redis (Cache)
   redis:
-    image: redis:8.2.9-alpine
+    logging: *bounded-logging
+    image: redis:8.2.9-alpine@sha256:30abb90e62f14b737010746def3ba99cc79fe19dcdb3d37b41f21fc62e7da19d
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     container_name: ura_redis
     restart: unless-stopped
     volumes:
@@ -221,9 +250,9 @@ services:
     # Cap memory + evict least-recently-used keys so the cache can't grow
     # unbounded. requirepass is enabled only when REDIS_PASSWORD is provided.
     command: >
-      sh -c "redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru ${REDIS_PASSWORD:+--requirepass \"$$REDIS_PASSWORD\"}"
+      sh -c "redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction ${REDIS_PASSWORD:+--requirepass \"$$REDIS_PASSWORD\"}"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep -q PONG"]
       interval: 10s
       timeout: 3s
       retries: 10

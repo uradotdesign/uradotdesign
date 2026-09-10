@@ -2,6 +2,9 @@ import { prefersReducedMotion, watchReducedMotion } from './reduced-motion.js';
 
 const videos = () => [...document.querySelectorAll<HTMLVideoElement>('.hero-video[data-is-video="true"]')];
 const button = () => document.getElementById('video-control');
+let inView = true;
+let observer: IntersectionObserver | undefined;
+const saveData = () => Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData);
 
 function draw() {
   const control = button();
@@ -17,20 +20,20 @@ function draw() {
 function update() {
   const control = button();
   if (!control) return;
-  control.dataset.state ||= prefersReducedMotion() ? 'paused' : 'playing';
+  control.dataset.state ||= prefersReducedMotion() || saveData() ? 'paused' : 'playing';
   const dark = document.documentElement.classList.contains('dark');
   const activeId = dark ? 'hero-media-dark' : 'hero-media-light';
   const active = document.getElementById(activeId);
   control.style.display = active instanceof HTMLVideoElement ? 'flex' : 'none';
   for (const video of videos()) {
-    if (video.id !== activeId || control.dataset.state !== 'playing' || document.hidden) {
+    if (video.id !== activeId || control.dataset.state !== 'playing' || document.hidden || !inView) {
       video.pause();
       continue;
     }
     video.muted = true;
     void video.play().then(() => {
       // A play promise may settle after navigation, a theme switch or Pause.
-      if (!video.isConnected || button() !== control || control.dataset.state !== 'playing' || document.hidden ||
+      if (!video.isConnected || button() !== control || control.dataset.state !== 'playing' || document.hidden || !inView ||
           document.documentElement.classList.contains('dark') !== dark) video.pause();
     }).catch(() => {
       if (video.isConnected && button() === control) {
@@ -53,8 +56,24 @@ watchReducedMotion((reduce: boolean) => {
   if (reduce && button()) button()!.dataset.state = 'paused';
   update();
 });
-document.addEventListener('astro:before-swap', () => videos().forEach(video => video.pause()));
-document.addEventListener('astro:page-load', update);
+function init() {
+  observer?.disconnect();
+  inView = true;
+  const hero = document.querySelector('.hero-wrapper');
+  if (hero && 'IntersectionObserver' in window) {
+    observer = new IntersectionObserver(entries => {
+      inView = entries.some(entry => entry.isIntersecting);
+      update();
+    });
+    observer.observe(hero);
+  }
+  update();
+}
+document.addEventListener('astro:before-swap', () => {
+  observer?.disconnect();
+  videos().forEach(video => video.pause());
+});
+document.addEventListener('astro:page-load', init);
 document.addEventListener('theme-changed', update);
 document.addEventListener('visibilitychange', update);
-update();
+init();

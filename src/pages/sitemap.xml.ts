@@ -1,10 +1,5 @@
 import type { APIRoute } from "astro";
-import {
-  getPages,
-  getBlogPosts,
-  getCaseStudies,
-  getServices,
-} from "../lib/directus";
+import { getSitemapRecords } from "../lib/directus";
 
 export const prerender = false;
 
@@ -43,22 +38,10 @@ export const GET: APIRoute = async ({ site }) => {
     `${base}/${locale}${path ? `/${path}` : ""}`;
 
   const [pages, posts, caseStudies, services] = await Promise.all([
-    getPages({
-      filter: { status: { _eq: "published" } },
-      fields: ["slug", "date_updated", "date_created"],
-    }),
-    getBlogPosts({
-      filter: { status: { _eq: "published" } },
-      fields: ["slug", "date_updated", "published_date"],
-    }),
-    getCaseStudies({
-      filter: { status: { _eq: "published" } },
-      fields: ["slug", "date_updated"],
-    }),
-    getServices({
-      filter: { status: { _eq: "published" } },
-      fields: ["slug", "date_updated"],
-    }),
+    getSitemapRecords('pages'),
+    getSitemapRecords('posts'),
+    getSitemapRecords('case_studies'),
+    getSitemapRecords('services'),
   ]);
 
   // Dedupe by path; services and pages share the /{lang}/{slug} route.

@@ -1,5 +1,5 @@
 # Base image
-FROM node:24-alpine AS base
+FROM node:24-alpine@sha256:50c8e8ca1d27439048670df5883f32d57cf81cff6233222c893fd0d9884cbd81 AS base
 
 # 1. Install all dependencies (incl. dev) for building.
 FROM base AS deps
@@ -32,6 +32,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4321
 ENV HOST=0.0.0.0
+ARG RELEASE_ID=local
+ENV RELEASE_ID=$RELEASE_ID
+LABEL org.opencontainers.image.revision=$RELEASE_ID
 
 # Don't run production as root.
 RUN addgroup --system --gid 1001 nodejs \

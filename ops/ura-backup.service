@@ -1,0 +1,12 @@
+[Unit]
+Description=Ura encrypted backup and isolated restore verification
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ura-backup
+TimeoutStartSec=30min
+Nice=15
+IOSchedulingClass=idle
+UMask=0077

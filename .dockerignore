@@ -10,5 +10,7 @@ node_modules
 .cursor
 dist
 **/dist
+!directus-extensions/*/dist
+!directus-extensions/*/dist/**
 .astro
 .cms-build

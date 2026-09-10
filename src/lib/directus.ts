@@ -4,6 +4,7 @@ import {
   readItems,
   readItem,
   staticToken,
+  aggregate,
 } from "@directus/sdk";
 import {
   directusUrl,
@@ -771,15 +772,31 @@ export async function getBlogPostCount(
 ): Promise<number> {
   const cacheKey = createCacheKey("posts_count", { filter });
   return cacheConfig(cacheKey, async () => {
-    // A finite, generous cap keeps the count correct while staying under any
-    // QUERY_LIMIT_MAX ceiling (an agency blog never approaches this).
-    const rows = await fetchCollection<{ id: number }>("posts", {
-      filter,
-      fields: ["id"],
-      sort: ["id"],
-      limit: 5000,
-    });
-    return rows.length;
+    const rows = await directus.request(aggregate('posts', {
+      aggregate: { count: '*' }, query: { filter },
+    }));
+    const count = Number(rows[0]?.count);
+    if (!Number.isSafeInteger(count) || count < 0) throw new Error('Invalid post count');
+    return count;
+  });
+}
+
+export async function getSitemapRecords(collection: 'pages' | 'posts' | 'case_studies' | 'services') {
+  return cacheConfig(`sitemap:${collection}`, async () => {
+    const all: Record<string, any>[] = [];
+    let after: string | number | undefined;
+    const fields = ['id', 'slug', 'date_updated'];
+    for (;;) {
+      const rows = await fetchCollection<Record<string, any>>(collection, {
+        fields, sort: ['id'], limit: 100,
+        filter: { status: { _eq: 'published' }, ...(after === undefined ? {} : { id: { _gt: after } }) },
+      });
+      if (!rows.length) return all;
+      const last = rows.at(-1)!.id;
+      if (last === undefined || last === after) throw new Error('Sitemap pagination did not advance');
+      all.push(...rows);
+      after = last;
+    }
   });
 }
 

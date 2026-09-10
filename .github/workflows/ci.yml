@@ -24,9 +24,9 @@ jobs:
           - 6379:6379
         options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           # Keep CI aligned with the Node 24 production Docker image.
           node-version: 24
@@ -63,92 +63,44 @@ jobs:
           DIRECTUS_URL: http://localhost:8055
           PUBLIC_DIRECTUS_URL: http://localhost:8055
 
-  # Continuous deployment: on a green push to main, SSH into the production host
-  # and roll the stack forward (pull -> rebuild Astro image -> recreate -> health
-  # gate). Skipped for pull requests. Requires the repository/environment secrets
-  # listed below; if they are unset the job fails fast with a clear message.
-  #
-  # Required secrets (Settings -> Secrets and variables -> Actions):
-  #   SSH_HOST         production host (e.g. ura.design)
-  #   SSH_USER         deploy user with docker + write access to DEPLOY_PATH
-  #   SSH_PRIVATE_KEY  private key whose public half is in the host's authorized_keys
-  #   DEPLOY_PATH      repo checkout on the server (e.g. /var/www/ura-prototype/uradotdesign)
-  #   SSH_PORT         optional; defaults to 22
-  #   SSH_PASSPHRASE   optional; set only if SSH_PRIVATE_KEY is passphrase-protected
   deploy:
     needs: verify
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # Never run two production deploys at once, and don't cancel an in-flight one.
+    environment: production
     concurrency:
       group: deploy-production
       cancel-in-progress: false
-    environment: production
     steps:
-      - name: Preflight (ensure deploy secrets are present)
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci && npm run build:extensions
+      - name: Configure restricted deployment connection
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          test -s ~/.ssh/id_ed25519 && test -s ~/.ssh/known_hosts
+      - name: Build production images once and deploy those exact images
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          missing=""
-          [ -z "$SSH_HOST" ] && missing="$missing SSH_HOST"
-          [ -z "$SSH_USER" ] && missing="$missing SSH_USER"
-          [ -z "$SSH_PRIVATE_KEY" ] && missing="$missing SSH_PRIVATE_KEY"
-          [ -z "$DEPLOY_PATH" ] && missing="$missing DEPLOY_PATH"
-          if [ -n "$missing" ]; then
-            echo "::error::Missing required deploy secret(s):$missing"
-            exit 1
-          fi
-          echo "All deploy secrets present."
-
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # Empty when the key has no passphrase; the action ignores it then.
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          command_timeout: 20m
-          script: |
-            set -euo pipefail
-            cd "${{ secrets.DEPLOY_PATH }}"
-
-            echo "==> Fast-forward to the verified commit"
-            git fetch --prune origin main
-            # Non-destructive: abort if the server tree has diverged (drift must be
-            # resolved by hand rather than silently discarded).
-            git diff --quiet
-            git diff --cached --quiet
-            git merge --ff-only "${{ github.sha }}"
-            test "$(git rev-parse HEAD)" = "${{ github.sha }}"
-
-            echo "==> Build the verified Directus image and current Astro content"
-            docker compose -f docker-compose.prod.yml build directus
-            bash scripts/prepare-cms-css.sh directus_cms
-            docker compose -f docker-compose.prod.yml build --build-arg CMS_CLASSES_SHA256="$(sha256sum .cms-build/classes.html | cut -d ' ' -f1)" astro
-
-            echo "==> Recreate changed services and wait for health"
-            docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 240
-
-            echo "==> Install the locked custom extension builds"
-            bash scripts/install-directus-extensions.sh directus_cms
-            docker compose -f docker-compose.prod.yml restart directus
-            docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 240
-
-            echo "==> Verify Directus entitlements and refresh its system cache"
-            docker exec -i directus_cms node --input-type=module - --clear-cache < scripts/verify-directus.mjs
-
-            echo "==> Verify endpoints"
-            curl -fsS --retry 5 --retry-delay 3 --max-time 15 http://127.0.0.1:4321/en >/dev/null && echo "Astro EN OK"
-            curl -fsS --retry 5 --retry-delay 3 --max-time 15 http://127.0.0.1:4321/de >/dev/null && echo "Astro DE OK"
-            curl -fsS --max-time 15 http://127.0.0.1:8055/server/ping >/dev/null && echo "Directus liveness OK"
-            curl -fsS --max-time 15 'http://127.0.0.1:8055/items/site_settings?fields=id' >/dev/null && echo "Directus content API OK"
-
-            echo "==> Prune dangling build layers"
-            docker image prune -f >/dev/null || true
-
-            echo "==> Deployed $(git rev-parse --short HEAD)"
+          set -euo pipefail
+          mkdir -p .cms-build
+          ssh -o BatchMode=yes "$SSH_USER@$SSH_HOST" manifest > .cms-build/classes.html
+          test -s .cms-build/classes.html
+          docker build --secret id=cms-classes,src=.cms-build/classes.html \
+            --build-arg REQUIRE_CMS_CLASSES=true \
+            --build-arg CMS_CLASSES_SHA256="$(sha256sum .cms-build/classes.html | cut -d ' ' -f1)" \
+            --build-arg RELEASE_ID="$GITHUB_SHA" -t "ura-astro:$GITHUB_SHA" .
+          docker build -f Dockerfile.directus -t ura-directus:12.3.1-ura.1 .
+          docker save "ura-astro:$GITHUB_SHA" ura-directus:12.3.1-ura.1 | gzip -1 | \
+            ssh -o BatchMode=yes "$SSH_USER@$SSH_HOST" "deploy $GITHUB_SHA"

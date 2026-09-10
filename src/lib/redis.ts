@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import { randomUUID } from "node:crypto";
 
 let redis: Redis | null = null;
 
@@ -38,7 +39,36 @@ export function getRedisClient(): Redis {
 export type RememberOptions = {
   ttl?: number;
   namespace?: string;
+  cacheIf?: (value: any) => boolean;
+  coalesce?: boolean;
 };
+
+// Outside content namespaces so SCAN purges never remove the write fence.
+export const CACHE_GENERATION_KEY = "ura:cache-generation";
+export const CACHE_WRITE_SCRIPT = `
+if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
+redis.call('SETEX', KEYS[2], ARGV[2], ARGV[3])
+return 1
+`;
+
+function generationKey(namespace?: string) {
+  return namespace?.startsWith('directus:') ? CACHE_GENERATION_KEY : `${CACHE_GENERATION_KEY}:${namespace || 'default'}`;
+}
+
+async function generation(client: Redis, key = CACHE_GENERATION_KEY): Promise<string> {
+  const current = await client.get(key);
+  if (current) return current;
+  // Random values avoid reusing a generation after eviction or a Redis restart.
+  await client.set(key, randomUUID(), "NX");
+  const created = await client.get(key);
+  if (!created) throw new Error("Cache generation unavailable");
+  return created;
+}
+
+export async function getContentRevision(): Promise<string> {
+  try { return await generation(getRedisClient()); }
+  catch { return 'cache-policy-20260910'; }
+}
 
 function namespacedKey(key: string, namespace?: string) {
   return namespace ? `${namespace}:${key}` : key;
@@ -52,13 +82,18 @@ export async function remember<T>(
   options: RememberOptions = {}
 ): Promise<T> {
   const ttl = options.ttl ?? 900;
-  const finalKey = namespacedKey(key, options.namespace);
+  // Keep the envelope format separate while old/new containers overlap.
+  const finalKey = `cache-v2:${namespacedKey(key, options.namespace)}`;
 
   const client = getRedisClient();
+  const fenceKey = generationKey(options.namespace);
+  let version: string | null = null;
   try {
+    version = await generation(client, fenceKey);
     const cached = await client.get(finalKey);
     if (cached) {
-      return JSON.parse(cached) as T;
+      const entry = JSON.parse(cached);
+      if (entry?.generation === version) return entry.data as T;
     }
   } catch (error) {
     console.warn("Cache read unavailable:", error);
@@ -66,15 +101,17 @@ export async function remember<T>(
 
   // Coalesce misses even when Redis is unavailable. Fetch failures propagate
   // without being cached or retried under the guise of a Redis failure.
-  const existing = inflight.get(finalKey);
+  const inflightKey = `${version}:${finalKey}`;
+  const existing = options.coalesce === false ? undefined : inflight.get(inflightKey);
   if (existing) return existing as Promise<T>;
 
   const promise = (async () => {
     try {
       const data = await fetchFn();
-      if (data !== null && data !== undefined) {
+      if (version && data !== null && data !== undefined && (options.cacheIf?.(data) ?? true)) {
         try {
-          await client.setex(finalKey, ttl, JSON.stringify(data));
+          await client.eval(CACHE_WRITE_SCRIPT, 2, fenceKey, finalKey,
+            version, ttl, JSON.stringify({ generation: version, data }));
         } catch (error) {
           // A cache write failure must not repeat a successful upstream call.
           console.warn("Cache write unavailable:", error);
@@ -82,25 +119,33 @@ export async function remember<T>(
       }
       return data;
     } finally {
-      inflight.delete(finalKey);
+      inflight.delete(inflightKey);
     }
   })();
 
-  inflight.set(finalKey, promise);
+  if (options.coalesce !== false) inflight.set(inflightKey, promise);
   return promise;
 }
 
 export async function invalidateCache(pattern: string): Promise<void> {
+  if (!/^[a-zA-Z0-9:_-]+:\*$/.test(pattern)) {
+    throw new Error('Cache invalidation requires a complete namespace prefix');
+  }
   try {
     const client = getRedisClient();
+    // Advance before deleting. Pending readers cannot repopulate old data,
+    // and readers on every application instance stop joining old requests.
+    await client.set(generationKey(pattern.replace(/:\*$/, '')), randomUUID());
     let cursor = "0";
     let totalDeleted = 0;
 
-    do {
+    for (const storedPattern of [pattern, `cache-v2:${pattern}`]) {
+      cursor = '0';
+      do {
       const [nextCursor, keys] = await client.scan(
         cursor,
         "MATCH",
-        pattern,
+        storedPattern,
         "COUNT",
         100
       );
@@ -109,7 +154,8 @@ export async function invalidateCache(pattern: string): Promise<void> {
         await client.del(...keys);
         totalDeleted += keys.length;
       }
-    } while (cursor !== "0");
+      } while (cursor !== "0");
+    }
 
     if (totalDeleted > 0) {
       console.log(

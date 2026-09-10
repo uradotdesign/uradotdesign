@@ -61,8 +61,8 @@ const services = servicesData.length > 0
 <section class="hero-wrapper relative min-h-[100dvh] lg:min-h-screen">
   <!-- Hero Background - Video or Image for Light Theme -->
   {isVideoLight ? (
-    <video id="hero-media-light" data-is-video="true" poster={!isVideoDark ? mediaDark : undefined} class="hero-video hero-video-light" muted loop playsinline aria-hidden="true" preload="metadata">
-      <source src={mediaLight} type="video/mp4" />
+    <video id="hero-media-light" data-is-video="true" poster={!isVideoDark ? mediaDark : undefined} class="hero-video hero-video-light" muted loop playsinline aria-hidden="true" preload="none">
+      <source src={mediaLight} type={lightFileMetadata?.type || (mediaLight?.endsWith('.webm') ? 'video/webm' : mediaLight?.endsWith('.ogg') ? 'video/ogg' : 'video/mp4')} />
     </video>
   ) : (
     <div id="hero-media-light" data-is-video="false" class="hero-video hero-video-light" style={`background-image: url(${mediaLight}); background-size: cover; background-position: center;`} aria-hidden="true"></div>
@@ -70,8 +70,8 @@ const services = servicesData.length > 0
   
   <!-- Hero Background - Video or Image for Dark Theme -->
   {isVideoDark ? (
-    <video id="hero-media-dark" data-is-video="true" poster={!isVideoLight ? mediaLight : undefined} class="hero-video hero-video-dark" muted loop playsinline aria-hidden="true" preload="metadata">
-      <source src={mediaDark} type="video/mp4" />
+    <video id="hero-media-dark" data-is-video="true" poster={!isVideoLight ? mediaLight : undefined} class="hero-video hero-video-dark" muted loop playsinline aria-hidden="true" preload="none">
+      <source src={mediaDark} type={darkFileMetadata?.type || (mediaDark?.endsWith('.webm') ? 'video/webm' : mediaDark?.endsWith('.ogg') ? 'video/ogg' : 'video/mp4')} />
     </video>
   ) : (
     <div id="hero-media-dark" data-is-video="false" class="hero-video hero-video-dark" style={`background-image: url(${mediaDark}); background-size: cover; background-position: center;`} aria-hidden="true"></div>

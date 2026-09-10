@@ -1,6 +1,10 @@
-FROM directus/directus:12.3.1
+FROM directus/directus:12.3.1@sha256:8978edf633ae28aa31464bb71c55300c94d8bc771ff3727b5fac485173283869
 USER root
 COPY scripts/patch-directus-picker.mjs /tmp/ura/patch-directus-picker.mjs
 COPY scripts/verify-directus-ui-build.mjs /tmp/ura/verify-directus-ui-build.mjs
 RUN node /tmp/ura/patch-directus-picker.mjs && node /tmp/ura/verify-directus-ui-build.mjs
+COPY directus-extensions/panel-external-embed/dist /opt/ura-extensions/panel-external-embed/dist
+COPY directus-extensions/panel-external-embed/package.json /opt/ura-extensions/panel-external-embed/package.json
+COPY directus-extensions/ura-interfaces/dist /opt/ura-extensions/ura-interfaces/dist
+COPY directus-extensions/ura-interfaces/package.json /opt/ura-extensions/ura-interfaces/package.json
 USER node
