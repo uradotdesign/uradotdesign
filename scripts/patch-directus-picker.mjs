@@ -8,7 +8,14 @@ import { pathToFileURL } from 'node:url';
 // existing permission-filtered createCollections in the Create New menu.
 // Fail closed on a different upstream build; review/remove on every upgrade.
 export const ORIGINAL_NAME = 'index.C9zFwJTK.entry.js';
-export const PATCHED_NAME = 'index.C9zFwJTK-ura-m2a1.entry.js';
+export function patchedAssetName(name) {
+  // Directus's extension resolver requires exactly eight hash characters.
+  const pattern = /([.-])[A-Za-z0-9_-]{8}(\.entry)?\.js$/;
+  assert.ok(pattern.test(name), `Unreviewed asset naming convention: ${name}`);
+  const hash = createHash('sha256').update(`ura-m2a1:${name}`).digest('base64url').slice(0, 8);
+  return name.replace(pattern, (_, separator, entry = '') => `${separator}${hash}${entry}.js`);
+}
+export const PATCHED_NAME = patchedAssetName(ORIGINAL_NAME);
 export const ORIGINAL_SHA = '90bd39ffba10f5f459fa25c1bc90bd10ba7efff2b8acf3443eea4daef16add26';
 const PATCHED_SHA = 'e0b1bf7125d30331dfc8529420303ccbaecf484e868dc9e1a07c5c06d7fc36ff';
 const BEFORE = 've(v.value,e=>(z(),T(Rb,{key:e.collection,clickable:``,onClick:n=>fe(e.collection)';
@@ -44,7 +51,7 @@ export async function patchApp(appDirectory) {
   // old entry module and otherwise initialize two incompatible app instances.
   const names = files.filter(path => path.endsWith('.js')).map(path => {
     const name = path.slice(path.lastIndexOf('/') + 1).split('\\').at(-1);
-    return [name, name.replace(/(\.entry)?\.js$/, '-ura-m2a1$1.js')];
+    return [name, patchedAssetName(name)];
   });
   assert.ok(names.some(([before, after]) => before === ORIGINAL_NAME && after === PATCHED_NAME));
   const replaceNames = source => names.reduce((text, [before, after]) => text.replaceAll(before, after), source);
