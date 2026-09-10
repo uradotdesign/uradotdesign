@@ -7321,19 +7321,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -13631,19 +13631,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -17086,19 +17086,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -19325,19 +19325,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -20105,19 +20105,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -21208,7 +21208,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 1,
+        "sort": 3,
         "special": null,
         "translations": null,
         "validation": null,
@@ -21302,7 +21302,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 2,
+        "sort": 4,
         "special": null,
         "translations": null,
         "validation": null,
@@ -21348,7 +21348,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 3,
+        "sort": 2,
         "special": null,
         "translations": null,
         "validation": null,
@@ -21407,7 +21407,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 4,
+        "sort": 1,
         "special": null,
         "translations": [
           {
@@ -21544,7 +21544,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 1,
+        "sort": 3,
         "special": [
           "file"
         ],
@@ -21590,7 +21590,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 2,
+        "sort": 4,
         "special": [
           "file"
         ],
@@ -21835,7 +21835,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 7,
+        "sort": 5,
         "special": [
           "m2m"
         ],
@@ -21863,7 +21863,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 3,
+        "sort": 2,
         "special": [
           "file"
         ],
@@ -21977,7 +21977,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 3,
+        "sort": 4,
         "special": [
           "cast-json"
         ],
@@ -22025,7 +22025,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 4,
+        "sort": 1,
         "special": [
           "file"
         ],
@@ -22079,7 +22079,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 5,
+        "sort": 6,
         "special": [
           "translations"
         ],
@@ -22114,7 +22114,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 4,
+        "sort": 3,
         "special": [
           "o2m"
         ],
@@ -22519,7 +22519,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 6,
+        "sort": 7,
         "special": [
           "m2a"
         ],
@@ -24684,6 +24684,23 @@
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
         "options": {
+          "customFormats": [
+            {
+              "block": "p",
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
+            },
+            {
+              "block": "p",
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
+            },
+            {
+              "classes": "ura-highlight",
+              "inline": "span",
+              "title": "Ura: Highlight"
+            }
+          ],
           "tinymce": {
             "allow_script_urls": true,
             "convert_urls": false,
@@ -24736,23 +24753,6 @@
             "visualaid",
             "charmap",
             "emoticons"
-          ],
-          "customFormats": [
-            {
-              "title": "Ura: Section label",
-              "block": "p",
-              "classes": "ura-section-label"
-            },
-            {
-              "title": "Ura: Lead paragraph",
-              "block": "p",
-              "classes": "ura-lead"
-            },
-            {
-              "title": "Ura: Highlight",
-              "inline": "span",
-              "classes": "ura-highlight"
-            }
           ]
         },
         "readonly": true,
@@ -24812,6 +24812,23 @@
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
         "options": {
+          "customFormats": [
+            {
+              "block": "p",
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
+            },
+            {
+              "block": "p",
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
+            },
+            {
+              "classes": "ura-highlight",
+              "inline": "span",
+              "title": "Ura: Highlight"
+            }
+          ],
           "tinymce": {
             "allow_script_urls": true,
             "convert_urls": false,
@@ -24864,23 +24881,6 @@
             "visualaid",
             "charmap",
             "emoticons"
-          ],
-          "customFormats": [
-            {
-              "title": "Ura: Section label",
-              "block": "p",
-              "classes": "ura-section-label"
-            },
-            {
-              "title": "Ura: Lead paragraph",
-              "block": "p",
-              "classes": "ura-lead"
-            },
-            {
-              "title": "Ura: Highlight",
-              "inline": "span",
-              "classes": "ura-highlight"
-            }
           ]
         },
         "readonly": true,
@@ -24945,6 +24945,23 @@
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
         "options": {
+          "customFormats": [
+            {
+              "block": "p",
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
+            },
+            {
+              "block": "p",
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
+            },
+            {
+              "classes": "ura-highlight",
+              "inline": "span",
+              "title": "Ura: Highlight"
+            }
+          ],
           "tinymce": {
             "allow_script_urls": true,
             "convert_urls": false,
@@ -24997,23 +25014,6 @@
             "visualaid",
             "charmap",
             "emoticons"
-          ],
-          "customFormats": [
-            {
-              "title": "Ura: Section label",
-              "block": "p",
-              "classes": "ura-section-label"
-            },
-            {
-              "title": "Ura: Lead paragraph",
-              "block": "p",
-              "classes": "ura-lead"
-            },
-            {
-              "title": "Ura: Highlight",
-              "inline": "span",
-              "classes": "ura-highlight"
-            }
           ]
         },
         "readonly": true,
@@ -25523,6 +25523,23 @@
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
         "options": {
+          "customFormats": [
+            {
+              "block": "p",
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
+            },
+            {
+              "block": "p",
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
+            },
+            {
+              "classes": "ura-highlight",
+              "inline": "span",
+              "title": "Ura: Highlight"
+            }
+          ],
           "tinymce": {
             "allow_script_urls": true,
             "convert_urls": false,
@@ -25575,23 +25592,6 @@
             "visualaid",
             "charmap",
             "emoticons"
-          ],
-          "customFormats": [
-            {
-              "title": "Ura: Section label",
-              "block": "p",
-              "classes": "ura-section-label"
-            },
-            {
-              "title": "Ura: Lead paragraph",
-              "block": "p",
-              "classes": "ura-lead"
-            },
-            {
-              "title": "Ura: Highlight",
-              "inline": "span",
-              "classes": "ura-highlight"
-            }
           ]
         },
         "readonly": false,
@@ -25638,6 +25638,23 @@
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
         "options": {
+          "customFormats": [
+            {
+              "block": "p",
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
+            },
+            {
+              "block": "p",
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
+            },
+            {
+              "classes": "ura-highlight",
+              "inline": "span",
+              "title": "Ura: Highlight"
+            }
+          ],
           "tinymce": {
             "allow_script_urls": true,
             "convert_urls": false,
@@ -25690,23 +25707,6 @@
             "visualaid",
             "charmap",
             "emoticons"
-          ],
-          "customFormats": [
-            {
-              "title": "Ura: Section label",
-              "block": "p",
-              "classes": "ura-section-label"
-            },
-            {
-              "title": "Ura: Lead paragraph",
-              "block": "p",
-              "classes": "ura-lead"
-            },
-            {
-              "title": "Ura: Highlight",
-              "inline": "span",
-              "classes": "ura-highlight"
-            }
           ]
         },
         "readonly": false,
@@ -25753,6 +25753,23 @@
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
         "options": {
+          "customFormats": [
+            {
+              "block": "p",
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
+            },
+            {
+              "block": "p",
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
+            },
+            {
+              "classes": "ura-highlight",
+              "inline": "span",
+              "title": "Ura: Highlight"
+            }
+          ],
           "tinymce": {
             "allow_script_urls": true,
             "convert_urls": false,
@@ -25805,23 +25822,6 @@
             "visualaid",
             "charmap",
             "emoticons"
-          ],
-          "customFormats": [
-            {
-              "title": "Ura: Section label",
-              "block": "p",
-              "classes": "ura-section-label"
-            },
-            {
-              "title": "Ura: Lead paragraph",
-              "block": "p",
-              "classes": "ura-lead"
-            },
-            {
-              "title": "Ura: Highlight",
-              "inline": "span",
-              "classes": "ura-highlight"
-            }
           ]
         },
         "readonly": false,
@@ -28386,19 +28386,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -29015,7 +29015,7 @@
         "display": null,
         "display_options": null,
         "field": "date_created",
-        "group": "grp_publishing",
+        "group": null,
         "hidden": true,
         "interface": "datetime",
         "note": "Legacy timestamp. Submitted At is the maintained arrival time.",
@@ -29023,7 +29023,7 @@
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 2,
+        "sort": 13,
         "special": null,
         "translations": null,
         "validation": null,
@@ -29273,7 +29273,7 @@
         "display_options": null,
         "field": "grp_publishing",
         "group": null,
-        "hidden": true,
+        "hidden": false,
         "interface": "group-detail",
         "note": null,
         "options": {
@@ -35090,11 +35090,28 @@
         "display": null,
         "display_options": null,
         "field": "content",
-        "group": null,
+        "group": "grp_content",
         "hidden": true,
         "interface": "input-rich-text-html",
         "note": "Formatted copy. If older HTML opens read-only, select it to review the changes. Edit Raw HTML preserves its markup; Edit Anyway converts it after saving.",
         "options": {
+          "customFormats": [
+            {
+              "block": "p",
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
+            },
+            {
+              "block": "p",
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
+            },
+            {
+              "classes": "ura-highlight",
+              "inline": "span",
+              "title": "Ura: Highlight"
+            }
+          ],
           "toolbar": [
             "undo",
             "redo",
@@ -35131,23 +35148,6 @@
             "fullscreen",
             "ltr",
             "rtl"
-          ],
-          "customFormats": [
-            {
-              "title": "Ura: Section label",
-              "block": "p",
-              "classes": "ura-section-label"
-            },
-            {
-              "title": "Ura: Lead paragraph",
-              "block": "p",
-              "classes": "ura-lead"
-            },
-            {
-              "title": "Ura: Highlight",
-              "inline": "span",
-              "classes": "ura-highlight"
-            }
           ]
         },
         "readonly": true,
@@ -36189,19 +36189,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -36625,19 +36625,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -37084,7 +37084,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 4,
+        "sort": 3,
         "special": [
           "translations"
         ],
@@ -37119,7 +37119,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 3,
+        "sort": 4,
         "special": [
           "m2a"
         ],
@@ -37729,19 +37729,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -39555,7 +39555,7 @@
         "readonly": false,
         "required": true,
         "searchable": true,
-        "sort": 1,
+        "sort": 3,
         "special": null,
         "translations": null,
         "validation": null,
@@ -39749,7 +39749,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 3,
+        "sort": 1,
         "special": null,
         "translations": null,
         "validation": null,
@@ -39881,7 +39881,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 1,
+        "sort": 4,
         "special": [
           "file"
         ],
@@ -39927,7 +39927,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 2,
+        "sort": 5,
         "special": [
           "file"
         ],
@@ -40261,7 +40261,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 3,
+        "sort": 2,
         "special": [
           "file"
         ],
@@ -40307,7 +40307,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 4,
+        "sort": 3,
         "special": [
           "file"
         ],
@@ -40385,7 +40385,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 3,
+        "sort": 5,
         "special": [
           "o2m"
         ],
@@ -40415,7 +40415,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 7,
+        "sort": 6,
         "special": [
           "o2m"
         ],
@@ -40443,7 +40443,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 5,
+        "sort": 1,
         "special": [
           "file"
         ],
@@ -40520,7 +40520,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 1,
+        "sort": 2,
         "special": null,
         "translations": null,
         "validation": null,
@@ -40571,7 +40571,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 6,
+        "sort": 3,
         "special": [
           "o2m"
         ],
@@ -40599,7 +40599,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 2,
+        "sort": 1,
         "special": null,
         "translations": [
           {
@@ -41073,7 +41073,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 8,
+        "sort": 7,
         "special": [
           "translations"
         ],
@@ -41342,7 +41342,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 5,
+        "sort": 8,
         "special": [
           "m2a"
         ],
@@ -41866,19 +41866,19 @@
         "options": {
           "customFormats": [
             {
-              "title": "Ura: Section label",
               "block": "p",
-              "classes": "ura-section-label"
+              "classes": "ura-section-label",
+              "title": "Ura: Section label"
             },
             {
-              "title": "Ura: Lead paragraph",
               "block": "p",
-              "classes": "ura-lead"
+              "classes": "ura-lead",
+              "title": "Ura: Lead paragraph"
             },
             {
-              "title": "Ura: Highlight",
+              "classes": "ura-highlight",
               "inline": "span",
-              "classes": "ura-highlight"
+              "title": "Ura: Highlight"
             }
           ]
         },
@@ -45117,7 +45117,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 1,
+        "sort": 3,
         "special": null,
         "translations": null,
         "validation": null,
@@ -45427,7 +45427,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 3,
+        "sort": 4,
         "special": null,
         "translations": null,
         "validation": null,
@@ -45486,7 +45486,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 4,
+        "sort": 1,
         "special": null,
         "translations": null,
         "validation": null,
