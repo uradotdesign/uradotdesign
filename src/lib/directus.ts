@@ -1,4 +1,10 @@
-import { createDirectus, rest, readItems, readItem } from "@directus/sdk";
+import {
+  createDirectus,
+  rest,
+  readItems,
+  readItem,
+  staticToken,
+} from "@directus/sdk";
 import {
   directusUrl,
   publicDirectusUrl,
@@ -7,13 +13,13 @@ import {
   cacheTTL as CONFIG_CACHE_TTL,
   previewSecret,
   previewToken,
-} from "./config";
+} from "./config.ts";
 import {
   buildPageBlockFields,
   BLOCK_SORT_KEYS,
   BLOCK_NESTED_SORT,
-} from "./blocks";
-import { requestMemo } from "./request-cache";
+} from "./blocks.ts";
+import { requestMemo } from "./request-cache.ts";
 
 // Directus schema types live in ./directus-types and are re-exported here so
 // existing `from "../lib/directus"` imports keep working unchanged.
@@ -78,7 +84,6 @@ import type {
   Schema,
 } from "./directus-types";
 
-
 type RememberFn = (
   key: string,
   fetcher: () => Promise<any>,
@@ -99,19 +104,14 @@ async function cacheConfig<T>(
       return fetcher();
     }
 
-    try {
-      if (!rememberConfig) {
-        const mod = await import("./redis");
-        rememberConfig = mod.remember;
-      }
-      return await rememberConfig(key, fetcher, {
-        ttl,
-        namespace: "directus:config",
-      });
-    } catch (error) {
-      console.warn("Directus config cache unavailable:", error);
-      return fetcher();
+    if (!rememberConfig) {
+      const mod = await import("./redis.ts");
+      rememberConfig = mod.remember;
     }
+    return rememberConfig(key, fetcher, {
+      ttl,
+      namespace: "directus:config",
+    });
   }) as Promise<T>;
 }
 
@@ -170,17 +170,18 @@ const fetchWithTimeout: typeof fetch = (input, init = {}) =>
     signal: init?.signal ?? AbortSignal.timeout(DIRECTUS_FETCH_TIMEOUT_MS),
   });
 
-// Create Directus client with REST API (public access)
-// Permissions are configured in Directus Admin → Settings → Access Control → Public
-export const directus = createDirectus<Schema>(directusUrl, {
+// The website identity reads content on the server. Anonymous access is only
+// needed for browser assets, not draft translations or page-builder blocks.
+const restClient = createDirectus<Schema>(directusUrl, {
   globals: { fetch: fetchWithTimeout },
 }).with(rest());
+export const directus = directusToken
+  ? restClient.with(staticToken(directusToken))
+  : restClient;
 
 // Helper function to get asset URL
 // Always use public URL for assets since they're loaded by the browser
-export function getAssetUrl(
-  fileId: string | null | undefined
-): string | null {
+export function getAssetUrl(fileId: string | null | undefined): string | null {
   if (!fileId) return null;
   return `${publicDirectusUrl}/assets/${fileId}`;
 }
@@ -266,8 +267,7 @@ export function buildAssetSrcSet(
   if (!assetUrl) return null;
   return widths
     .map(
-      (w) =>
-        `${getOptimizedAssetUrl(assetUrl, { width: w, ...opts })} ${w}w`
+      (w) => `${getOptimizedAssetUrl(assetUrl, { width: w, ...opts })} ${w}w`
     )
     .join(", ");
 }
@@ -334,7 +334,8 @@ async function fetchCollection<T>(
     return [];
   } catch (error) {
     console.error(`Error fetching ${collection}:`, error);
-    return [];
+    // A failed request must not become a successful empty value in Redis.
+    throw error;
   }
 }
 
@@ -376,18 +377,27 @@ async function fetchSingletonHTTP<T>(
 
     const res = await fetchWithTimeout(url, {
       method: "GET",
-      headers: { "Cache-Control": "no-cache" },
+      headers: {
+        "Cache-Control": "no-cache",
+        ...(directusToken ? { Authorization: `Bearer ${directusToken}` } : {}),
+      },
       cache: "no-store",
     });
 
     if (!res.ok) {
-      console.error(`${collection} HTTP error: ${res.status} ${res.statusText}`);
+      console.error(
+        `${collection} HTTP error: ${res.status} ${res.statusText}`
+      );
       return null;
     }
 
     const body = await res.json();
 
-    if (body?.data && typeof body.data === "object" && !Array.isArray(body.data)) {
+    if (
+      body?.data &&
+      typeof body.data === "object" &&
+      !Array.isArray(body.data)
+    ) {
       return body.data as T;
     }
 
@@ -409,7 +419,9 @@ export async function getFileMetadata(
   if (!fileId) return null;
   try {
     const response = await fetchWithTimeout(`${directusUrl}/files/${fileId}`, {
-      headers: directusToken ? { Authorization: `Bearer ${directusToken}` } : {},
+      headers: directusToken
+        ? { Authorization: `Bearer ${directusToken}` }
+        : {},
     });
     if (!response.ok) return null;
     const data = await response.json();
@@ -490,7 +502,10 @@ const PAGE_BASE_FIELDS = [
 // lives in exactly one place (src/lib/blocks.ts).
 export const PAGE_BLOCK_FIELDS = buildPageBlockFields();
 
-export const PAGE_WITH_BLOCKS_FIELDS = [...PAGE_BASE_FIELDS, ...PAGE_BLOCK_FIELDS];
+export const PAGE_WITH_BLOCKS_FIELDS = [
+  ...PAGE_BASE_FIELDS,
+  ...PAGE_BLOCK_FIELDS,
+];
 
 /**
  * Sorts a block list (and the nested O2M children each block may carry) in
@@ -516,7 +531,9 @@ export function sortBlocks(blocks?: PageBlock[] | null): PageBlock[] {
         if (Array.isArray(parents)) {
           for (const p of parents) {
             if (Array.isArray(p?.[child])) {
-              p[child].sort((x: any, y: any) => (x?.sort || 0) - (y?.sort || 0));
+              p[child].sort(
+                (x: any, y: any) => (x?.sort || 0) - (y?.sort || 0)
+              );
             }
           }
         }
@@ -553,11 +570,15 @@ export async function getPageWithBlocks(slug: string): Promise<Page | null> {
  * Draft-aware variant for Live Preview: fetches the page (any status) with the
  * preview token, bypassing the cache, and expands the block tree.
  */
-export async function getPagePreviewBySlug(slug: string): Promise<Page | null> {
+export async function getPagePreviewBySlug(
+  slug: string,
+  options: PreviewOptions = {}
+): Promise<Page | null> {
   const page = await getPreviewItemBySlug<Page>(
     "pages",
     slug,
-    PAGE_WITH_BLOCKS_FIELDS
+    PAGE_WITH_BLOCKS_FIELDS,
+    options
   );
   return sortPageBlocks(page);
 }
@@ -623,7 +644,12 @@ const SERVICE_RELATION_COLLECTIONS = [
 ] as const;
 
 function emptyServiceRelations(): Record<string, any[]> {
-  return { checklist_items: [], steps: [], activities_list: [], subservices: [] };
+  return {
+    checklist_items: [],
+    steps: [],
+    activities_list: [],
+    subservices: [],
+  };
 }
 
 export async function getBatchServiceRelations(serviceIds: number[]) {
@@ -639,11 +665,14 @@ export async function getBatchServiceRelations(serviceIds: number[]) {
     const results = await Promise.allSettled(
       SERVICE_RELATION_COLLECTIONS.map(({ collection }) =>
         directus.request(
-          readItems(collection as any, {
-            fields: ["*", "translations.*"],
-            filter: { service_id: { _in: serviceIds } },
-            sort: ["sort"],
-          } as any)
+          readItems(
+            collection as any,
+            {
+              fields: ["*", "translations.*"],
+              filter: { service_id: { _in: serviceIds } },
+              sort: ["sort"],
+            } as any
+          )
         )
       )
     );
@@ -654,6 +683,7 @@ export async function getBatchServiceRelations(serviceIds: number[]) {
     });
 
     results.forEach((result, i) => {
+      if (result.status === "rejected") throw result.reason;
       const { key } = SERVICE_RELATION_COLLECTIONS[i];
       if (result.status === "fulfilled") {
         (result.value as any[]).forEach((item: any) => {
@@ -679,11 +709,14 @@ export async function getServiceRelations(serviceId: number) {
     const results = await Promise.allSettled(
       SERVICE_RELATION_COLLECTIONS.map(({ collection }) =>
         directus.request(
-          readItems(collection as any, {
-            fields: ["*", "translations.*"],
-            filter: { service_id: { _eq: serviceId } },
-            sort: ["sort"],
-          } as any)
+          readItems(
+            collection as any,
+            {
+              fields: ["*", "translations.*"],
+              filter: { service_id: { _eq: serviceId } },
+              sort: ["sort"],
+            } as any
+          )
         )
       )
     );
@@ -691,14 +724,10 @@ export async function getServiceRelations(serviceId: number) {
     const relations = emptyServiceRelations();
 
     results.forEach((result, i) => {
+      if (result.status === "rejected") throw result.reason;
       const { key } = SERVICE_RELATION_COLLECTIONS[i];
       if (result.status === "fulfilled") {
         relations[key] = result.value as any[];
-      } else {
-        console.warn(
-          `Service relation "${key}" for service ${serviceId}:`,
-          result.reason?.message || "failed"
-        );
       }
     });
 
@@ -785,24 +814,52 @@ export function isPreviewActive(url: URL): boolean {
  * both the status filter and the Redis cache so editors see live changes.
  * Returns null when preview isn't configured or the item doesn't exist.
  */
+export interface PreviewOptions {
+  id?: string | null;
+  version?: string | null;
+}
+
 export async function getPreviewItemBySlug<T>(
   collection: string,
   slug: string,
-  fields: string[]
+  fields: string[],
+  options: PreviewOptions = {}
 ): Promise<T | null> {
   if (!previewToken || !slug) return null;
   try {
+    const headers = {
+      Authorization: `Bearer ${previewToken}`,
+      "Cache-Control": "no-cache",
+    };
+    // Directus versions are read through the single-item endpoint. Carry the
+    // stable item id in preview URLs so changing a draft slug still previews it.
+    let id = options.id;
+    if (!id && options.version) {
+      const lookup = new URLSearchParams({
+        fields: "id",
+        "filter[slug][_eq]": slug,
+        limit: "1",
+      });
+      const response = await fetchWithTimeout(
+        `${directusUrl}/items/${collection}?${lookup}`,
+        { headers, cache: "no-store" }
+      );
+      if (!response.ok) return null;
+      id = (await response.json()).data?.[0]?.id;
+      if (id == null) return null;
+    }
     const params = new URLSearchParams();
     params.set("fields", fields.join(","));
-    params.set("filter[slug][_eq]", slug);
-    params.set("limit", "1");
+    if (options.version) params.set("version", options.version);
+    if (!id) {
+      params.set("filter[slug][_eq]", slug);
+      params.set("limit", "1");
+    }
+    const path = id ? `${collection}/${encodeURIComponent(id)}` : collection;
     const res = await fetchWithTimeout(
-      `${directusUrl}/items/${collection}?${params.toString()}`,
+      `${directusUrl}/items/${path}?${params.toString()}`,
       {
-        headers: {
-          Authorization: `Bearer ${previewToken}`,
-          "Cache-Control": "no-cache",
-        },
+        headers,
         cache: "no-store",
       }
     );
@@ -862,7 +919,10 @@ export async function getClients(options?: {
 
 export async function getClientsSection(): Promise<ClientsSection | null> {
   return cacheConfig("clients_section", () =>
-    fetchSingletonById<ClientsSection>("clients_section", 1, ["*", "translations.*"])
+    fetchSingletonById<ClientsSection>("clients_section", 1, [
+      "*",
+      "translations.*",
+    ])
   );
 }
 
@@ -1044,7 +1104,10 @@ export async function getRelatedCaseStudies(options: {
     if (categoryIds.length) {
       add(
         await fetchCollection<CaseStudy>("case_studies", {
-          filter: { ...base, categories: { category_id: { _in: categoryIds } } },
+          filter: {
+            ...base,
+            categories: { category_id: { _in: categoryIds } },
+          },
           sort: ["sort_order"],
           fields: RELATED_CASE_STUDY_FIELDS,
           limit,
@@ -1099,7 +1162,9 @@ export async function getSocialLinks() {
 
 // Site Settings helpers - HTTP ONLY (no SDK to avoid caching issues)
 export async function getSiteSettings(): Promise<SiteSettings | null> {
-  return cacheConfig("site_settings", () => fetchSingletonHTTP<SiteSettings>("site_settings", "*,translations.*"));
+  return cacheConfig("site_settings", () =>
+    fetchSingletonHTTP<SiteSettings>("site_settings", "*,translations.*")
+  );
 }
 
 // Translations helpers
@@ -1218,7 +1283,9 @@ export async function getAccessibilitySettings() {
 
 // Footer Settings helpers - HTTP ONLY (same approach as getSiteSettings)
 export async function getFooterSettings(): Promise<FooterSettings | null> {
-  return cacheConfig("footer_settings", () => fetchSingletonHTTP<FooterSettings>("footer_settings", "*,translations.*"));
+  return cacheConfig("footer_settings", () =>
+    fetchSingletonHTTP<FooterSettings>("footer_settings", "*,translations.*")
+  );
 }
 
 // Certifications helpers
@@ -1283,7 +1350,11 @@ export async function getContactTeamMembers(options?: {
 
   return cacheConfig(cacheKey, () =>
     fetchCollection<TeamMember>("team_members", {
-      fields: options?.fields ?? [...defaultFields, "sort_order", "translations.*"],
+      fields: options?.fields ?? [
+        ...defaultFields,
+        "sort_order",
+        "translations.*",
+      ],
       limit: options?.limit,
       filter: { show_in_contact: { _eq: true } },
       sort: ["sort_order"],

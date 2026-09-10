@@ -1,11 +1,11 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
-import { getRedisClient } from "../../lib/redis";
-import { getClientIp } from "../../lib/http";
+import { getRedisClient } from "../../lib/redis.ts";
+import { getClientIp } from "../../lib/http.ts";
 import {
   directusUrl as DIRECTUS_URL,
   directusToken as DIRECTUS_TOKEN,
-} from "../../lib/config";
+} from "../../lib/config.ts";
 
 // Fallback in-memory rate limiting (per IP), used only when Redis is unavailable.
 const submissionTimestamps = new Map<string, number[]>();
@@ -89,7 +89,13 @@ export const POST: APIRoute = async ({ request }) => {
         console.log(
           `🚫 Spam blocked: Form submitted too quickly (${timeTaken}ms)`
         );
-        return successResponse();
+        return jsonResponse(
+          {
+            success: false,
+            error: "Please wait a few seconds before sending your message.",
+          },
+          400
+        );
       }
     }
 
@@ -149,18 +155,18 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // SPAM PROTECTION 4: Content validation.
-    const suspiciousPatterns = [
-      /\b(viagra|cialis|casino|lottery|prize|winner)\b/i,
-      /http[s]?:\/\/.*http[s]?:\/\//i, // Multiple URLs
-      /<script|<iframe|javascript:/i, // XSS attempts
-    ];
+    // Inquiries commonly contain multiple links or discuss a client's industry.
+    // Reject embedded executable markup explicitly; never silently drop a
+    // legitimate inquiry based on broad keyword or URL-count heuristics.
     const contentToCheck = `${data.message} ${data.first_name} ${data.last_name}`;
-    for (const pattern of suspiciousPatterns) {
-      if (pattern.test(contentToCheck)) {
-        console.log("🚫 Spam blocked: Suspicious content detected");
-        return successResponse();
-      }
+    if (/<script\b|<iframe\b|javascript:/i.test(contentToCheck)) {
+      return jsonResponse(
+        {
+          success: false,
+          error: "Please send plain text without embedded scripts or frames.",
+        },
+        400
+      );
     }
 
     // Build the submission with server-controlled fields (never from the body).
@@ -181,7 +187,7 @@ export const POST: APIRoute = async ({ request }) => {
       submitted_at: new Date().toISOString(),
     };
 
-    console.log("📤 Submitting contact form for:", submissionData.email);
+    console.log("Submitting contact form");
 
     const directusResponse = await fetch(
       `${DIRECTUS_URL}/items/contact_submissions`,
@@ -233,7 +239,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Log full detail server-side; never leak internals (parse/DNS/timeout) out.
     console.error("Contact API error:", error);
     return jsonResponse(
-      { success: false, error: "Something went wrong. Please try again later." },
+      {
+        success: false,
+        error: "Something went wrong. Please try again later.",
+      },
       500
     );
   }

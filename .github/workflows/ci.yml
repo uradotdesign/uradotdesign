@@ -5,10 +5,10 @@ on:
     branches: [main]
   pull_request:
 
-# Cancel superseded runs on the same ref to save CI minutes.
+# Cancel superseded PR checks, but let production deployments finish.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Least privilege: jobs only need to read the repo.
 permissions:
@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          # Astro 6 requires Node >=22.12; use the current LTS (24).
+          # Keep CI aligned with the Node 24 production Docker image.
           node-version: 24
           cache: npm
 
@@ -34,6 +34,9 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Build Directus extensions from lockfiles
+        run: npm run build:extensions
 
       - name: Build (includes astro check)
         run: npm run build
@@ -97,11 +100,14 @@ jobs:
             set -euo pipefail
             cd "${{ secrets.DEPLOY_PATH }}"
 
-            echo "==> Fast-forward to origin/main"
+            echo "==> Fast-forward to the verified commit"
             git fetch --prune origin main
             # Non-destructive: abort if the server tree has diverged (drift must be
             # resolved by hand rather than silently discarded).
-            git merge --ff-only origin/main
+            git diff --quiet
+            git diff --cached --quiet
+            git merge --ff-only "${{ github.sha }}"
+            test "$(git rev-parse HEAD)" = "${{ github.sha }}"
 
             echo "==> Rebuild the Astro image (only service built from source)"
             docker compose -f docker-compose.prod.yml build astro
@@ -109,9 +115,19 @@ jobs:
             echo "==> Recreate changed services and wait for health"
             docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 240
 
+            echo "==> Install the locked custom extension builds"
+            bash scripts/install-directus-extensions.sh directus_cms
+            docker compose -f docker-compose.prod.yml restart directus
+            docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 240
+
+            echo "==> Verify Directus entitlements and refresh its system cache"
+            docker exec -i directus_cms node --input-type=module - --clear-cache < scripts/verify-directus.mjs
+
             echo "==> Verify endpoints"
-            curl -fsS --retry 5 --retry-delay 3 --max-time 15 http://127.0.0.1:4321/ >/dev/null && echo "Astro OK"
-            curl -fsS --max-time 15 http://127.0.0.1:8055/server/health >/dev/null && echo "Directus OK"
+            curl -fsS --retry 5 --retry-delay 3 --max-time 15 http://127.0.0.1:4321/en >/dev/null && echo "Astro EN OK"
+            curl -fsS --retry 5 --retry-delay 3 --max-time 15 http://127.0.0.1:4321/de >/dev/null && echo "Astro DE OK"
+            curl -fsS --max-time 15 http://127.0.0.1:8055/server/ping >/dev/null && echo "Directus liveness OK"
+            curl -fsS --max-time 15 'http://127.0.0.1:8055/items/site_settings?fields=id' >/dev/null && echo "Directus content API OK"
 
             echo "==> Prune dangling build layers"
             docker image prune -f >/dev/null || true

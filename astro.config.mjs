@@ -6,6 +6,8 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   site: "https://ura.design",
   output: "server",
+  // Preserve the existing inline whitespace behavior when upgrading to Astro 7.
+  compressHTML: true,
   adapter: node({
     mode: "standalone",
   }),

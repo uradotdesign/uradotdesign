@@ -1,4 +1,4 @@
-import { getRedisClient } from "./redis";
+import { getRedisClient } from "./redis.ts";
 
 /**
  * Resolve the client IP from proxy headers.

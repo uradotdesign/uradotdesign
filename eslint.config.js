@@ -15,6 +15,7 @@ export default [
   {
     ignores: [
       "dist/**",
+      "directus-extensions/*/dist/**",
       ".astro/**",
       "node_modules/**",
       "public/**",

@@ -53,6 +53,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
     response.headers.set(name, value);
   }
 
+  if (isPreview) {
+    response.headers.set('Cache-Control', 'private, no-store');
+    response.headers.set('Referrer-Policy', 'no-referrer');
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+
   if (isPreview && CMS_ORIGIN) {
     // Allow the Directus editor (CMS origin) to embed the preview iframe.
     response.headers.set(

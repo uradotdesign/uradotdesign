@@ -13,6 +13,8 @@ services:
       - DIRECTUS_URL=http://directus:8055 # Internal
       - PUBLIC_DIRECTUS_URL=https://cms.${DOMAIN_NAME:-ura.design} # Public
       - SITE_URL=https://${DOMAIN_NAME:-ura.design}
+      # Restricted API identity, issued by setup-website-access.mjs.
+      - DIRECTUS_WEBSITE_TOKEN=${DIRECTUS_WEBSITE_TOKEN:-}
 
       # Weather API
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
@@ -23,6 +25,8 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - DIRECTUS_CONFIG_CACHE=${DIRECTUS_CONFIG_CACHE:-true}
+      - DIRECTUS_CONFIG_CACHE_TTL=${DIRECTUS_CONFIG_CACHE_TTL:-3600}
 
       # Shared secret for the /api/revalidate cache hook (called by a Directus
       # Flow on content changes). Endpoint is disabled when unset.
@@ -38,7 +42,13 @@ services:
       - DEFAULT_LOCALE=${DEFAULT_LOCALE:-en}
       - AVAILABLE_LOCALES=${AVAILABLE_LOCALES:-en,de}
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4321/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:4321/en').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -53,7 +63,7 @@ services:
 
   # 2. Directus CMS
   directus:
-    image: directus/directus:11.17.4
+    image: directus/directus:12.3.1
     container_name: directus_cms
     restart: unless-stopped
     ports:
@@ -70,6 +80,12 @@ services:
       SECRET: ${SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      LICENSE_KEY: ${LICENSE_KEY:?Set LICENSE_KEY for the production CMS permissions}
+      TELEMETRY: "true"
+      # Host Nginx reaches this container through the project's bridge gateway.
+      IP_TRUST_PROXY: ${IP_TRUST_PROXY:-loopback,172.22.0.1}
+      # Prevent old-version permission/schema caches from surviving an upgrade.
+      CACHE_NAMESPACE: "directus-v12"
 
       DB_CLIENT: "pg"
       DB_HOST: "postgres"
@@ -132,7 +148,13 @@ services:
       # whose cert chain requires it (e.g. ProtonMail direct SMTP).
       EMAIL_SMTP_TLS_REJECT_UNAUTHORIZED: ${EMAIL_SMTP_TLS_REJECT_UNAUTHORIZED:-true}
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8055/server/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8055/server/ping').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -151,7 +173,7 @@ services:
 
   # 3. Database
   postgres:
-    image: postgres:18-alpine
+    image: postgres:18.6-alpine
     container_name: directus_postgres
     restart: unless-stopped
     deploy:
@@ -159,7 +181,8 @@ services:
         limits:
           memory: 256M
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # PostgreSQL 18 stores its cluster in 18/docker below this mount.
+      - postgres_data:/var/lib/postgresql
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-directus}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-directus}
@@ -174,7 +197,7 @@ services:
 
   # 4. Redis (Cache)
   redis:
-    image: redis:8.2.3-alpine
+    image: redis:8.2.9-alpine
     container_name: ura_redis
     restart: unless-stopped
     volumes:
