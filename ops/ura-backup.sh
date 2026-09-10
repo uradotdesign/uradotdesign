@@ -57,7 +57,11 @@ else
   test -d "$extensions"
   cp -a "$extensions" "$work/extensions"
   cp /etc/nginx/sites-available/ura.design "$work/nginx.conf"
-  git -C "$repo" rev-parse HEAD > "$work/revision"
+  # The checkout can already be at a candidate revision during deployment.
+  # Record the serving release so the bundle checkout matches the archived app.
+  cp /var/lib/ura-deploy/active-revision "$work/revision"
+  grep -Eq '^[a-f0-9]{40}$' "$work/revision"
+  git -C "$repo" cat-file -e "$(cat "$work/revision")^{commit}"
   docker inspect directus_cms directus_postgres ura_redis --format '{{.Name}} {{.Image}}' > "$work/images.txt"
   # Recovery does not depend on an available registry or the original checkout.
   port=$(cat /var/lib/ura-deploy/active-port)
