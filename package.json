@@ -55,7 +55,7 @@
     "@types/sanitize-html": "^2.16.1",
     "axe-core": "4.13.0",
     "eslint": "^10.10.0",
-    "eslint-plugin-astro": "^1.7.0",
+    "eslint-plugin-astro": "^3.2.1",
     "globals": "^17.12.0",
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^1.0.0",
@@ -64,6 +64,7 @@
     "typescript-eslint": "^8.70.0"
   },
   "overrides": {
+    "postcss-selector-parser": "^7.1.6",
     "satori": {
       "fflate": "^0.8.3",
       "@shuding/opentype.js": {
