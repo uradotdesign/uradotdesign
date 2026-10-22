@@ -58,8 +58,7 @@ const language = lang as Language;
 const ui = await getUI(lang);
 
 const title = getLocalizedField(post, "title", language) || post.title;
-const content =
-  getLocalizedField(post, "content", language) || post.content || "";
+const content = getLocalizedField(post, "content", language) || "";
 const readingTime = calculateReadingTime(content);
 const wordCount = content
   .replace(/<[^>]*>/g, " ")

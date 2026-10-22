@@ -229,9 +229,14 @@ if (type === 'page') {
   const page = data as Page;
   pageBlocks = Array.isArray(page.blocks) ? page.blocks : [];
   const localizedTitle = getLocalizedField(page, "title", lang) || page.title;
+  // `content` is a translations-only field: the legacy top-level `pages.content`
+  // column is a deprecated duplicate that drifted from what editors change in
+  // the Studio (edits land in `pages_translations.content`). Do NOT fall back
+  // to it — serve translations exclusively so edits always go live.
+  const localizedContent = getLocalizedField(page, "content", lang) || "";
   pageContent = {
     title: localizedTitle,
-    content: page.content || "",
+    content: localizedContent,
     seoTitle:
       localizedSeo(page, 'seo_title', lang) ||
       localizedTitle ||

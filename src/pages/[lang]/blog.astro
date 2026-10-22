@@ -90,7 +90,7 @@ const articles = rawArticles.map((a) => ({
   ...a,
   title: getLocalizedField(a, "title", lang) || a.title,
   excerpt: getLocalizedField(a, "excerpt", lang) || a.excerpt,
-  content: getLocalizedField(a, "content", lang) || a.content,
+  content: getLocalizedField(a, "content", lang) || "",
 }));
 
 // Featured post only leads the first page; later pages are grid-only.
