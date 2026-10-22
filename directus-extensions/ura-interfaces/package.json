@@ -39,6 +39,7 @@
     "dev": "directus-extension build -w --no-minify"
   },
   "overrides": {
+    "vite": "^8.1.6",
     "@unhead/vue": "2.1.17",
     "@directus/utils": {
       "joi": "^18.2.8",

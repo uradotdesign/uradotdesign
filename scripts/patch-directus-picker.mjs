@@ -4,10 +4,11 @@ import { readFile, readdir, writeFile, unlink } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-// Directus 12.3.1 list-m2a.vue renders allowedCollections instead of its
-// existing permission-filtered createCollections in the Create New menu.
-// Fail closed on a different upstream build; review/remove on every upgrade.
-export const ORIGINAL_NAME = 'index.C9zFwJTK.entry.js';
+// Directus 12.5.0 list-m2a.vue gates the Create New menu on the
+// permission-filtered createCollections but still renders allowedCollections
+// instead of it. Fail closed on a different upstream build; review/remove on
+// every upgrade.
+export const ORIGINAL_NAME = 'index.B2vK2xV1.entry.js';
 export function patchedAssetName(name) {
   // Directus's extension resolver requires exactly eight hash characters.
   const pattern = /([.-])[A-Za-z0-9_-]{8}(\.entry)?\.js$/;
@@ -16,10 +17,10 @@ export function patchedAssetName(name) {
   return name.replace(pattern, (_, separator, entry = '') => `${separator}${hash}${entry}.js`);
 }
 export const PATCHED_NAME = patchedAssetName(ORIGINAL_NAME);
-export const ORIGINAL_SHA = '90bd39ffba10f5f459fa25c1bc90bd10ba7efff2b8acf3443eea4daef16add26';
-const PATCHED_SHA = 'e0b1bf7125d30331dfc8529420303ccbaecf484e868dc9e1a07c5c06d7fc36ff';
-const BEFORE = 've(v.value,e=>(z(),T(Rb,{key:e.collection,clickable:``,onClick:n=>fe(e.collection)';
-const AFTER = BEFORE.replace('ve(v.value', 've(we.value');
+export const ORIGINAL_SHA = '67281da2f38d3425140b0154dd3b131855b40437800dbd73404b3f1bd15f5115';
+const PATCHED_SHA = 'dd5adb938f2349ba2e99cf707d83e5577b9747fdd5ed4f444664b5380edf4c01';
+const BEFORE = 'he(_.value,e=>(h(),y(Qg,{key:e.collection,clickable:``,disabled:K(dg)(e),onClick:n=>pe(e.collection)';
+const AFTER = BEFORE.replace('he(_.value', 'he(De.value');
 const sha = source => createHash('sha256').update(source).digest('hex');
 
 export function patchPicker(source) {
@@ -42,7 +43,7 @@ async function filesIn(directory) {
 
 export async function patchApp(appDirectory) {
   const pkg = JSON.parse(await readFile(join(appDirectory, 'package.json'), 'utf8'));
-  assert.equal(pkg.version, '17.1.1', 'Unreviewed @directus/app version; expected the package shipped in Directus 12.3.1.');
+  assert.equal(pkg.version, '18.1.0', 'Unreviewed @directus/app version; expected the package shipped in Directus 12.5.0.');
   const dist = join(appDirectory, 'dist');
   const original = join(dist, 'assets', ORIGINAL_NAME);
   const patched = patchPicker(await readFile(original, 'utf8'));
@@ -70,7 +71,7 @@ export async function patchApp(appDirectory) {
     for (const suffix of ['.gz', '.br']) await unlink(path + suffix).catch(error => { if (error.code !== 'ENOENT') throw error; });
     if (destination !== path) await unlink(path);
   }
-  console.log(`Directus 12.3.1 picker patched; ${writes.length} files updated and ${names.length} JS chunk URLs refreshed.`);
+  console.log(`Directus 12.5.0 picker patched; ${writes.length} files updated and ${names.length} JS chunk URLs refreshed.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

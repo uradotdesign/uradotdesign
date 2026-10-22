@@ -86,7 +86,7 @@ services:
   # 2. Directus CMS
   directus:
     logging: *bounded-logging
-    image: ura-directus:12.3.1-ura.1
+    image: ura-directus:12.5.0-ura.1
     build:
       context: .
       dockerfile: Dockerfile.directus

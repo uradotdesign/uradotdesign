@@ -59,7 +59,7 @@ jobs:
           npm --prefix directus-extensions/panel-external-embed audit --audit-level=low
 
       - name: Build and verify the pinned Directus UI correction
-        run: docker build -f Dockerfile.directus -t ura-directus:12.3.1-ura.1 .
+        run: docker build -f Dockerfile.directus -t ura-directus:12.5.0-ura.1 .
 
       - name: Build (includes astro check)
         run: npm run build
@@ -107,6 +107,6 @@ jobs:
             --build-arg REQUIRE_CMS_CLASSES=true \
             --build-arg CMS_CLASSES_SHA256="$(sha256sum .cms-build/classes.html | cut -d ' ' -f1)" \
             --build-arg RELEASE_ID="$GITHUB_SHA" -t "ura-astro:$GITHUB_SHA" .
-          docker build -f Dockerfile.directus -t ura-directus:12.3.1-ura.1 .
-          docker save "ura-astro:$GITHUB_SHA" ura-directus:12.3.1-ura.1 | gzip -1 | \
+          docker build -f Dockerfile.directus -t ura-directus:12.5.0-ura.1 .
+          docker save "ura-astro:$GITHUB_SHA" ura-directus:12.5.0-ura.1 | gzip -1 | \
             ssh -o BatchMode=yes "$SSH_USER@$SSH_HOST" "deploy $GITHUB_SHA"

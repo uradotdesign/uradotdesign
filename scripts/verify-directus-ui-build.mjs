@@ -12,5 +12,5 @@ assert.deepEqual(Object.keys(mapping).sort(), [...dependencies].sort());
 const dist = '/directus/node_modules/.pnpm/@directus+app@file+app/node_modules/@directus/app/dist';
 for (const url of Object.values(mapping)) assert.ok((await readFile(join(dist, 'assets', basename(url)))).length > 0);
 assert.ok((await readFile(join(dist, 'index.html'), 'utf8')).includes(PATCHED_NAME));
-await writeFile('/directus/ura-ui-patch.json', JSON.stringify({ directus: '12.3.1', patch: 'm2a1', entry: PATCHED_NAME, sharedDependencies: mapping }, null, 2));
+await writeFile('/directus/ura-ui-patch.json', JSON.stringify({ directus: '12.5.0', patch: 'm2a1', entry: PATCHED_NAME, sharedDependencies: mapping }, null, 2));
 console.log('Verified the patched entry and all five real Directus shared extension dependency mappings.');
