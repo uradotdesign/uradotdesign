@@ -174,14 +174,17 @@ const bar = (
 });
 
 /**
- * A time-series chart counting rows bucketed by a datetime field. The builder
- * groups by the raw xAxis when no precision is set, which is correct for date
- * columns like posts.published_date.
+ * A time-series chart counting rows bucketed by a datetime field.
+ *
+ * The core Directus time-series panel reads `dateField` (the time axis) and
+ * `valueField` (the aggregated column) — NOT `xAxis`/`yAxis`. Supplying the
+ * wrong keys leaves both undefined and crashes the panel
+ * (`getField(collection, undefined)` -> `undefined.includes('.')`).
  */
 const timeSeries = (
   name,
   { x, y, w, h },
-  { collection, xAxis, yAxis = "id", filter = {}, color = C.brand },
+  { collection, dateField, valueField = "id", filter = {}, precision = "month", range = "1 year", color = C.brand },
   { icon = "show_chart" } = {}
 ) => ({
   name,
@@ -194,10 +197,11 @@ const timeSeries = (
   height: h,
   options: {
     collection,
-    xAxis,
-    yAxis,
-    aggregation: "count",
+    dateField,
+    valueField,
     function: "count",
+    precision,
+    range,
     fillType: "gradient",
     filter,
     color,
@@ -248,7 +252,7 @@ async function main() {
       timeSeries(
         "Posts published over time",
         { x: HALF_X[1], y: ROW[3], w: HALF_W, h: 13 },
-        { collection: "posts", xAxis: "published_date", filter: PUB, color: C.good },
+        { collection: "posts", dateField: "published_date", filter: PUB, color: C.good },
         { icon: "trending_up" }
       ),
     ],
@@ -336,7 +340,7 @@ async function main() {
       timeSeries(
         "Submissions over time",
         { x: HALF_X[1], y: ROW[1], w: HALF_W, h: 18 },
-        { collection: "contact_submissions", xAxis: "submitted_at", color: C.lead },
+        { collection: "contact_submissions", dateField: "submitted_at", filter: {}, color: C.lead },
         { icon: "trending_up" }
       ),
     ],

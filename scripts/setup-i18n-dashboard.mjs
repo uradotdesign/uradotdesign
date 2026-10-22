@@ -4,8 +4,8 @@
  * ship.
  *
  *   • Per content type: total items vs items that have an EN / DE translation
- *     row (filter: translations.languages_code _eq <locale>). A covered count
- *     below the total means missing translations.
+ *     row (filter: translations.languages_code.code _eq <locale>). A covered
+ *     count below the total means missing translations.
  *   • Translation rows by language for each *_translations junction (bar) — the
  *     fastest visual read of which locale is behind.
  *   • UI strings (the key/value `translations` collection): totals, by language,
@@ -86,10 +86,13 @@ async function createDashboard({ name, icon, color, note, panels }) {
 }
 
 // ---- panel builders (mirror setup-insights-dashboards.mjs) -----------------
-const count = (collection, filter = {}) => ({
+// `field` defaults to the conventional "id" primary key, but must be overridden
+// for collections keyed differently (e.g. `languages` is keyed by `code`) —
+// otherwise the metric's GraphQL `count { <field> }` fails validation.
+const count = (collection, filter = {}, field = "id") => ({
   collection,
   function: "count",
-  field: "id",
+  field,
   filter,
 });
 
@@ -131,9 +134,13 @@ const bar = (
   },
 });
 
-/** count of items in `collection` that have a translation row for `locale`. */
+// Count of items in `collection` that have a translation row for `locale`.
+// `languages_code` is an M2O to `languages` (keyed by `code`), so the filter
+// must descend into the related PK: `languages_code.code _eq <locale>`. The
+// flat `languages_code _eq <locale>` shape is invalid GraphQL (`_eq` is not a
+// field of `languages_filter`) and breaks the whole dashboard query.
 const covered = (collection, locale) =>
-  count(collection, { translations: { languages_code: { _eq: locale } } });
+  count(collection, { translations: { languages_code: { code: { _eq: locale } } } });
 
 const CONTENT = [
   { coll: "posts", junction: "posts_translations", label: "Posts", icon: "article" },
@@ -148,7 +155,7 @@ async function main() {
   // (The key/value `translations` collection is intentionally excluded — the
   // site's UI strings live in code, so it is empty and would always read 0.)
   const panels = [
-    metric("Languages", 0, 0, count("languages"), { icon: "language", color: C.brand }),
+    metric("Languages", 0, 0, count("languages", {}, "code"), { icon: "language", color: C.brand }),
   ];
 
   CONTENT.forEach(({ coll, label, icon }, i) => {
